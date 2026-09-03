@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLIO Test Page — Login Demo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 16px;
+      gap: 40px;
+    }
+    h1 { font-size: 22px; color: #38bdf8; }
+    .subtitle { font-size: 13px; color: #64748b; }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 32px;
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .card h2 { font-size: 18px; color: #e2e8f0; }
+    label { font-size: 12px; color: #94a3b8; display: block; margin-bottom: 6px; }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: #0f172a;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      color: #f8fafc;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #38bdf8; }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #0284c7;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #0369a1; }
+    #result {
+      background: #0f172a;
+      border: 1px solid #1e3a5f;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 13px;
+      color: #4ade80;
+      min-height: 48px;
+      word-break: break-word;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #1e3a5f;
+      color: #38bdf8;
+      margin-left: 8px;
+    }
+    .divider { border: none; border-top: 1px solid #1e3a5f; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .nav-links { display: flex; gap: 12px; flex-wrap: wrap; }
+    .nav-links a {
+      color: #38bdf8;
+      text-decoration: none;
+      font-size: 13px;
+      padding: 6px 12px;
+      border: 1px solid #1e3a5f;
+      border-radius: 6px;
+    }
+    .nav-links a:hover { background: #1e293b; }
+  </style>
+</head>
+<body>
+
+  <div>
+    <h1>⚡ CLIO Test Page <span class="badge">local</span></h1>
+    <p class="subtitle" style="margin-top:6px;text-align:center">Use CLIO to interact with this page</p>
+  </div>
+
+  <!-- Navigation links for testing navigate action -->
+  <div class="nav-links">
+    <a href="/test" id="link-home">🏠 Home</a>
+    <a href="/test#search" id="link-search">🔍 Search</a>
+    <a href="/test#settings" id="link-settings">⚙️ Settings</a>
+  </div>
+
+  <!-- Login form -->
+  <div class="card" id="login-form">
+    <h2>Sign In</h2>
+    <div class="field">
+      <label for="email">Email address</label>
+      <input id="email" type="email" placeholder="user@example.com" aria-label="Email address" />
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input id="password" type="password" placeholder="••••••••" aria-label="Password" />
+    </div>
+    <div class="field">
+      <label for="role">Role</label>
+      <select id="role" aria-label="Role">
+        <option value="">Select a role…</option>
+        <option value="admin">Admin</option>
+        <option value="editor">Editor</option>
+        <option value="viewer">Viewer</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="notes">Notes (optional)</label>
+      <textarea id="notes" rows="2" placeholder="Any notes..." aria-label="Notes"></textarea>
+    </div>
+    <button id="submit-btn" aria-label="Sign in" onclick="handleSubmit()">Sign In</button>
+  </div>
+
+  <hr class="divider" style="width:100%;max-width:400px" />
+
+  <!-- Result display -->
+  <div class="card" style="max-width:400px">
+    <h2>Result <span class="badge">agent output</span></h2>
+    <div id="result">Waiting for agent action…</div>
+    <button onclick="resetForm()" aria-label="Reset form" style="background:#334155">Reset Form</button>
+  </div>
+
+  <script>
+    function handleSubmit() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const role = document.getElementById('role').value;
+      const notes = document.getElementById('notes').value;
+
+      if (!email || !password) {
+        document.getElementById('result').textContent = '⚠️ Email and password are required.';
+        document.getElementById('result').style.color = '#f87171';
+        return;
+      }
+
+      document.getElementById('result').innerHTML =
+        `✅ Submitted!<br>` +
+        `Email: <strong>${email}</strong><br>` +
+        `Role: <strong>${role || 'none'}</strong><br>` +
+        `Notes: ${notes || '—'}`;
+      document.getElementById('result').style.color = '#4ade80';
+    }
+
+    function resetForm() {
+      document.getElementById('email').value = '';
+      document.getElementById('password').value = '';
+      document.getElementById('role').value = '';
+      document.getElementById('notes').value = '';
+      document.getElementById('result').textContent = 'Waiting for agent action…';
+      document.getElementById('result').style.color = '#4ade80';
+    }
+  </script>
+</body>
+</html>
