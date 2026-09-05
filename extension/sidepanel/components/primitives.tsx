@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 
 export const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <section className="card">{children}</section>
@@ -31,13 +31,15 @@ export const StatusPill: React.FC<{
   </span>
 );
 
-export const PrimaryButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = (p) => (
-  <button {...p} className="btn btn-primary" />
+export const PrimaryButton = forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
+  (props, ref) => <button {...props} ref={ref} className="btn btn-primary" />
 );
+PrimaryButton.displayName = 'PrimaryButton';
 
-export const SecondaryButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = (p) => (
-  <button {...p} className="btn btn-secondary" />
+export const SecondaryButton = forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
+  (props, ref) => <button {...props} ref={ref} className="btn btn-secondary" />
 );
+SecondaryButton.displayName = 'SecondaryButton';
 
 export const TabSwitcher: React.FC<{
   tabs: readonly string[]; active: string; onChange: (t: string) => void;
