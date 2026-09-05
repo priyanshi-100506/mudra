@@ -193,3 +193,4 @@ function notifyStatus(status: 'idle' | 'running' | 'completed' | 'error', messag
     message,
   }).catch(() => {});
 }
+chrome.sidePanel?.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});

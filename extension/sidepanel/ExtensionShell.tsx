@@ -1,4 +1,5 @@
-import React, { useReducer, useState, useCallback } from 'react';
+import React, { useReducer, useState, useCallback, useEffect } from 'react';
+import { subscribe, startTask, sendDecision } from './bridge';
 import { reducer, initialState, isBusy } from './state';
 import { PageContext } from './components/PageContext';
 import { AgentStatus } from './components/AgentStatus';
@@ -20,20 +21,17 @@ export const ExtensionShell: React.FC = () => {
     const task = draft.trim();
     if (!task) return;
     dispatch({ type: 'TASK_STARTED', task });
-    // Wire to the existing background worker here.
+    void startTask(task).catch(() =>
+      dispatch({ type: 'ERROR', message: 'Could not reach the agent worker.' }));
   }, [draft]);
 
-  const resolve = (outcome: 'executed' | 'refused') => {
+  useEffect(() => subscribe(dispatch), []);
+
+  const resolve = (decision: 'authorise' | 'refuse') => {
     if (!state.pending) return;
-    dispatch({
-      type: 'CONFIRM_RESOLVED',
-      entry: {
-        at: new Date().toISOString(),
-        effect: state.pending.effect,
-        outcome,
-        reason: outcome === 'refused' ? 'Declined by the user.' : undefined,
-      },
-    });
+    dispatch({ type: 'PHASE', phase: decision === 'refuse' ? 'REFUSED' : 'EXECUTING' });
+    void sendDecision(decision).catch(() =>
+      dispatch({ type: 'ERROR', message: 'Could not send your decision to the executor.' }));
   };
 
   if (state.phase === 'ERROR') {
@@ -79,8 +77,8 @@ export const ExtensionShell: React.FC = () => {
       {state.pending && (
         <ConfirmationDialog
           pending={state.pending}
-          onAuthorise={() => resolve('executed')}
-          onRefuse={() => resolve('refused')}
+          onAuthorise={() => resolve('authorise')}
+          onRefuse={() => resolve('refuse')}
         />
       )}
       <span className="sr-only" aria-live="polite">

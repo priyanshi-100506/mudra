@@ -1,29 +1,20 @@
-export type AgentPhase =
-  | 'IDLE' | 'CAPTURING' | 'DETECTING' | 'REDACTING' | 'BUILDING_SCENE'
-  | 'PLANNING' | 'AWAITING_CONFIRMATION' | 'EXECUTING'
-  | 'COMPLETE' | 'REFUSED' | 'ERROR';
+export type {
+  AgentPhase, DetectionCounts, RedactionCounts,
+  OutboundSummary, GrantRequest as PendingAction,
+} from '../src/shared/agent-events';
 
 export interface PageContextInfo { origin: string; title: string }
-export interface DetectionCounts { structuredPii: number; faces: number; namedEntities: number; ocrRegions: number }
-export interface RedactionCounts { textReferences: number; maskedRegions: number; reOcrVerified: boolean }
-
-/** Safe outbound view. Never carries a resolved value. */
-export interface OutboundSummary {
-  rawPixelsSent: 0;
-  piiValuesSent: 0;
-  fieldsDescribed: number;
-  preview: string;
-}
-
-export interface PendingAction {
-  sentence: string; origin: string; effect: string;
-  targetRole: string; targetRef: string;
-}
 
 export interface AuditEntry {
-  at: string; effect: string;
-  outcome: 'executed' | 'refused'; reason?: string;
+  at: string;
+  effect: string;
+  outcome: 'executed' | 'refused';
+  reason?: string;
 }
+
+import type {
+  AgentPhase, DetectionCounts, RedactionCounts, OutboundSummary, GrantRequest,
+} from '../src/shared/agent-events';
 
 export interface AgentState {
   phase: AgentPhase;
@@ -32,7 +23,7 @@ export interface AgentState {
   detection: DetectionCounts | null;
   redaction: RedactionCounts | null;
   outbound: OutboundSummary | null;
-  pending: PendingAction | null;
+  pending: GrantRequest | null;
   audit: AuditEntry[];
   error: string | null;
 }
