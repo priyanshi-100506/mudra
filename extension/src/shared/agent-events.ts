@@ -29,6 +29,14 @@ export interface DetectionCounts {
   ocrRegions: number;
 }
 
+/** Safe to show. Carries no resolved value — by construction. */
+export interface RedactedField {
+  ref: string;
+  label: string;
+  role: string;
+  sensitive: boolean;
+}
+
 export interface RedactionCounts {
   textReferences: number;
   maskedRegions: number;
@@ -60,7 +68,7 @@ export type AgentEventMessage =
   | { type: 'AGENT_PHASE'; phase: AgentPhase }
   | { type: 'AGENT_PAGE'; origin: string; title: string }
   | { type: 'AGENT_DETECTION'; counts: DetectionCounts }
-  | { type: 'AGENT_REDACTION'; counts: RedactionCounts }
+  | { type: 'AGENT_REDACTION'; counts: RedactionCounts; fields: RedactedField[] }
   | { type: 'AGENT_OUTBOUND'; summary: OutboundSummary }
   | { type: 'AGENT_CONFIRM_REQUIRED'; request: GrantRequest }
   | { type: 'AGENT_ACTION_RESOLVED'; effect: string; outcome: 'executed' | 'refused'; reason?: string }

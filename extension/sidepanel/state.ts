@@ -2,7 +2,7 @@ import type { AgentState, AgentPhase } from './types';
 
 export const initialState: AgentState = {
   phase: 'IDLE', page: null, task: null, detection: null,
-  redaction: null, outbound: null, pending: null, audit: [], error: null,
+  redaction: null, fields: [], outbound: null, pending: null, audit: [], error: null,
 };
 
 export type AgentEvent =
@@ -10,7 +10,7 @@ export type AgentEvent =
   | { type: 'TASK_STARTED'; task: string }
   | { type: 'PHASE'; phase: AgentPhase }
   | { type: 'DETECTION'; detection: AgentState['detection'] }
-  | { type: 'REDACTION'; redaction: AgentState['redaction'] }
+  | { type: 'REDACTION'; redaction: AgentState['redaction']; fields: AgentState['fields'] }
   | { type: 'OUTBOUND'; outbound: AgentState['outbound'] }
   | { type: 'CONFIRM_REQUIRED'; pending: AgentState['pending'] }
   | { type: 'CONFIRM_RESOLVED'; entry: AuditLike }
@@ -31,7 +31,7 @@ export function reducer(state: AgentState, e: AgentEvent): AgentState {
     case 'TASK_STARTED': return { ...initialState, page: state.page, task: e.task, phase: 'CAPTURING' };
     case 'PHASE': return { ...state, phase: e.phase };
     case 'DETECTION': return { ...state, detection: e.detection };
-    case 'REDACTION': return { ...state, redaction: e.redaction };
+    case 'REDACTION': return { ...state, redaction: e.redaction, fields: e.fields };
     case 'OUTBOUND': return { ...state, outbound: e.outbound };
     case 'CONFIRM_REQUIRED': return { ...state, phase: 'AWAITING_CONFIRMATION', pending: e.pending };
     case 'CONFIRM_RESOLVED': return {

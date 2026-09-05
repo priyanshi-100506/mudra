@@ -12,7 +12,7 @@ export function toAgentEvent(msg: AgentEventMessage): AgentEvent | null {
     case 'AGENT_DETECTION':
       return { type: 'DETECTION', detection: msg.counts };
     case 'AGENT_REDACTION':
-      return { type: 'REDACTION', redaction: msg.counts };
+      return { type: 'REDACTION', redaction: msg.counts, fields: msg.fields };
     case 'AGENT_OUTBOUND':
       return { type: 'OUTBOUND', outbound: msg.summary };
     case 'AGENT_CONFIRM_REQUIRED':

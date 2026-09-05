@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react';
 
-export const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <section className="card">{children}</section>
+export const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
+  <section className={className ? `card ${className}` : 'card'}>{children}</section>
 );
 
 export const Section: React.FC<{ children: React.ReactNode }> = ({ children }) => (

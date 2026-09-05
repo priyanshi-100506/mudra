@@ -1,5 +1,7 @@
 import { ExtensionMessage } from '../shared/messaging';
 import { AgentAction, PageIR } from '../shared/types';
+import { redactPageIR, buildOutbound } from '../shared/redact';
+import { emitPhase, emitError, emitDetection, emitRedaction, emitOutbound, emitActivePage } from './panel-events';
 
 let currentGoal = '';
 let isAgentRunning = false;
@@ -26,8 +28,12 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendRe
   return true; // keep channel open for async
 });
 
-async function handleMessage(message: ExtensionMessage) {
+async function handleMessage(message: ExtensionMessage | { type: 'PANEL_READY' }) {
   switch (message.type) {
+    case 'PANEL_READY': {
+      await emitActivePage();
+      break;
+    }
     case 'START_TASK': {
       currentGoal = message.goal;
       isAgentRunning = true;
@@ -41,12 +47,15 @@ async function handleMessage(message: ExtensionMessage) {
 
       activeTabId = tab.id;
       notifyStatus('running', `Session ${sessionId.slice(0, 8)} started.`);
+      await emitActivePage();
+      emitPhase('CAPTURING');
       await triggerObservation();
       break;
     }
 
     case 'STOP_TASK': {
       isAgentRunning = false;
+      emitPhase('IDLE');
       // Reset backend session state
       fetch(`${backendUrl}/agent/reset`, {
         method: 'POST',
@@ -91,8 +100,29 @@ async function triggerObservation() {
   }
 }
 
-async function processPageIR(pageIR: PageIR) {
+async function processPageIR(pageIR: PageIR){
   notifyStatus('running', 'Planning next action...');
+
+  emitPhase('DETECTING');
+  const redacted = redactPageIR(pageIR);
+  emitDetection(redacted.detection);
+
+  emitPhase('REDACTING');
+  emitRedaction(redacted.redaction, redacted.fields);
+
+  emitPhase('BUILDING_SCENE');
+  let scene;
+  try {
+    scene = buildOutbound(redacted);
+  } catch (err: any) {
+    isAgentRunning = false;
+    emitError(err.message);
+    notifyStatus('error', err.message);
+    return;
+  }
+  emitOutbound(scene.summary);
+
+  emitPhase('PLANNING');
 
   try {
     const response = await fetch(`${backendUrl}/agent/step`, {
@@ -100,7 +130,7 @@ async function processPageIR(pageIR: PageIR) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         goal: currentGoal,
-        page_ir: pageIR,
+        page_ir: { ...pageIR, elements: scene.payload.elements },
         session_id: sessionId,
       }),
     });
@@ -115,18 +145,21 @@ async function processPageIR(pageIR: PageIR) {
 
     if (data.status === 'done') {
       isAgentRunning = false;
+      emitPhase('COMPLETE');
       notifyStatus('completed', `Done: ${data.message}`);
       return;
     }
 
     if (data.status === 'error') {
       isAgentRunning = false;
+      emitError(data.message);
       notifyStatus('error', `${data.message}`);
       return;
     }
 
     // Show action being executed
     notifyStatus('running', `${data.message}`);
+    emitPhase('EXECUTING');
 
     if (activeTabId && isAgentRunning) {
       // Execute action in content script
@@ -157,6 +190,7 @@ async function processPageIR(pageIR: PageIR) {
       await triggerObservation();
     }
   } catch (err: any) {
+    emitError(err.message);
     notifyStatus('error', `❌ ${err.message}`);
     isAgentRunning = false;
   }
@@ -194,3 +228,6 @@ function notifyStatus(status: 'idle' | 'running' | 'completed' | 'error', messag
   }).catch(() => {});
 }
 chrome.sidePanel?.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+
+chrome.tabs.onActivated.addListener(() => { void emitActivePage(); });
+chrome.tabs.onUpdated.addListener((_id, info) => { if (info.status === 'complete') void emitActivePage(); });
