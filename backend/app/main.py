@@ -81,6 +81,73 @@ def session_status(session_id: str):
     }
 
 
+from typing import Optional, List
+from app.schemas.manifest import EgressManifestEntry
+from app.manifest_store import manifest_store
+
+@app.post("/manifest/record", response_model=EgressManifestEntry)
+def record_manifest(entry: EgressManifestEntry):
+    return manifest_store.record(entry)
+
+@app.get("/manifests", response_model=List[EgressManifestEntry])
+def list_manifests(session_id: Optional[str] = None, status: Optional[str] = None):
+    return manifest_store.list_entries(session_id=session_id, status=status)
+
+@app.get("/manifests/{entry_id}", response_model=EgressManifestEntry)
+def get_manifest_entry(entry_id: str):
+    entry = manifest_store.get_entry(entry_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Manifest entry not found")
+    return entry
+
+@app.get("/manifests/viewer/html", response_class=HTMLResponse)
+def manifest_viewer_html():
+    entries = manifest_store.list_entries()
+    rows = ""
+    for e in entries:
+        color = "#28a745" if e.status == "allowed" else "#dc3545"
+        rows += f"""
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;">{e.id}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{e.timestamp}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{e.session_id}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{e.target_url}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><code>{e.action_type}</code></td>
+            <td style="padding: 8px; border: 1px solid #ddd; color: {color}; font-weight: bold;">{e.status.upper()}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{e.redacted_refs_count}</td>
+        </tr>
+        """
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>MUDRA Egress Audit Manifest Viewer</title>
+        <style>
+            body {{ font-family: system-ui, sans-serif; margin: 20px; background: #0f172a; color: #f8fafc; }}
+            h1 {{ color: #38bdf8; }}
+            table {{ width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; }}
+            th {{ background: #334155; padding: 12px; text-align: left; }}
+        </style>
+    </head>
+    <body>
+        <h1>🛡️ MUDRA Egress Audit Manifest Viewer</h1>
+        <p>Zero raw PII leaves the client. Below is the active log of all outbound actions & grant authorizations.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Timestamp</th><th>Session</th><th>Target URL</th><th>Action</th><th>Status</th><th>Redacted PII Tokens</th>
+                </tr>
+            </thead>
+            <tbody>
+                {rows if rows else '<tr><td colspan="7" style="padding: 16px; text-align: center;">No egress manifest entries recorded yet.</td></tr>'}
+            </tbody>
+        </table>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html)
+
+
 @app.post("/agent/step", response_model=LoopStepResponse)
 async def run_agent_step(payload: AgentStepRequest):
     loop = get_session(payload.session_id)
