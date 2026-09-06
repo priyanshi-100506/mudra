@@ -5,6 +5,7 @@ import { redactPageIR, buildOutbound } from '../shared/redact';
 import { emitPhase, emitError, emitDetection, emitRedaction, emitOutbound, emitActivePage,
          emitConfirmRequired, emitActionResolved, replaySnapshot, clearSnapshot } from './panel-events';
 import { deriveGrant, checkAction, confirmSentence, effectOf, type Grant } from '../shared/grant';
+import { stubPlan, STUB_ENABLED_KEY } from './planner-stub';
 
 let currentGoal = '';
 let isAgentRunning = false;
@@ -13,6 +14,14 @@ let sessionId = '';
 let backendUrl = 'http://127.0.0.1:8000';
 let grant: Grant | null = null;
 let pendingResolve: ((decision: 'authorise' | 'refuse') => void) | null = null;
+let usePlannerStub = false;
+let stubStep = 0;
+chrome.storage.local.get(STUB_ENABLED_KEY, (res) => {
+  usePlannerStub = Boolean(res?.[STUB_ENABLED_KEY]);
+});
+chrome.storage.onChanged.addListener((changes) => {
+  if (STUB_ENABLED_KEY in changes) usePlannerStub = Boolean(changes[STUB_ENABLED_KEY].newValue);
+});
 
 // Load persisted backend URL on startup
 chrome.storage.local.get('backendUrl', (res) => {
@@ -58,6 +67,7 @@ async function handleMessage(message: ExtensionMessage | PanelCommand) {
 
       activeTabId = tab.id;
       clearSnapshot();
+      stubStep = 0;
       { let o = tab.url ?? '';
         try { o = new URL(tab.url ?? '').origin; } catch { /* keep raw */ }
         grant = deriveGrant(message.goal, o); }
@@ -115,6 +125,27 @@ async function triggerObservation() {
   }
 }
 
+/** The real planner call, extracted so the stub can stand in for it. */
+async function fetchPlan(
+  elements: unknown[],
+  pageIR: PageIR,
+): Promise<{ status: string; message: string; action: AgentAction }> {
+  const response = await fetch(`${backendUrl}/agent/step`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      goal: currentGoal,
+      page_ir: { ...pageIR, elements },
+      session_id: sessionId,
+    }),
+  });
+  if (!response.ok) {
+    const errBody = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(`Backend HTTP ${response.status}: ${errBody.detail ?? response.statusText}`);
+  }
+  return response.json();
+}
+
 async function processPageIR(pageIR: PageIR){
   notifyStatus('running', 'Planning next action...');
 
@@ -152,22 +183,18 @@ async function processPageIR(pageIR: PageIR){
   emitPhase('PLANNING');
 
   try {
-    const response = await fetch(`${backendUrl}/agent/step`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        goal: currentGoal,
-        page_ir: { ...pageIR, elements: scene.payload.elements },
-        session_id: sessionId,
-      }),
-    });
+    // The planner is the only step that can be stubbed for the demo.
+    // Everything below this line is the real path, unchanged — the
+    // refusal is not mocked, only the hostile plan that provokes it.
+    const stubOn = await chrome.storage.local
+      .get(STUB_ENABLED_KEY)
+      .then((r) => Boolean(r?.[STUB_ENABLED_KEY]))
+      .catch(() => usePlannerStub);
 
-    if (!response.ok) {
-      const errBody = await response.json().catch(() => ({ detail: response.statusText }));
-      throw new Error(`Backend HTTP ${response.status}: ${errBody.detail ?? response.statusText}`);
-    }
+    const data = stubOn
+      ? stubPlan(stubStep++, scene.payload.elements)
+      : await fetchPlan(scene.payload.elements, pageIR);
 
-    const data = await response.json();
     const action: AgentAction = data.action;
 
     if (data.status === 'done') {
