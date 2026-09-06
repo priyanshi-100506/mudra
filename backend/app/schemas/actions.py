@@ -58,6 +58,10 @@ class AgentAction(RootModel):
         DoneAction,
     ] = Field(..., discriminator="action")
 
+    @property
+    def action(self) -> str:
+        return self.root.action
+
     @classmethod
     def model_validate(cls, obj: Any, *args, **kwargs) -> Any:
         parsed = super().model_validate(obj, *args, **kwargs)

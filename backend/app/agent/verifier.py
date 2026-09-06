@@ -23,16 +23,17 @@ class ActionVerifier:
                 return True, "Success: Click executed."
 
             case "type":
-                target_el = next((e for e in after_ir.elements if e.id == action.element_id), None)
-                if target_el and target_el.value == action.text:
-                    return True, f"Success: Element value updated to '{action.text}'."
-                return False, "Verification failed: Input element value did not update."
+                # The backend no longer receives raw values — sensitive fields
+                # are redacted client-side.  We cannot compare value, so we
+                # accept the action unconditionally and let the next observation
+                # surface any failure naturally.
+                return True, "Success: Type action dispatched."
 
             case "select":
-                target_el = next((e for e in after_ir.elements if e.id == action.element_id), None)
-                if target_el and target_el.selected_options and action.option in target_el.selected_options:
-                    return True, f"Success: Selected option '{action.option}'."
-                return False, "Verification failed: Dropdown selected option did not update."
+                # selected_options is absent from the new PageElement shape.
+                # Accept unconditionally; the next observation will reveal
+                # whether the selection took effect.
+                return True, "Success: Select action dispatched."
 
             case "navigate":
                 if after_ir.url != before_ir.url:

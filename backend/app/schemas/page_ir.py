@@ -10,13 +10,23 @@ class BoundingBox(BaseModel):
 
 
 class PageElement(BaseModel):
-    id: str = Field(description="Observation-scoped unique identifier (e.g., e1, e2)")
+    """
+    One interactive element in the page snapshot.
+
+    For ordinary fields, `ref` equals the observation-scoped element id (e.g. "e1").
+    For sensitive fields the Mudra redaction layer replaces `ref` with a
+    request-scoped random handle (e.g. "ref_1k4z") and strips value/checked/
+    selected_options entirely — the backend must plan using name/role/input_type
+    and sensitive flag alone for those fields.
+    """
+    ref: str = Field(description="Observation-scoped unique handle. Opaque ref_* for sensitive fields.")
     role: str = Field(description="Role like button, textbox, link, checkbox, select, generic")
-    name: str = Field(description="Extracted label or title of the element")
-    input_type: Optional[str] = Field(default=None, description="HTML input type if applicable (e.g., email, password)")
-    value: Optional[str] = Field(default=None, description="Current text value of input or select")
-    checked: Optional[bool] = Field(default=None, description="Checked state for checkboxes/radios")
-    selected_options: Optional[List[str]] = Field(default=None, description="Currently selected options in dropdowns")
+    name: str = Field(description="Extracted accessible label of the element")
+    input_type: Optional[str] = Field(default=None, description="HTML input type if applicable (e.g. email, password)")
+    autocomplete: Optional[str] = Field(default=None, description="HTML autocomplete token, if present")
+    sensitive: bool = Field(default=False, description="True when the field holds private data redacted client-side")
+    # value / checked / selected_options are intentionally absent:
+    # sensitive fields never carry values; the backend must not depend on them.
     visible: bool = Field(default=True, description="Whether the element passes visibility heuristics")
     enabled: bool = Field(default=True, description="Whether the element is interactive and not disabled")
     bbox: Optional[BoundingBox] = Field(default=None, description="Viewport coordinates of element")

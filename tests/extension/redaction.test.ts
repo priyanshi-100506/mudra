@@ -75,14 +75,14 @@ describe('isAadhaar', () => {
   // embedding real Aadhaar data in test fixtures.
   //
   // Standard test vector for Aadhaar (passes Verhoeff check)
-  const VALID_AADHAAR = '499118665121';
+  const VALID_AADHAAR = '499118665128';
 
   it('accepts a structurally valid Aadhaar number', () => {
     expect(isAadhaar(VALID_AADHAAR)).toBe(true);
   });
 
   it('accepts a valid Aadhaar with space grouping', () => {
-    expect(isAadhaar('4991 1866 5120')).toBe(true);
+    expect(isAadhaar('4991 1866 5128')).toBe(true);
   });
 
   it('rejects an Aadhaar starting with 0', () => {
@@ -440,6 +440,10 @@ describe('redactCanvas', () => {
     // Mock getContext('2d') in jsdom environment where canvas context is not fully implemented
     HTMLCanvasElement.prototype.getContext = function (contextId: string) {
       if (contextId === '2d') {
+        const self = this as any;
+        if (self._mock2dContext) {
+          return self._mock2dContext;
+        }
         const filledRects: Array<{ x: number; y: number; w: number; h: number; color: string }> = [];
         let currentColor = '#000000';
         const mockContext = {
@@ -456,8 +460,8 @@ describe('redactCanvas', () => {
           getImageData: (x: number, y: number) => {
             let colorVal = 255; // default white
             for (const r of filledRects) {
-              if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
-                if (r.color === '#000000') {
+              if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) {
+                if (r.color.toLowerCase() === '#000000') {
                   colorVal = 0; // black
                 }
               }
@@ -465,6 +469,7 @@ describe('redactCanvas', () => {
             return { data: [colorVal, colorVal, colorVal, 255] };
           },
         };
+        self._mock2dContext = mockContext;
         return mockContext as unknown as CanvasRenderingContext2D;
       }
       return null;

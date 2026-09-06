@@ -25,17 +25,21 @@ def test_type_action_max_length_constraint():
 
 
 def test_verifier_type_action_success():
-    before_el = PageElement(id="e1", role="textbox", name="Email", value="")
-    after_el = PageElement(id="e1", role="textbox", name="Email", value="user@example.com")
+    """
+    Type action verification now passes unconditionally because the new
+    PageElement shape carries no `value` field (values are redacted client-side).
+    """
+    before_el = PageElement(ref="e1", role="textbox", name="Email", sensitive=False)
+    after_el  = PageElement(ref="e1", role="textbox", name="Email", sensitive=False)
 
     before_ir = PageIR(url="http://test.com", title="Test", elements=[before_el], observed_at="2026-01-01T00:00:00Z")
-    after_ir = PageIR(url="http://test.com", title="Test", elements=[after_el], observed_at="2026-01-01T00:00:01Z")
+    after_ir  = PageIR(url="http://test.com", title="Test", elements=[after_el],  observed_at="2026-01-01T00:00:01Z")
 
     action = TypeAction(action="type", element_id="e1", text="user@example.com")
     success, msg = ActionVerifier.verify(action, before_ir, after_ir)
 
     assert success is True
-    assert "updated" in msg
+    assert "dispatched" in msg
 
 
 @pytest.mark.asyncio
@@ -49,7 +53,7 @@ async def test_agent_loop_rejects_nonexistent_element_id():
     current_ir = PageIR(
         url="http://test.com",
         title="Test",
-        elements=[PageElement(id="e1", role="button", name="Submit")],
+        elements=[PageElement(ref="e1", role="button", name="Submit")],
         observed_at="2026-01-01T00:00:00Z"
     )
 

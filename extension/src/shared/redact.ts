@@ -28,6 +28,51 @@ function luhnValid(digits: string): boolean {
   return digits.length >= 13 && sum % 10 === 0;
 }
 
+const EMAIL = /\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b/;
+const PASSPORT_IN = /\b[A-Z][1-9][0-9]{6,7}\b/;
+const SSN = /\b\d{3}-\d{2}-\d{4}\b/;
+
+/* Multiplication table d for Verhoeff */
+const _verhoeffD: number[][] = [
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  [1, 2, 3, 4, 0, 6, 7, 8, 9, 5],
+  [2, 3, 4, 0, 1, 7, 8, 9, 5, 6],
+  [3, 4, 0, 1, 2, 8, 9, 5, 6, 7],
+  [4, 0, 1, 2, 3, 9, 5, 6, 7, 8],
+  [5, 9, 8, 7, 6, 0, 4, 3, 2, 1],
+  [6, 5, 9, 8, 7, 1, 0, 4, 3, 2],
+  [7, 6, 5, 9, 8, 2, 1, 0, 4, 3],
+  [8, 7, 6, 5, 9, 3, 2, 1, 0, 4],
+  [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+];
+const _verhoeffP: number[][] = [
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  [1, 5, 7, 6, 2, 8, 3, 0, 9, 4],
+  [5, 8, 0, 3, 7, 9, 6, 1, 4, 2],
+  [8, 9, 1, 6, 0, 4, 3, 5, 2, 7],
+  [9, 4, 5, 3, 1, 2, 6, 8, 7, 0],
+  [4, 2, 8, 6, 5, 7, 3, 9, 0, 1],
+  [2, 7, 9, 3, 8, 0, 6, 4, 1, 5],
+  [7, 0, 4, 6, 9, 1, 3, 2, 5, 8],
+];
+
+export function isValidVerhoeff(digits: string): boolean {
+  if (!/^\d+$/.test(digits)) return false;
+  let c = 0;
+  const arr = digits.split('').map(Number).reverse();
+  for (let i = 0; i < arr.length; i++) {
+    c = _verhoeffD[c][_verhoeffP[i % 8][arr[i]]];
+  }
+  return c === 0;
+}
+
+export function isAadhaar(s: string): boolean {
+  const digits = s.replace(/\s+/g, '');
+  if (!/^\d{12}$/.test(digits)) return false;
+  if (/^[01]/.test(digits)) return false;
+  return isValidVerhoeff(digits);
+}
+
 export function isSensitive(el: PageElement): boolean {
   // Identity first: a field is sensitive because of what it is, not only
   // what it currently holds. An empty card-number input still counts.
@@ -36,7 +81,8 @@ export function isSensitive(el: PageElement): boolean {
   if (SENSITIVE_AUTOCOMPLETE.test(el.autocomplete ?? '')) return true;
   const v = el.value ?? '';
   if (!v) return false;
-  if (PAN.test(v) || AADHAAR.test(v) || IFSC.test(v) || UPI.test(v)) return true;
+  if (PAN.test(v) || IFSC.test(v) || UPI.test(v) || EMAIL.test(v) || PASSPORT_IN.test(v) || SSN.test(v)) return true;
+  if (AADHAAR.test(v) && isAadhaar(v)) return true;
   if (CARD.test(v) && luhnValid(v.replace(/\D/g, ''))) return true;
   return false;
 }

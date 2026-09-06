@@ -16,3 +16,16 @@ export function sendMessageToTab(tabId: number, message: ExtensionMessage): Prom
 export function sendMessageToRuntime(message: ExtensionMessage): Promise<any> {
   return chrome.runtime.sendMessage(message);
 }
+import type { AgentEventMessage, PanelCommand } from './agent-events';
+
+export type PanelMessage = AgentEventMessage | PanelCommand;
+
+export function isAgentEvent(m: unknown): m is AgentEventMessage {
+  return typeof m === 'object' && m !== null &&
+    typeof (m as { type?: unknown }).type === 'string' &&
+    (m as { type: string }).type.startsWith('AGENT_');
+}
+
+export function sendPanelCommand(command: PanelCommand): Promise<unknown> {
+  return chrome.runtime.sendMessage(command);
+}
