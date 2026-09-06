@@ -210,8 +210,8 @@ const PII_PATTERNS: PIIPattern[] = [
   // Indian Passport — [A-Z][1-9][0-9]{7}
   {
     label: 'PASSPORT_IN',
-    fullPattern: /^[A-Z][1-9][0-9]{7}$/,
-    searchPattern: /\b[A-Z][1-9][0-9]{7}\b/g,
+    fullPattern: /^[A-Z][1-9][0-9]{6}$/,
+    searchPattern: /\b[A-Z][1-9][0-9]{6}\b/g,
   },
 ];
 
@@ -298,8 +298,15 @@ export function redactPageIR(ir: PageIR): {
 
   // Deep-clone elements and redact sensitive fields
   const sanitizedElements: PageElement[] = ir.elements.map((el) => {
-    // The accessible name is a label, not a value.
-    const sanitized: PageElement = { ...el };
+    // The accessible name is a label ("Credit Card Number"), not a value.
+    // We still scan it, because a value can end up in an accessible name —
+    // but redactString only replaces pattern matches, so ordinary labels
+    // survive intact. The UPI pattern is provider-scoped for this reason:
+    // a loose word@word rule ate every label containing an "@".
+    const sanitized: PageElement = {
+      ...el,
+      name: redactField(el.name, referenceMap) ?? el.name,
+    };
 
     if (el.value != null) {
       sanitized.value = redactField(el.value, referenceMap);
