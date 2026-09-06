@@ -33,6 +33,8 @@ export type ScrollAction = { action: 'scroll'; direction: 'up' | 'down'; amount:
 export type NavigateAction = { action: 'navigate'; url: string };
 export type WaitAction = { action: 'wait'; duration_ms: number };
 export type ExtractAction = { action: 'extract'; element_id: string };
+/** High-impact commit. Always mediated by the executor and confirmed by the user. */
+export type SubmitAction = { action: 'submit'; element_id: string };
 export type DoneAction = { action: 'done'; summary: string };
 
 export type AgentAction =
@@ -43,6 +45,7 @@ export type AgentAction =
   | NavigateAction
   | WaitAction
   | ExtractAction
+  | SubmitAction
   | DoneAction;
 
 export interface ExecutionResult {

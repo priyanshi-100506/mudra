@@ -24,6 +24,7 @@ export function effectOf(action: AgentAction): string {
     case 'scroll':   return 'scroll';
     case 'extract':  return 'extract';
     case 'wait':     return 'wait';
+    case 'submit':   return 'submit_form';
     case 'navigate': return 'navigate_cross_origin';
     case 'done':     return 'done';
     default:         return 'unknown';

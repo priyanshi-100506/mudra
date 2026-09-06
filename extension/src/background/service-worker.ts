@@ -156,6 +156,7 @@ async function fetchPlan(
 async function processPageIR(pageIR: PageIR){
   notifyStatus('running', 'Planning next action...');
 
+  const t0 = performance.now();
   emitPhase('DETECTING');
   const redacted = redactPageIR(pageIR);
   emitDetection(redacted.detection);
@@ -190,6 +191,11 @@ async function processPageIR(pageIR: PageIR){
     notifyStatus('error', err.message);
     return;
   }
+  const localMs = performance.now() - t0;
+  console.log('[mudra:perf] local pipeline', Math.round(localMs), 'ms',
+    '| fields', scene.summary.fieldsDescribed,
+    '| refs', redacted.redaction.textReferences);
+
   emitOutbound(scene.summary);
   // The ref → element mapping never leaves this worker. It is the point at
   // which a reference the planner merely discussed becomes a target we act

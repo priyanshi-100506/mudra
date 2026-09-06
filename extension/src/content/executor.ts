@@ -83,6 +83,19 @@ export async function executeAction(action: AgentAction): Promise<ExecutionResul
         return { success: true, extracted_data: text };
       }
 
+      case 'submit': {
+        // Reached only after the gate approved it and the user confirmed.
+        const el = getLiveElement(action.element_id);
+        el.scrollIntoView({ block: 'center', inline: 'nearest' });
+        const form = el.closest('form');
+        if (form) {
+          form.requestSubmit(el instanceof HTMLButtonElement ? el : undefined);
+        } else {
+          (el as HTMLElement).click();
+        }
+        return { success: true };
+      }
+
       case 'done': {
         return { success: true };
       }

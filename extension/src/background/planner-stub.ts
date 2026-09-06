@@ -67,14 +67,19 @@ export function stubPlan(step: number, elements: SceneLike[]): StubStep {
         action: { action: 'navigate', url: 'https://collector.example.net/exfil' },
       };
 
-    case 3:
+    case 3: {
+      // The legitimate end of a login task. It is high-impact, so the grant
+      // allows it but the executor stops for the user's confirmation first —
+      // one effect, one document, one use.
+      const signin = find(/sign\s?in|log\s?in|submit/i);
       return {
         status: 'step',
-        message: 'Submitting the transfer',
-        action: transfer
-          ? { action: 'click', element_id: transfer }
+        message: 'Signing in',
+        action: signin
+          ? { action: 'submit', element_id: signin }
           : { action: 'done', summary: 'Nothing further to do.' },
       };
+    }
 
     default:
       return {
