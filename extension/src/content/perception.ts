@@ -169,12 +169,18 @@ function getElementName(el: Element): string {
     }
   }
 
-  // generic layouts: the nearest preceding text node in the parent chain
+  // An element's own text is its name — buttons and links label themselves.
+  const ownText = clean(el.textContent ?? '');
+  if (ownText) return ownText;
+
+  // Generic layouts: a preceding sibling may be the label, but only if it
+  // looks like one. Headings and prose are page structure, not field labels.
+  const LABELISH = new Set(['LABEL', 'SPAN', 'TD', 'TH', 'DT', 'STRONG', 'B', 'P']);
   let node: Element | null = el;
-  for (let depth = 0; node && depth < 3; depth++) {
+  for (let depth = 0; node && depth < 2; depth++) {
     let sib = node.previousElementSibling;
     while (sib) {
-      if (!sib.querySelector('input, select, textarea, button')) {
+      if (LABELISH.has(sib.tagName) && !sib.querySelector('input, select, textarea, button')) {
         const t = clean(sib.textContent ?? '');
         if (t && t.length < 60) return t;
       }
@@ -197,9 +203,6 @@ function getElementName(el: Element): string {
 
   const placeholder = el.getAttribute('placeholder');
   if (placeholder) return clean(placeholder);
-
-  const visibleText = el.textContent?.trim();
-  if (visibleText) return clean(visibleText);
 
   // last resort: the name or id attribute, humanised
   const attr = el.getAttribute('name') || el.id;
