@@ -143,11 +143,12 @@ architecture loses to a weaker project where all six can.
   does not.
 - **Opaque node handles** with a document epoch and pre-execution
   revalidation of identity, connectedness, origin and role.
+- **Egress Audit Manifest Viewer.** Endpoints (`POST /manifest/record`, `GET /manifests`, `GET /manifests/{id}`, `GET /manifests/viewer/html`), in-memory store (`manifest_store.py`), and auto-recording hook in `AgentLoop.step`. Serves a visual audit UI presenting logged egress events and grant authorizations.
 - **Backend contract aligned with Mudra frontend.** `PageElement` schema on
-  the backend now accepts `ref`, `sensitive: bool`, `autocomplete`, and `bbox`
+  the backend accepts `ref`, `sensitive: bool`, `autocomplete`, and `bbox`
   with zero `value` fields required. The ActionVerifier accepts blind fills
   unconditionally and lets subsequent observations verify state changes.
-  All 36 backend tests and 57 extension tests pass cleanly.
+  All 40 backend tests and 60 extension tests pass cleanly.
 
 ### Known gaps, stated honestly
 
