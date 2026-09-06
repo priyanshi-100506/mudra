@@ -8,6 +8,7 @@ const HOST_ID = 'mudra-highlight-host';
 let host: HTMLElement | null = null;
 let shadow: ShadowRoot | null = null;
 let timers: number[] = [];
+let cleanupListeners: (() => void) | null = null;
 
 const CSS = `
   :host { all: initial; }
@@ -67,6 +68,8 @@ function layer(): HTMLElement {
 export function clearHighlights() {
   timers.forEach(clearTimeout);
   timers = [];
+  cleanupListeners?.();
+  cleanupListeners = null;
   host?.remove();
   host = null;
   shadow = null;
@@ -108,9 +111,23 @@ export function runRedactionOverlay(
 ) {
   clearHighlights();
   const root = layer();
+
+  const firstSensitive = targets.find((t) => t.sensitive);
+  const anchor = firstSensitive && resolve(firstSensitive.elementId);
+  if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
   scanPage();
 
-  const boxes: { box: HTMLElement; sensitive: boolean }[] = [];
+  const boxes: { box: HTMLElement; sensitive: boolean; el: Element }[] = [];
+
+  /** Rects are viewport-relative and go stale on scroll or reflow. */
+  const place = (box: HTMLElement, el: Element) => {
+    const r = el.getBoundingClientRect();
+    box.style.left = `${r.left - 2}px`;
+    box.style.top = `${r.top - 2}px`;
+    box.style.width = `${r.width + 4}px`;
+    box.style.height = `${r.height + 4}px`;
+  };
 
   targets.forEach((t, i) => {
     const el = resolve(t.elementId);
@@ -120,10 +137,7 @@ export function runRedactionOverlay(
 
     const box = document.createElement('div');
     box.className = 'box';
-    box.style.left = `${r.left - 2}px`;
-    box.style.top = `${r.top - 2}px`;
-    box.style.width = `${r.width + 4}px`;
-    box.style.height = `${r.height + 4}px`;
+    place(box, el);
 
     if (t.sensitive) {
       const tag = document.createElement('span');
@@ -133,19 +147,30 @@ export function runRedactionOverlay(
     }
 
     root.appendChild(box);
-    boxes.push({ box, sensitive: t.sensitive });
+    boxes.push({ box, sensitive: t.sensitive, el });
 
     timers.push(window.setTimeout(() => box.classList.add('on'), 600 + i * 45));
   });
 
   // then seal the sensitive ones in sequence
   let n = 0;
-  boxes.forEach(({ box, sensitive }) => {
+  boxes.forEach(({ box, sensitive, el }) => {
     if (!sensitive) return;
     const delay = 1000 + n * stepMs;
     n += 1;
-    timers.push(window.setTimeout(() => box.classList.add('sealed'), delay));
+    timers.push(window.setTimeout(() => {
+      place(box, el);
+      box.classList.add('sealed');
+    }, delay));
   });
+
+  const reposition = () => boxes.forEach(({ box, el }) => place(box, el));
+  window.addEventListener('scroll', reposition, { passive: true });
+  window.addEventListener('resize', reposition, { passive: true });
+  cleanupListeners = () => {
+    window.removeEventListener('scroll', reposition);
+    window.removeEventListener('resize', reposition);
+  };
 
   // fade the whole layer once the sequence finishes
   timers.push(window.setTimeout(clearHighlights, 1000 + n * stepMs + 2200));
