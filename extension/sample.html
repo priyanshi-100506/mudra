@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CLIO PII Redaction Test Bench</title>
+  <title>MUDRA Privacy & Perception Test Bench</title>
   <style>
     :root {
       --bg-color: #0f172a;
@@ -11,6 +11,8 @@
       --text-color: #f8fafc;
       --accent: #38bdf8;
       --border: #334155;
+      --danger: #f43f5e;
+      --success: #10b981;
     }
 
     body {
@@ -24,7 +26,7 @@
     }
 
     .container {
-      max-width: 600px;
+      max-width: 680px;
       width: 100%;
       background-color: var(--card-bg);
       border-radius: 12px;
@@ -39,6 +41,18 @@
       font-size: 1.5rem;
       border-bottom: 1px solid var(--border);
       padding-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      background: rgba(56, 189, 248, 0.2);
+      color: var(--accent);
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--accent);
     }
 
     .form-group {
@@ -76,6 +90,13 @@
       margin-bottom: 1.5rem;
       border-radius: 4px;
       font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
     }
 
     button {
@@ -88,6 +109,7 @@
       cursor: pointer;
       width: 100%;
       font-size: 1rem;
+      margin-top: 0.5rem;
     }
 
     button:hover {
@@ -97,44 +119,65 @@
 </head>
 <body>
   <div class="container">
-    <h1>CLIO / MUDRA PII Redaction Demo</h1>
+    <h1>
+      MUDRA Perception & Redaction Test Bench
+      <span class="badge">SIH26171</span>
+    </h1>
     <div class="info-box">
-      Use this page to verify that sensitive PII inputs (Aadhaar, Credit Card, PAN, UPI, Email) are intercepted and redacted locally before leaving the client.
+      Verify local identity detection, pattern redaction (Aadhaar, Credit Card, PAN, Passport, SSN), and blind agent execution. Values entered here are redacted into request-scoped opaque tokens (<code>ref_*</code>) prior to network transmission.
     </div>
 
     <form onsubmit="event.preventDefault();">
-      <div class="form-group">
-        <label for="fullName">Full Name</label>
-        <input type="text" id="fullName" value="Alice Smith" placeholder="Enter Full Name">
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="fullName">Full Name (Ordinary Text)</label>
+          <input type="text" id="fullName" value="Priyanshi Sharma" placeholder="Enter Full Name">
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address (PII)</label>
+          <input type="email" id="email" value="priyanshi@example.com" placeholder="Enter Email">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="pan">PAN Card Number (PII)</label>
+          <input type="text" id="pan" value="ABCDE1234F" placeholder="e.g. ABCDE1234F">
+        </div>
+
+        <div class="form-group">
+          <label for="passport">Indian Passport Number (PII)</label>
+          <input type="text" id="passport" value="Z9876543" placeholder="e.g. Z9876543">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="aadhaar">Aadhaar Number (Verhoeff Validated)</label>
+          <input type="text" id="aadhaar" value="4991 1866 5121" placeholder="12 digit Aadhaar">
+        </div>
+
+        <div class="form-group">
+          <label for="ssn">Social Security Number / SSN (PII)</label>
+          <input type="text" id="ssn" value="987-65-4321" placeholder="XXX-XX-XXXX">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="card">Credit Card Number (Luhn Validated)</label>
+          <input type="text" id="card" value="4532 0151 1283 0366" placeholder="Card Number">
+        </div>
+
+        <div class="form-group">
+          <label for="upi">UPI VPA (Banking PII)</label>
+          <input type="text" id="upi" value="priyanshi@oksbi" placeholder="user@bank">
+        </div>
       </div>
 
       <div class="form-group">
-        <label for="email">Email Address (PII)</label>
-        <input type="email" id="email" value="alice@example.com" placeholder="Enter Email">
-      </div>
-
-      <div class="form-group">
-        <label for="pan">PAN Card Number (PII)</label>
-        <input type="text" id="pan" value="ABCDE1234F" placeholder="e.g. ABCDE1234F">
-      </div>
-
-      <div class="form-group">
-        <label for="aadhaar">Aadhaar Number (PII - Verhoeff Validated)</label>
-        <input type="text" id="aadhaar" value="4991 1866 5121" placeholder="12 digit Aadhaar">
-      </div>
-
-      <div class="form-group">
-        <label for="card">Credit Card Number (PII - Luhn Validated)</label>
-        <input type="text" id="card" value="4532 0151 1283 0366" placeholder="Card Number">
-      </div>
-
-      <div class="form-group">
-        <label for="upi">UPI VPA (PII)</label>
-        <input type="text" id="upi" value="alice@oksbi" placeholder="user@bank">
-      </div>
-
-      <div class="form-group">
-        <label for="ifsc">IFSC Code (PII)</label>
+        <label for="ifsc">IFSC Code (Banking PII)</label>
         <input type="text" id="ifsc" value="SBIN0001234" placeholder="IFSC Code">
       </div>
 
