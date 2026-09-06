@@ -1,4 +1,5 @@
 import { PageIR, PageElement, BoundingBox } from '../shared/types';
+import { register } from './node-registry';
 
 // Observation-scoped mapping from ID to live DOM node
 export const currentElementMap = new Map<string, WeakRef<Element>>();
@@ -62,6 +63,9 @@ export function capturePageIR(): PageIR {
 
     const id = `e${elementCounter++}`;
     currentElementMap.set(id, new WeakRef(el));
+    // Record the opaque handle. The executor resolves through this registry
+    // and revalidates identity, origin and role immediately before acting.
+    register(id, el, getElementRole(el));
 
     const role = getElementRole(el);
     const name = getElementName(el);

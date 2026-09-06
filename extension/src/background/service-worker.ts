@@ -18,6 +18,7 @@ let pendingResolve: ((decision: 'authorise' | 'refuse') => void) | null = null;
 let usePlannerStub = false;
 let stubStep = 0;
 let refusalCount = 0;
+let lastRefMap = new Map<string, { elementId: string; value: string }>();
 const MAX_REFUSALS = 3;
 chrome.storage.local.get(STUB_ENABLED_KEY, (res) => {
   usePlannerStub = Boolean(res?.[STUB_ENABLED_KEY]);
@@ -70,6 +71,7 @@ async function handleMessage(message: ExtensionMessage | PanelCommand) {
 
       activeTabId = tab.id;
       clearSnapshot();
+      lastRefMap.clear();
       clearManifest();
       stubStep = 0;
       refusalCount = 0;
@@ -189,6 +191,13 @@ async function processPageIR(pageIR: PageIR){
     return;
   }
   emitOutbound(scene.summary);
+  // The ref → element mapping never leaves this worker. It is the point at
+  // which a reference the planner merely discussed becomes a target we act
+  // on, and it is consulted only after the gate has approved the action.
+  // Merge rather than replace: refs are stable per field, so a rebuilt map
+  // carries the same handles. Merging keeps a plan made one observation ago
+  // resolvable while the task is still running.
+  for (const [k, v] of redacted.refMap) lastRefMap.set(k, v);
   await recordEgress(scene.payload, stubOnAtCapture ? 'local (planner stubbed)' : backendUrl, {
     fields: scene.summary.fieldsDescribed,
     refs: redacted.redaction.textReferences,
@@ -289,9 +298,18 @@ async function processPageIR(pageIR: PageIR){
 
     if (activeTabId && isAgentRunning) {
       // Execute action in content script
+      // Resolve the reference to a live element id. The planner named a
+      // handle; only we can turn that into a target.
+      const targeted = (() => {
+        const a = action as { element_id?: string };
+        if (!a.element_id) return action;
+        const mapped = lastRefMap.get(a.element_id)?.elementId;
+        return mapped ? { ...action, element_id: mapped } : action;
+      })();
+
       const execResult = await chrome.tabs.sendMessage(activeTabId, {
         type: 'EXECUTE_ACTION',
-        action,
+        action: targeted,
       }).catch((err: any) => ({ success: false, error: err.message }));
 
       // The outcome is only known now. A handle refusal is the boundary

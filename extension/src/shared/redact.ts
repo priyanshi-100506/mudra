@@ -41,8 +41,36 @@ export function isSensitive(el: PageElement): boolean {
   return false;
 }
 
-let counter = 0;
-const newRef = () => `ref_${(++counter).toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+/**
+ * References are stable for a given field within a document, and rotate when
+ * the document does.
+ *
+ * They were request-scoped and regenerated on every observation, but the agent
+ * re-observes before each action — so a plan built against observation N
+ * carried refs that no longer existed by the time it executed. A ref that
+ * changes under the planner's feet buys nothing: the security property lives
+ * in the executor's gate, not in the identifier churning.
+ *
+ * Refs remain opaque and unguessable. They are not predictable strings like
+ * PASSWORD_1, so attacker-controlled page text cannot collide with them, and
+ * they carry no meaning outside this document.
+ */
+const refsByElement = new Map<string, string>();
+let refSalt = Math.random().toString(36).slice(2, 8);
+
+/** Called when the document changes; invalidates every outstanding ref. */
+export function rotateRefs(): void {
+  refsByElement.clear();
+  refSalt = Math.random().toString(36).slice(2, 8);
+}
+
+function newRef(elementId: string): string {
+  const existing = refsByElement.get(elementId);
+  if (existing) return existing;
+  const ref = `ref_${refSalt}${Math.random().toString(36).slice(2, 6)}`;
+  refsByElement.set(elementId, ref);
+  return ref;
+}
 
 export interface Redacted {
   /** Safe to send. Contains no resolved values. */
@@ -65,7 +93,7 @@ export function redactPageIR(ir: PageIR): Redacted {
     let ref = el.id;
     if (sensitive) {
       structuredPii += 1;
-      ref = newRef();
+      ref = newRef(el.id);
       refMap.set(ref, { elementId: el.id, value: el.value ?? '' });
     }
     idByRef.set(ref, el.id);

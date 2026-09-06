@@ -37,6 +37,12 @@ export function rotateEpoch(): string {
   return epoch;
 }
 
+/** Listeners that must run when the document changes — e.g. ref rotation. */
+const onRotate: Array<() => void> = [];
+export function onEpochRotate(fn: () => void): void {
+  onRotate.push(fn);
+}
+
 export function register(handle: string, el: Element, role: string): void {
   registry.set(handle, {
     ref: new WeakRef(el),
@@ -147,5 +153,10 @@ function liveRole(el: Element): string {
 }
 
 // A new document means new handles. Navigation, history, and bfcache restore.
-window.addEventListener('pagehide', () => { rotateEpoch(); });
-window.addEventListener('popstate', () => { rotateEpoch(); });
+function rotateAll() {
+  rotateEpoch();
+  onRotate.forEach((fn) => fn());
+}
+
+window.addEventListener('pagehide', rotateAll);
+window.addEventListener('popstate', rotateAll);
