@@ -1,0 +1,213 @@
+:root{
+  --paper:#FCFCFA;
+  --paper-2:#F4F4F1;
+  --rule:#E5E4DF;
+  --rule-2:#CFCEC8;
+  --ink:#0A0A0B;
+  --ink-2:#54555B;
+  --ink-3:#96979D;
+  --accent:#1B3AC4;
+  --ok:#0F5132;
+  --stop:#8B1A1A;
+  --mono:'SF Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,'Segoe UI',Helvetica,sans-serif;
+}
+
+html,body{background:var(--paper)}
+body{width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
+
+.mudra-frame{margin:0;border-radius:0;border:none;background:var(--paper);box-shadow:none;overflow:visible}
+.mudra-frame::before{display:none}
+
+/* ── header: quiet, wide-tracked, one rule ── */
+.mudra-topbar{
+  padding:18px 22px 15px;border-bottom:1px solid var(--ink);
+  background:transparent;align-items:flex-start;
+}
+.mudra-id{gap:0;display:block}
+.mudra-icon{display:none}
+.mudra-name{
+  font-family:var(--sans);font-size:11px;font-weight:600;
+  letter-spacing:.26em;text-transform:uppercase;color:var(--ink);
+}
+.mudra-sub{
+  font-family:var(--mono);font-size:10px;color:var(--ink-3);
+  margin:6px 0 0;letter-spacing:.02em;
+}
+.mudra-tool{
+  width:24px;height:24px;border-radius:0;background:transparent;
+  border:none;box-shadow:none;color:var(--ink-3);
+}
+.mudra-tool:hover:not(:disabled){background:transparent;color:var(--ink)}
+
+.mudra-body{margin:0;padding:26px 22px 22px;border-radius:0;background:transparent;border:none;box-shadow:none}
+
+/* ── the display line — this is the hierarchy ── */
+.mudra-welcome{margin:0 0 30px;padding:0;border:none}
+.mudra-hi{
+  font-family:var(--sans);font-size:25px;font-weight:400;
+  letter-spacing:-.028em;line-height:1.18;color:var(--ink);margin:0;
+  text-transform:none;
+}
+.mudra-hi em{font-style:normal;color:var(--ink-3)}
+.mudra-hi-sub{
+  font-size:12.5px;color:var(--ink-2);margin:12px 0 0;
+  line-height:1.6;max-width:31ch;
+}
+
+.mudra-q{
+  font-family:var(--mono);font-size:9.5px;font-weight:500;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);
+  margin:0 0 9px;
+}
+
+/* ── input: underline, not a box ── */
+.mudra-input{
+  min-height:58px;border-radius:0;font-family:var(--sans);font-size:14.5px;
+  background:transparent;border:none;border-bottom:1px solid var(--rule-2);
+  color:var(--ink);padding:2px 0 10px;box-shadow:none;line-height:1.5;
+  transition:border-color 160ms ease;
+}
+.mudra-input:focus{background:transparent;border-bottom-color:var(--ink);box-shadow:none;outline:none}
+.mudra-input::placeholder{color:var(--ink-3)}
+
+.mudra-actions{margin-top:14px}
+.mudra-count{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:.08em}
+
+.mudra-btn{
+  border-radius:0;padding:13px 24px;font-family:var(--sans);
+  font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  background:var(--ink);color:var(--paper);border:1px solid var(--ink);box-shadow:none;
+}
+.mudra-btn:hover:not(:disabled){background:#000}
+.mudra-btn:active:not(:disabled){transform:none}
+.mudra-btn:disabled{opacity:1;background:transparent;color:var(--ink-3);border-color:var(--rule-2)}
+.mudra-btn-ghost{background:transparent;color:var(--ink);border-color:var(--ink);box-shadow:none}
+.mudra-btn-ghost:hover{background:var(--paper-2)}
+
+/* ── tabs ── */
+.mudra-tabs{
+  background:transparent;border:none;border-bottom:1px solid var(--rule-2);
+  border-radius:0;padding:0;gap:26px;margin:0 0 24px;
+}
+.mudra-tab{
+  flex:none;height:26px;border-radius:0;background:transparent;
+  font-family:var(--sans);font-size:10.5px;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);
+  border-bottom:1.5px solid transparent;margin-bottom:-1px;padding:0;
+}
+.mudra-tab[aria-selected="true"]{background:transparent;color:var(--ink);border-bottom-color:var(--ink)}
+
+/* ── status ── */
+.mudra-status{
+  display:flex;justify-content:flex-start;gap:9px;padding:0 0 22px;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ink-2);border:none;
+}
+.mudra-dot{width:4px;height:4px;border-radius:0;background:var(--ink)}
+
+/* ── reel: hairline rows, generous height ── */
+.mudra-reel{gap:0;margin:0}
+.mudra-field{
+  border-radius:0;padding:13px 0;background:transparent;border:none;
+  border-bottom:1px solid var(--rule);box-shadow:none;gap:14px;
+}
+.mudra-field:first-child{border-top:1px solid var(--rule)}
+.mudra-flabel{font-family:var(--sans);font-size:13px;color:var(--ink)}
+.mudra-field.sealed .mudra-flabel{opacity:1;color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--rule-2)}
+.mudra-arrow{display:none}
+.mudra-ref{
+  border-radius:0;font-family:var(--mono);font-size:10.5px;font-weight:400;
+  background:transparent;color:var(--accent);border:none;padding:0;letter-spacing:.02em;
+}
+.mudra-safe{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:.12em;text-transform:uppercase}
+
+/* ── boundary ── */
+.mudra-boundary{margin:26px 0 24px;gap:12px}
+.mudra-bline{border-top:1px solid var(--ink);opacity:1}
+.mudra-blabel{
+  font-family:var(--mono);font-size:9px;font-weight:500;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--ink);
+}
+
+/* ── stats: big number, small label ── */
+.mudra-stats{display:block;margin:0}
+.mudra-stat{
+  display:flex;align-items:baseline;justify-content:space-between;
+  border-radius:0;background:transparent;border:none;
+  border-bottom:1px solid var(--rule);padding:14px 0;box-shadow:none;
+}
+.mudra-stat:first-child{border-top:1px solid var(--rule)}
+.mudra-num{font-family:var(--mono);font-size:22px;font-weight:400;letter-spacing:-.02em;order:2;color:var(--ink)}
+.mudra-num.zero{color:var(--ink)}
+.mudra-slabel{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ink-3);margin:0;order:1;
+}
+
+.mudra-err{
+  border-radius:0;background:transparent;border:none;
+  border-left:2px solid var(--stop);color:var(--stop);
+  font-family:var(--mono);font-size:11px;padding:2px 0 2px 14px;margin-top:22px;
+  letter-spacing:.02em;
+}
+
+/* ── confirmation ── */
+.mudra-scrim{
+  position:fixed;inset:0;z-index:20;background:rgba(10,10,11,.32);
+  display:flex;align-items:center;justify-content:center;padding:16px;
+  animation:mudra-fade 140ms ease;
+}
+@keyframes mudra-fade{from{opacity:0}to{opacity:1}}
+.mudra-confirm{
+  width:100%;background:var(--paper);border:1px solid var(--ink);
+  border-radius:0;padding:22px;
+}
+.mudra-confirm-eyebrow{
+  font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 10px;
+}
+.mudra-confirm-q{
+  font-size:19px;font-weight:400;letter-spacing:-.022em;line-height:1.25;
+  color:var(--ink);margin:0 0 20px;
+}
+.mudra-kv{margin:0 0 22px;border-top:1px solid var(--rule)}
+.mudra-kv > div{
+  display:flex;justify-content:space-between;align-items:baseline;gap:14px;
+  padding:9px 0;border-bottom:1px solid var(--rule);
+}
+.mudra-kv dt{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-3);margin:0;
+}
+.mudra-kv dd{margin:0;font-size:12.5px;text-align:right;word-break:break-all}
+.mudra-kv-mono{font-family:var(--mono);font-size:11px;color:var(--ink)}
+.mudra-confirm-actions{display:flex;flex-direction:column;gap:8px}
+.mudra-confirm-actions .mudra-btn{width:100%}
+.mudra-confirm-foot{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;
+  color:var(--ink-3);margin:14px 0 0;text-align:center;
+}
+
+/* ── audit ── */
+.mudra-audit{margin-top:24px}
+.mudra-audit-head{
+  font-family:var(--mono);font-size:9.5px;font-weight:500;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 2px;
+  padding-bottom:9px;border-bottom:1px solid var(--rule-2);
+}
+.mudra-audit-row{
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  padding:11px 0;border-bottom:1px solid var(--rule);
+}
+.mudra-audit-effect{font-family:var(--mono);font-size:11.5px;color:var(--ink)}
+.mudra-audit-reason{
+  font-size:11.5px;color:var(--ink-2);margin:5px 0 0;line-height:1.5;
+  padding-bottom:11px;border-bottom:1px solid var(--rule);
+}
+.mudra-audit-mark{
+  font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;flex:none;
+}
+.mudra-audit-mark.executed{color:var(--ok)}
+.mudra-audit-mark.refused{color:var(--stop)}

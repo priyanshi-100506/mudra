@@ -1,0 +1,116 @@
+:root{
+  --bg:#EFEDE6; --panel:#FFFFFF; --panel-2:#F5F3ED; --line:#E4E1D8;
+  --ink:#15161A; --ink-2:#55565C; --ink-3:#8A8B90;
+  --blue:#3355E0; --blue-soft:#E4E8FB; --blue-press:#2743C4;
+  --ok:#2F6B4F; --stop:#9E3A32;
+  --sh:0 1px 3px rgba(20,18,12,.05), 0 10px 30px rgba(20,18,12,.09);
+  --sh-sm:0 1px 4px rgba(20,18,12,.06);
+  --mono:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:transparent}
+body{width:372px;color:var(--ink);
+  font-family:'Outfit','Poppins',ui-rounded,-apple-system,sans-serif;
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+.mudra-frame{background:var(--bg);border-radius:24px;overflow:hidden;margin:6px;box-shadow:var(--sh)}
+
+.mudra-topbar{display:flex;align-items:center;justify-content:space-between;padding:15px 17px 13px}
+.mudra-id{display:flex;align-items:center;gap:11px}
+.mudra-icon{width:38px;height:38px;border-radius:12px;background:var(--blue);flex:none;
+  box-shadow:0 3px 10px rgba(51,85,224,.30);position:relative}
+.mudra-icon::after{content:'';position:absolute;inset:9px;border-radius:5px;
+  background:#EEF1FE;opacity:.9}
+.mudra-name{font-size:16.5px;font-weight:500;letter-spacing:-.01em}
+.mudra-sub{font-size:11.5px;color:var(--ink-2);margin:1px 0 0}
+.mudra-tools{display:flex;gap:8px}
+.mudra-tool{width:33px;height:33px;border:none;border-radius:50%;background:var(--panel);
+  color:var(--ink-2);box-shadow:var(--sh-sm);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:color 140ms ease,transform 90ms ease}
+.mudra-tool:hover:not(:disabled){color:var(--ink)}
+.mudra-tool:active:not(:disabled){transform:scale(.93)}
+.mudra-tool:disabled{opacity:.35;cursor:not-allowed}
+
+.mudra-body{background:var(--panel);border-radius:20px;margin:0 6px 6px;padding:17px}
+
+.mudra-tabs{display:flex;background:var(--panel-2);border-radius:999px;padding:4px;gap:4px;margin-bottom:15px}
+.mudra-tab{flex:1;height:37px;border:none;border-radius:999px;background:transparent;
+  color:var(--ink-2);font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;
+  transition:background 200ms cubic-bezier(.4,0,.2,1),color 200ms ease}
+.mudra-tab[aria-selected="true"]{background:var(--blue);color:#fff;
+  box-shadow:0 2px 9px rgba(51,85,224,.32)}
+
+.mudra-notice{background:#14151A;color:#fff;border-radius:14px;padding:13px 15px;
+  font-size:12.5px;line-height:1.45;margin:0 0 14px;display:flex;align-items:center;gap:10px}
+.mudra-notice-dot{width:22px;height:22px;border-radius:7px;background:var(--blue);flex:none}
+
+.mudra-q{font-size:17px;font-weight:500;letter-spacing:-.015em;margin:0 0 10px}
+.mudra-input{width:100%;min-height:78px;resize:none;background:var(--panel-2);
+  border:1px solid var(--line);border-radius:14px;padding:11px 13px;
+  font-family:inherit;font-size:13.5px;color:var(--ink);
+  transition:border-color 140ms ease,background 140ms ease}
+.mudra-input:focus{outline:none;background:#fff;border-color:var(--blue)}
+.mudra-input::placeholder{color:var(--ink-3)}
+
+.mudra-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
+.mudra-count{font-size:11.5px;color:var(--ink-3);font-family:var(--mono)}
+.mudra-btn{width:100%;border:none;border-radius:14px;background:var(--blue);color:#fff;
+  padding:14px 24px;font-family:inherit;font-size:14.5px;font-weight:500;cursor:pointer;
+  box-shadow:0 4px 13px rgba(51,85,224,.28);
+  transition:background 140ms ease,transform 90ms ease}
+.mudra-btn:hover:not(:disabled){background:var(--blue-press)}
+.mudra-btn:active:not(:disabled){transform:scale(.985)}
+.mudra-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.mudra-btn-ghost{background:var(--panel);color:var(--ink);box-shadow:var(--sh-sm)}
+.mudra-btn-ghost:hover{background:var(--panel-2)}
+
+.mudra-status{display:flex;align-items:center;justify-content:center;gap:8px;
+  font-size:13px;color:var(--ink-2);padding:4px 0 2px}
+.mudra-dot{width:7px;height:7px;border-radius:50%;background:var(--ink);flex:none;
+  animation:mudra-pulse 1.3s ease-in-out infinite}
+@keyframes mudra-pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+.mudra-reel{display:flex;flex-direction:column;gap:5px;margin-top:13px}
+.mudra-field{display:flex;align-items:center;gap:9px;background:var(--panel-2);border-radius:12px;
+  padding:10px 12px;opacity:0;transform:translateY(5px);
+  animation:mudra-in 280ms cubic-bezier(.2,.8,.3,1) forwards}
+@keyframes mudra-in{to{opacity:1;transform:none}}
+.mudra-flabel{flex:1;min-width:0;font-size:12.5px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;transition:opacity 260ms ease}
+.mudra-field.sealed .mudra-flabel{opacity:.4;text-decoration:line-through;
+  text-decoration-color:var(--ink-3)}
+.mudra-arrow{color:var(--ink-3);flex:none;opacity:0;transition:opacity 200ms ease;font-size:12px}
+.mudra-field.sealed .mudra-arrow{opacity:1}
+.mudra-ref{flex:none;font-family:var(--mono);font-size:11px;font-weight:500;
+  background:var(--blue-soft);color:var(--blue-press);border-radius:7px;padding:2px 8px;
+  opacity:0;transform:scale(.88);
+  transition:opacity 260ms ease,transform 260ms cubic-bezier(.2,.8,.3,1)}
+.mudra-field.sealed .mudra-ref{opacity:1;transform:none}
+.mudra-safe{flex:none;font-size:11px;color:var(--ink-3)}
+
+.mudra-boundary{display:flex;align-items:center;gap:10px;margin:14px 0 11px}
+.mudra-bline{flex:1;height:0;border-top:1.5px dashed var(--blue);opacity:.4}
+.mudra-blabel{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--blue);white-space:nowrap}
+
+.mudra-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.mudra-stat{background:var(--panel-2);border-radius:13px;padding:11px 12px}
+.mudra-num{font-size:20px;font-weight:500;letter-spacing:-.02em;line-height:1.1}
+.mudra-num.zero{color:var(--ok)}
+.mudra-slabel{font-size:10.5px;color:var(--ink-2);margin-top:2px}
+
+.mudra-err{background:#F8ECEA;color:var(--stop);border-radius:13px;padding:11px 13px;
+  font-size:12.5px;margin-top:12px}
+
+.mudra-chips{display:flex;gap:7px;padding:0 12px 13px}
+.mudra-chip{border:none;background:var(--panel);color:var(--ink-2);box-shadow:var(--sh-sm);
+  border-radius:999px;padding:7px 14px;font-family:inherit;font-size:12px;font-weight:500;
+  cursor:pointer;transition:color 140ms ease,transform 90ms ease}
+.mudra-chip:hover{color:var(--ink)}
+.mudra-chip:active{transform:scale(.97)}
+.mudra-chip-note{margin-left:auto;align-self:center;font-size:11px;color:var(--ink-3)}
+
+@media (prefers-reduced-motion:reduce){
+  .mudra-field,.mudra-dot{animation:none}
+  .mudra-field{opacity:1;transform:none}
+}

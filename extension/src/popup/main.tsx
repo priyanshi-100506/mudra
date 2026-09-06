@@ -1,9 +1,8 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { App } from './App';
+import { createRoot } from 'react-dom/client';
+import './popup.css';
+import './tune.css';
+import { MudraPopup } from './MudraPopup';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+const el = document.getElementById('root');
+if (el) createRoot(el).render(<React.StrictMode><MudraPopup /></React.StrictMode>);
