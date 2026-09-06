@@ -270,7 +270,6 @@ async function processPageIR(pageIR: PageIR){
       if (grant) grant.usesRemaining -= 1;
     }
 
-    emitActionResolved(effectOf(action), 'executed');
     emitPhase('EXECUTING');
 
     if (activeTabId && isAgentRunning) {
@@ -280,8 +279,27 @@ async function processPageIR(pageIR: PageIR){
         action,
       }).catch((err: any) => ({ success: false, error: err.message }));
 
-      if (!execResult?.success) {
-        notifyStatus('running', `Execution warning: ${execResult?.error}. Retrying observation...`);
+      // The outcome is only known now. A handle refusal is the boundary
+      // working; a DOM failure is a bug. Both are logged, but they are not
+      // the same thing and the manifest must not conflate them.
+      const refusedByExecutor =
+        typeof execResult?.error === 'string' && execResult.error.startsWith('Refused (');
+
+      if (refusedByExecutor) {
+        emitActionResolved(effectOf(action), 'refused', execResult.error);
+        notifyStatus('running', execResult.error);
+        refusalCount += 1;
+        if (refusalCount >= MAX_REFUSALS) {
+          emitPhase('REFUSED');
+          emitError('Too many refused actions — stopping.');
+          isAgentRunning = false;
+          return;
+        }
+      } else if (!execResult?.success) {
+        emitActionResolved(effectOf(action), 'refused', execResult?.error ?? 'Execution failed.');
+        notifyStatus('running', `Execution failed: ${execResult?.error}. Re-observing…`);
+      } else {
+        emitActionResolved(effectOf(action), 'executed');
       }
 
       // After navigate: wait for tab to finish loading before re-observing
