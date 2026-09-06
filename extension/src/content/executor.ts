@@ -1,24 +1,31 @@
 import { AgentAction, ExecutionResult } from '../shared/types';
-import { currentElementMap } from './perception';
+import { resolve as resolveHandle } from './node-registry';
 
-export class StaleElementError extends Error {
-  constructor(elementId: string) {
-    super(`Element ${elementId} is stale or no longer connected to the DOM.`);
-    this.name = 'StaleElementError';
+export class HandleRefusedError extends Error {
+  readonly reason: string;
+  constructor(reason: string, detail: string) {
+    super(detail);
+    this.name = 'HandleRefusedError';
+    this.reason = reason;
   }
 }
 
 /**
- * Resolves an element ID from the current perception snapshot to a live attached DOM node.
+ * Resolves an opaque handle to a live node and revalidates it immediately
+ * before use — identity, epoch, connectedness, origin and role must all still
+ * match what was observed.
+ *
+ * This is the time-of-check-to-time-of-use defence. A page can rebind what a
+ * selector points to between the moment the plan was made and the moment we
+ * act; it cannot rebind node identity. Never cache this result: the whole
+ * point is that it is checked at the last possible moment.
  */
-function getLiveElement(id: string): Element {
-  const ref = currentElementMap.get(id);
-  const el = ref?.deref();
-
-  if (!el || !el.isConnected) {
-    throw new StaleElementError(id);
+function getLiveElement(id: string, expectedRole?: string): Element {
+  const r = resolveHandle(id, expectedRole);
+  if (!r.ok) {
+    throw new HandleRefusedError(r.reason, r.detail);
   }
-  return el;
+  return r.el;
 }
 
 /**
@@ -35,7 +42,7 @@ export async function executeAction(action: AgentAction): Promise<ExecutionResul
       }
 
       case 'type': {
-        const el = getLiveElement(action.element_id) as HTMLInputElement | HTMLTextAreaElement;
+        const el = getLiveElement(action.element_id, 'textbox') as HTMLInputElement | HTMLTextAreaElement;
         el.scrollIntoView({ block: 'center', inline: 'nearest' });
         el.focus();
         el.value = action.text;
@@ -47,7 +54,7 @@ export async function executeAction(action: AgentAction): Promise<ExecutionResul
       }
 
       case 'select': {
-        const el = getLiveElement(action.element_id) as HTMLSelectElement;
+        const el = getLiveElement(action.element_id, 'select') as HTMLSelectElement;
         el.scrollIntoView({ block: 'center', inline: 'nearest' });
         el.value = action.option;
         el.dispatchEvent(new Event('change', { bubbles: true }));
@@ -84,9 +91,15 @@ export async function executeAction(action: AgentAction): Promise<ExecutionResul
         return { success: false, error: 'Unknown action type' };
     }
   } catch (err: any) {
+    if (err instanceof HandleRefusedError) {
+      return {
+        success: false,
+        error: `Refused (${err.reason}): ${err.message}`,
+      };
+    }
     return {
       success: false,
-      error: err.message || 'Execution failed'
+      error: err.message || 'Execution failed',
     };
   }
 }
