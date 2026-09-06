@@ -6,6 +6,10 @@ const AADHAAR = /\b\d{4}\s?\d{4}\s?\d{4}\b/;
 const CARD = /\b\d{13,19}\b/;
 const IFSC = /\b[A-Z]{4}0[A-Z0-9]{6}\b/;
 const UPI = /\b[\w.\-]{2,}@[a-zA-Z]{2,}\b/;
+const EMAIL = /\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b/;
+const PASSPORT_IN = /\b[A-Z][1-9][0-9]{6,7}\b/;
+const SSN = /\b\d{3}-\d{2}-\d{4}\b/;
+
 const SENSITIVE_NAME =
   /(pass\s?word|pwd|otp|cvv|cvc|\bpin\b|aadhaar|aadhar|\bpan\b|card\s?(number|no|verification)|credit\s?card|debit\s?card|expir|account\s?(number|no)|ifsc|upi|token|secret|\bssn\b|passport|licen[cs]e|\bdob\b|date\s?of\s?birth)/i;
 
@@ -27,10 +31,6 @@ function luhnValid(digits: string): boolean {
   }
   return digits.length >= 13 && sum % 10 === 0;
 }
-
-const EMAIL = /\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b/;
-const PASSPORT_IN = /\b[A-Z][1-9][0-9]{6,7}\b/;
-const SSN = /\b\d{3}-\d{2}-\d{4}\b/;
 
 /* Multiplication table d for Verhoeff */
 const _verhoeffD: number[][] = [
@@ -131,36 +131,24 @@ export function redactPageIR(ir: PageIR): Redacted {
     .map((e) => ({
       ref: e.ref,
       label: e.name || e.role,
-      role: e.role,
-      sensitive: e.sensitive,
-      elementId: idByRef.get(e.ref) ?? e.ref,
+      type: e.input_type || e.role,
+      redacted: e.sensitive,
     }));
 
   return {
     elements,
     refMap,
     fields,
-    detection: { structuredPii, faces: 0, namedEntities: 0, ocrRegions: 0 },
-    redaction: { textReferences: refMap.size, maskedRegions: 0, reOcrVerified: false },
-  };
-}
-
-/** Builds the outbound payload. Asserts no sensitive value survives. */
-export function buildOutbound(r: Redacted): { payload: { elements: SceneElement[] }; summary: OutboundSummary } {
-  const payload: { elements: SceneElement[] } = { elements: r.elements };
-  const serialised = JSON.stringify(payload);
-  for (const { value } of r.refMap.values()) {
-    if (value && serialised.includes(value)) {
-      throw new Error('Redaction failed: a protected value reached the outbound payload.');
-    }
-  }
-  return {
-    payload,
-    summary: {
-      rawPixelsSent: 0,
-      piiValuesSent: 0,
-      fieldsDescribed: r.elements.length,
-      preview: JSON.stringify(payload.elements.slice(0, 6), null, 2),
+    detection: {
+      domSensitive: structuredPii,
+      visualOcr: 0,
+      visualNlp: 0,
+      faceDetections: 0,
+    },
+    redaction: {
+      structuredPii,
+      visualMaskedRegions: 0,
+      refCount: refMap.size,
     },
   };
 }
