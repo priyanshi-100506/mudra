@@ -9,6 +9,8 @@ import { OutboundPayload } from './components/OutboundPayload';
 import { ConfirmationDialog } from './components/ConfirmationDialog';
 import { AuditSummary } from './components/AuditSummary';
 import { ErrorState } from './components/ErrorState';
+import { PanelHeader } from './components/PanelHeader';
+import { PanelFooter } from './components/PanelFooter';
 import { TabSwitcher, Card, PrimaryButton } from './components/primitives';
 
 const TABS = ['Activity', 'Payload'] as const;
@@ -38,6 +40,7 @@ export const ExtensionShell: React.FC = () => {
   if (state.phase === 'ERROR') {
     return (
       <main className="shell">
+        <PanelHeader onReset={() => dispatch({ type: 'RESET' })} busy={false} />
         <PageContext page={state.page} />
         <ErrorState message={state.error ?? 'Unknown error.'} onRetry={() => dispatch({ type: 'RESET' })} />
       </main>
@@ -48,6 +51,7 @@ export const ExtensionShell: React.FC = () => {
 
   return (
     <main className="shell">
+      <PanelHeader onReset={() => { setDraft(''); dispatch({ type: 'RESET' }); }} busy={isBusy(state.phase)} />
       {idle
         ? <Hero origin={state.page?.origin ?? null} title={state.page?.title ?? null} />
         : <PageContext page={state.page} />}
@@ -94,6 +98,7 @@ export const ExtensionShell: React.FC = () => {
         />
       )}
 
+      <PanelFooter onTab={setTab} active={tab} show={!idle} />
       <span className="sr-only" aria-live="polite">{isBusy(state.phase) ? 'Working' : 'Idle'}</span>
     </main>
   );

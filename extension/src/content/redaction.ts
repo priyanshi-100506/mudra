@@ -198,8 +198,8 @@ const PII_PATTERNS: PIIPattern[] = [
   // UPI VPA — localpart@provider
   {
     label: 'UPI_VPA',
-    fullPattern: /^[\w.\-]+@[\w.\-]+$/,
-    searchPattern: /\b[\w.\-]+@[\w.\-]+\b/g,
+    fullPattern: /^[\w.\-]{2,}@(?:ok(?:hdfcbank|icici|axis|sbi)|paytm|ybl|upi|apl|ibl|axl)$/i,
+    searchPattern: /\b[\w.\-]{2,}@(?:ok(?:hdfcbank|icici|axis|sbi)|paytm|ybl|upi|apl|ibl|axl)\b/gi,
   },
   // Email — RFC-5321 simplified
   {
@@ -298,10 +298,8 @@ export function redactPageIR(ir: PageIR): {
 
   // Deep-clone elements and redact sensitive fields
   const sanitizedElements: PageElement[] = ir.elements.map((el) => {
-    const sanitized: PageElement = {
-      ...el,
-      name: redactField(el.name, referenceMap) ?? el.name,
-    };
+    // The accessible name is a label, not a value.
+    const sanitized: PageElement = { ...el };
 
     if (el.value != null) {
       sanitized.value = redactField(el.value, referenceMap);

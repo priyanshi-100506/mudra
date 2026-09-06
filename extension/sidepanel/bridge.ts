@@ -19,7 +19,7 @@ export function toAgentEvent(msg: AgentEventMessage): AgentEvent | null {
       return { type: 'CONFIRM_REQUIRED', pending: msg.request };
     case 'AGENT_ACTION_RESOLVED':
       return {
-        type: 'CONFIRM_RESOLVED',
+        type: 'ACTION_RESOLVED',
         entry: {
           at: new Date().toISOString(),
           effect: msg.effect,

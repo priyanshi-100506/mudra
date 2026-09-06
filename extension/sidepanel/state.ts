@@ -13,7 +13,7 @@ export type AgentEvent =
   | { type: 'REDACTION'; redaction: AgentState['redaction']; fields: AgentState['fields'] }
   | { type: 'OUTBOUND'; outbound: AgentState['outbound'] }
   | { type: 'CONFIRM_REQUIRED'; pending: AgentState['pending'] }
-  | { type: 'CONFIRM_RESOLVED'; entry: AuditLike }
+  | { type: 'ACTION_RESOLVED'; entry: AuditLike }
   | { type: 'COMPLETE' }
   | { type: 'ERROR'; message: string }
   | { type: 'RESET' };
@@ -34,9 +34,8 @@ export function reducer(state: AgentState, e: AgentEvent): AgentState {
     case 'REDACTION': return { ...state, redaction: e.redaction, fields: e.fields };
     case 'OUTBOUND': return { ...state, outbound: e.outbound };
     case 'CONFIRM_REQUIRED': return { ...state, phase: 'AWAITING_CONFIRMATION', pending: e.pending };
-    case 'CONFIRM_RESOLVED': return {
+    case 'ACTION_RESOLVED': return {
       ...state, pending: null,
-      phase: e.entry.outcome === 'refused' ? 'REFUSED' : 'EXECUTING',
       audit: [e.entry, ...state.audit],
     };
     case 'COMPLETE': return { ...state, phase: 'COMPLETE', pending: null };
@@ -57,5 +56,5 @@ export const PHASE_LABEL: Record<AgentPhase, string> = {
   EXECUTING: 'Carrying out the approved action',
   COMPLETE: 'Task complete',
   REFUSED: 'Action refused',
-  ERROR: 'Something went wrong',
+  ERROR: 'Not completed',
 };

@@ -6,7 +6,15 @@ const AADHAAR = /\b\d{4}\s?\d{4}\s?\d{4}\b/;
 const CARD = /\b\d{13,19}\b/;
 const IFSC = /\b[A-Z]{4}0[A-Z0-9]{6}\b/;
 const UPI = /\b[\w.\-]{2,}@[a-zA-Z]{2,}\b/;
-const SENSITIVE_NAME = /(pass|pwd|otp|cvv|pin|aadhaar|aadhar|pan\b|card|account|token|secret|ssn)/i;
+const SENSITIVE_NAME =
+  /(pass\s?word|pwd|otp|cvv|cvc|\bpin\b|aadhaar|aadhar|\bpan\b|card\s?(number|no|verification)|credit\s?card|debit\s?card|expir|account\s?(number|no)|ifsc|upi|token|secret|\bssn\b|passport|licen[cs]e|\bdob\b|date\s?of\s?birth)/i;
+
+/** Input types that are sensitive by their nature, whatever they contain. */
+const SENSITIVE_TYPE = new Set(['password', 'tel']);
+
+/** autocomplete tokens the spec reserves for sensitive data. */
+const SENSITIVE_AUTOCOMPLETE =
+  /(cc-|current-password|new-password|one-time-code|bday|tel-national)/i;
 
 function luhnValid(digits: string): boolean {
   let sum = 0;
@@ -21,8 +29,11 @@ function luhnValid(digits: string): boolean {
 }
 
 export function isSensitive(el: PageElement): boolean {
-  if (el.input_type === 'password') return true;
+  // Identity first: a field is sensitive because of what it is, not only
+  // what it currently holds. An empty card-number input still counts.
+  if (el.input_type && SENSITIVE_TYPE.has(el.input_type)) return true;
   if (SENSITIVE_NAME.test(el.name ?? '')) return true;
+  if (SENSITIVE_AUTOCOMPLETE.test(el.autocomplete ?? '')) return true;
   const v = el.value ?? '';
   if (!v) return false;
   if (PAN.test(v) || AADHAAR.test(v) || IFSC.test(v) || UPI.test(v)) return true;
@@ -47,6 +58,8 @@ export function redactPageIR(ir: PageIR): Redacted {
   const refMap = new Map<string, { elementId: string; value: string }>();
   let structuredPii = 0;
 
+  const idByRef = new Map<string, string>();
+
   const elements: SceneElement[] = ir.elements.map((el) => {
     const sensitive = isSensitive(el);
     let ref = el.id;
@@ -55,6 +68,7 @@ export function redactPageIR(ir: PageIR): Redacted {
       ref = newRef();
       refMap.set(ref, { elementId: el.id, value: el.value ?? '' });
     }
+    idByRef.set(ref, el.id);
     return {
       ref,
       role: el.role,
@@ -67,8 +81,14 @@ export function redactPageIR(ir: PageIR): Redacted {
 
   const fields: RedactedField[] = elements
     .filter((e) => e.sensitive || e.role === 'textbox' || e.role === 'button')
-    .slice(0, 8)
-    .map((e) => ({ ref: e.ref, label: e.name || e.role, role: e.role, sensitive: e.sensitive }));
+    .slice(0, 14)
+    .map((e) => ({
+      ref: e.ref,
+      label: e.name || e.role,
+      role: e.role,
+      sensitive: e.sensitive,
+      elementId: idByRef.get(e.ref) ?? e.ref,
+    }));
 
   return {
     elements,

@@ -1,13 +1,18 @@
 import { ExtensionMessage } from '../shared/messaging';
+import type { PanelCommand } from '../shared/agent-events';
 import { AgentAction, PageIR } from '../shared/types';
 import { redactPageIR, buildOutbound } from '../shared/redact';
-import { emitPhase, emitError, emitDetection, emitRedaction, emitOutbound, emitActivePage } from './panel-events';
+import { emitPhase, emitError, emitDetection, emitRedaction, emitOutbound, emitActivePage,
+         emitConfirmRequired, emitActionResolved, replaySnapshot, clearSnapshot } from './panel-events';
+import { deriveGrant, checkAction, confirmSentence, effectOf, type Grant } from '../shared/grant';
 
 let currentGoal = '';
 let isAgentRunning = false;
 let activeTabId: number | null = null;
 let sessionId = '';
 let backendUrl = 'http://127.0.0.1:8000';
+let grant: Grant | null = null;
+let pendingResolve: ((decision: 'authorise' | 'refuse') => void) | null = null;
 
 // Load persisted backend URL on startup
 chrome.storage.local.get('backendUrl', (res) => {
@@ -28,10 +33,16 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendRe
   return true; // keep channel open for async
 });
 
-async function handleMessage(message: ExtensionMessage | { type: 'PANEL_READY' }) {
+async function handleMessage(message: ExtensionMessage | PanelCommand) {
   switch (message.type) {
     case 'PANEL_READY': {
       await emitActivePage();
+      replaySnapshot();
+      break;
+    }
+    case 'PANEL_CONFIRM': {
+      pendingResolve?.((message as { decision: 'authorise' | 'refuse' }).decision);
+      pendingResolve = null;
       break;
     }
     case 'START_TASK': {
@@ -46,6 +57,10 @@ async function handleMessage(message: ExtensionMessage | { type: 'PANEL_READY' }
       }
 
       activeTabId = tab.id;
+      clearSnapshot();
+      { let o = tab.url ?? '';
+        try { o = new URL(tab.url ?? '').origin; } catch { /* keep raw */ }
+        grant = deriveGrant(message.goal, o); }
       notifyStatus('running', `Session ${sessionId.slice(0, 8)} started.`);
       await emitActivePage();
       emitPhase('CAPTURING');
@@ -110,6 +125,18 @@ async function processPageIR(pageIR: PageIR){
   emitPhase('REDACTING');
   emitRedaction(redacted.redaction, redacted.fields);
 
+  // show the redaction happening on the page itself
+  if (activeTabId) {
+    chrome.tabs.sendMessage(activeTabId, {
+      type: 'MUDRA_HIGHLIGHT',
+      targets: redacted.fields.map((f) => ({
+        ref: f.ref,
+        elementId: f.elementId,
+        sensitive: f.sensitive,
+      })),
+    }).catch(() => {});
+  }
+
   emitPhase('BUILDING_SCENE');
   let scene;
   try {
@@ -159,6 +186,49 @@ async function processPageIR(pageIR: PageIR){
 
     // Show action being executed
     notifyStatus('running', `${data.message}`);
+
+    // ── the gate: every action is checked before execution ──
+    let currentOrigin = '';
+    try {
+      const [t] = await chrome.tabs.query({ active: true, currentWindow: true });
+      currentOrigin = new URL(t?.url ?? '').origin;
+    } catch { /* leave blank; the check will refuse */ }
+
+    const verdict = checkAction(action, grant, currentOrigin);
+
+    if (verdict.kind === 'refuse') {
+      emitActionResolved(verdict.effect, 'refused', verdict.reason);
+      emitPhase('REFUSED');
+      notifyStatus('error', `Refused: ${verdict.reason}`);
+      isAgentRunning = false;
+      return;
+    }
+
+    if (verdict.kind === 'confirm') {
+      emitPhase('AWAITING_CONFIRMATION');
+      emitConfirmRequired({
+        sentence: confirmSentence(verdict.effect, currentOrigin),
+        origin: currentOrigin,
+        effect: verdict.effect,
+        targetRole: (action as { element_id?: string }).element_id ?? 'page',
+        targetRef: (action as { element_id?: string }).element_id ?? '—',
+      });
+
+      const decision = await new Promise<'authorise' | 'refuse'>((resolve) => {
+        pendingResolve = resolve;
+      });
+
+      if (decision === 'refuse') {
+        emitActionResolved(verdict.effect, 'refused', 'Declined by the user.');
+        emitPhase('REFUSED');
+        notifyStatus('idle', 'Action declined.');
+        isAgentRunning = false;
+        return;
+      }
+      if (grant) grant.usesRemaining -= 1;
+    }
+
+    emitActionResolved(effectOf(action), 'executed');
     emitPhase('EXECUTING');
 
     if (activeTabId && isAgentRunning) {
@@ -227,7 +297,7 @@ function notifyStatus(status: 'idle' | 'running' | 'completed' | 'error', messag
     message,
   }).catch(() => {});
 }
-chrome.sidePanel?.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+
 
 chrome.tabs.onActivated.addListener(() => { void emitActivePage(); });
 chrome.tabs.onUpdated.addListener((_id, info) => { if (info.status === 'complete') void emitActivePage(); });

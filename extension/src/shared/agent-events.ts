@@ -35,6 +35,11 @@ export interface RedactedField {
   label: string;
   role: string;
   sensitive: boolean;
+  /**
+   * The live element id, for on-device use only — the redaction overlay and
+   * the action executor. Never included in the outbound payload.
+   */
+  elementId: string;
 }
 
 export interface RedactionCounts {

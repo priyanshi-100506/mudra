@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build && node copy-manifest.js",
+    "build": "rm -f src/**/*.js src/*.js 2>/dev/null; tsc --noEmit && vite build && BUILD_TARGET=content vite build && node copy-manifest.js",
     "test": "vitest --config vitest.config.ts",
     "typecheck": "tsc --noEmit"
   },

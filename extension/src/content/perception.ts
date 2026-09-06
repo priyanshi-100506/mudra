@@ -35,10 +35,30 @@ export function capturePageIR(): PageIR {
     '[tabindex]:not([tabindex="-1"])'
   ].join(',');
 
-  const candidates = Array.from(document.querySelectorAll(interactiveSelector));
+  const MAX_ELEMENTS = 60;
+
+  /** Cheap pre-check so sensitive fields are never crowded out by the cap. */
+  const looksSensitive = (el: Element): boolean => {
+    if (el instanceof HTMLInputElement && el.type === 'password') return true;
+    const hay = [
+      el.getAttribute('name') ?? '',
+      el.id ?? '',
+      el.getAttribute('autocomplete') ?? '',
+      el.getAttribute('placeholder') ?? '',
+    ].join(' ');
+    return /(pass|pwd|otp|cvv|cvc|pin|card|aadhaar|aadhar|\bpan\b|ssn|social|licen|passport|account|ifsc|upi|expir|dob|birth)/i.test(hay);
+  };
+  const raw = Array.from(document.querySelectorAll(interactiveSelector));
+  // Sensitive-looking fields first so the cap never hides the ones that matter.
+  const candidates = [...raw.filter(looksSensitive), ...raw.filter((e) => !looksSensitive(e))];
 
   for (const el of candidates) {
+    if (elements.length >= MAX_ELEMENTS) break;
     if (!isVisible(el)) continue;
+
+    // Skip navigation chrome — it inflates the payload and the planner
+    // rarely needs it for a form task.
+    if (el.closest('nav, header, footer, [role="navigation"]')) continue;
 
     const id = `e${elementCounter++}`;
     currentElementMap.set(id, new WeakRef(el));
@@ -58,6 +78,7 @@ export function capturePageIR(): PageIR {
 
     if (el instanceof HTMLInputElement) {
       pageEl.input_type = el.type || 'text';
+      pageEl.autocomplete = el.getAttribute('autocomplete');
       pageEl.value = el.value;
       if (el.type === 'checkbox' || el.type === 'radio') {
         pageEl.checked = el.checked;
@@ -109,9 +130,58 @@ function getElementRole(el: Element): string {
   }
 }
 
+function clean(s: string): string {
+  return s.replace(/\s+/g, ' ').replace(/[:*]\s*$/, '').trim().slice(0, 60);
+}
+
 function getElementName(el: Element): string {
   const ariaLabel = el.getAttribute('aria-label');
   if (ariaLabel) return ariaLabel.trim();
+
+  const labelledBy = el.getAttribute('aria-labelledby');
+  if (labelledBy) {
+    const parts = labelledBy.split(/\s+/)
+      .map((id) => document.getElementById(id)?.textContent ?? '')
+      .filter(Boolean);
+    if (parts.length) return clean(parts.join(' '));
+  }
+
+  const wrapping = el.closest('label');
+  if (wrapping?.textContent) {
+    const t = clean(wrapping.textContent);
+    if (t) return t;
+  }
+
+  // table forms: walk left across cells, then up to the row's first cell
+  const cell = el.closest('td, th');
+  if (cell) {
+    let prev = cell.previousElementSibling;
+    while (prev) {
+      const t = clean(prev.textContent ?? '');
+      if (t && !/^\s*$/.test(t)) return t;
+      prev = prev.previousElementSibling;
+    }
+    const row = cell.closest('tr');
+    const firstCell = row?.querySelector('td, th');
+    if (firstCell && firstCell !== cell) {
+      const t = clean(firstCell.textContent ?? '');
+      if (t) return t;
+    }
+  }
+
+  // generic layouts: the nearest preceding text node in the parent chain
+  let node: Element | null = el;
+  for (let depth = 0; node && depth < 3; depth++) {
+    let sib = node.previousElementSibling;
+    while (sib) {
+      if (!sib.querySelector('input, select, textarea, button')) {
+        const t = clean(sib.textContent ?? '');
+        if (t && t.length < 60) return t;
+      }
+      sib = sib.previousElementSibling;
+    }
+    node = node.parentElement;
+  }
 
   if (el.id) {
     const escapedId = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(el.id) : el.id.replace(/(["\\])/g, '\\$1');
@@ -120,16 +190,20 @@ function getElementName(el: Element): string {
   }
 
   const alt = el.getAttribute('alt');
-  if (alt) return alt.trim();
+  if (alt) return clean(alt);
 
   const title = el.getAttribute('title');
-  if (title) return title.trim();
+  if (title) return clean(title);
 
   const placeholder = el.getAttribute('placeholder');
-  if (placeholder) return placeholder.trim();
+  if (placeholder) return clean(placeholder);
 
   const visibleText = el.textContent?.trim();
-  if (visibleText) return visibleText.slice(0, 50);
+  if (visibleText) return clean(visibleText);
+
+  // last resort: the name or id attribute, humanised
+  const attr = el.getAttribute('name') || el.id;
+  if (attr) return clean(attr.replace(/[_\-.]+/g, ' '));
 
   return '';
 }

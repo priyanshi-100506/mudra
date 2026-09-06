@@ -1,14 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "CLIO - DOM-First Agent v0.1",
+  "name": "MUDRA - On-device Perception for Browser Agents",
   "version": "0.1.0",
-  "description": "DOM-First browser agent prototype learning control loop for SIH26171",
+  "description": "Perception stays on your device. The planner sees references, never values. SIH26171.",
   "permissions": [
     "activeTab",
     "tabs",
     "scripting",
-    "storage",
-    "sidePanel"
+    "storage"
   ],
   "host_permissions": [
     "http://127.0.0.1:8000/*",
@@ -30,9 +29,7 @@
     }
   ],
   "action": {
-    "default_popup": "index.html"
-  },
-  "side_panel": {
-    "default_path": "sidepanel/index.html"
+    "default_popup": "index.html",
+    "default_title": "Mudra"
   }
 }
