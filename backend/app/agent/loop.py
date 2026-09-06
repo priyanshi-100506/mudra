@@ -5,6 +5,8 @@ from app.agent.gemini_client import GeminiAgentClient
 from app.agent.verifier import ActionVerifier
 from app.schemas.actions import AgentAction, DoneAction
 from app.schemas.page_ir import PageIR
+from app.manifest_store import manifest_store
+from app.schemas.manifest import EgressManifestEntry
 
 
 class LoopStepResponse(BaseModel):
@@ -58,9 +60,10 @@ class AgentLoop:
             last_result=self.last_result,
         )
 
-        # Validate element_id exists in current IR (for element-targeting actions)
+        # Validate element_id exists in current IR (for element-targeting actions).
+        # PageElement now uses `ref` (not `id`) as the unique handle.
         if hasattr(action, "element_id"):
-            valid_ids = {e.id for e in current_ir.elements}
+            valid_ids = {e.ref for e in current_ir.elements}
             if action.element_id not in valid_ids:
                 self.last_result = f"Error: element_id '{action.element_id}' does not exist in current Page IR."
                 return LoopStepResponse(
@@ -71,13 +74,23 @@ class AgentLoop:
 
         # Handle wait action: sleep on backend before responding so extension
         # doesn't immediately re-observe a page that is still loading
-        if action.action == "wait":
-            await asyncio.sleep(action.duration_ms / 1000)
-
         # Record step
         action_dict = action.model_dump()
         self.history.append({"action": action_dict, "result": self.last_result or "pending"})
         self.last_ir = current_ir
+
+        # Auto-record egress manifest entry
+        redacted_count = len(getattr(current_ir, "text_snippets", []))
+        manifest_store.record(
+            EgressManifestEntry(
+                session_id=self.last_ir.url if hasattr(self.last_ir, "url") else "default",
+                target_url=current_ir.url if hasattr(current_ir, "url") else "http://localhost",
+                action_type=action.action,
+                status="allowed",
+                redacted_refs_count=redacted_count,
+                details={"action": action_dict}
+            )
+        )
 
         if action.action == "done":
             return LoopStepResponse(
