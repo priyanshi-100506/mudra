@@ -3,8 +3,10 @@ import type { PanelCommand } from '../shared/agent-events';
 import { AgentAction, PageIR } from '../shared/types';
 import { redactPageIR, buildOutbound } from '../shared/redact';
 import { emitPhase, emitError, emitDetection, emitRedaction, emitOutbound, emitActivePage,
-         emitConfirmRequired, emitActionResolved, replaySnapshot, clearSnapshot } from './panel-events';
+         emitConfirmRequired, emitActionResolved, emitManifest, replaySnapshot, clearSnapshot } from './panel-events';
 import { deriveGrant, checkAction, confirmSentence, effectOf, type Grant } from '../shared/grant';
+import { stubPlan, STUB_ENABLED_KEY } from './planner-stub';
+import { recordEgress, recordAction, readManifest, clearManifest } from './manifest';
 
 let currentGoal = '';
 let isAgentRunning = false;
@@ -13,6 +15,16 @@ let sessionId = '';
 let backendUrl = 'http://127.0.0.1:8000';
 let grant: Grant | null = null;
 let pendingResolve: ((decision: 'authorise' | 'refuse') => void) | null = null;
+let usePlannerStub = false;
+let stubStep = 0;
+let refusalCount = 0;
+const MAX_REFUSALS = 3;
+chrome.storage.local.get(STUB_ENABLED_KEY, (res) => {
+  usePlannerStub = Boolean(res?.[STUB_ENABLED_KEY]);
+});
+chrome.storage.onChanged.addListener((changes) => {
+  if (STUB_ENABLED_KEY in changes) usePlannerStub = Boolean(changes[STUB_ENABLED_KEY].newValue);
+});
 
 // Load persisted backend URL on startup
 chrome.storage.local.get('backendUrl', (res) => {
@@ -58,6 +70,9 @@ async function handleMessage(message: ExtensionMessage | PanelCommand) {
 
       activeTabId = tab.id;
       clearSnapshot();
+      clearManifest();
+      stubStep = 0;
+      refusalCount = 0;
       { let o = tab.url ?? '';
         try { o = new URL(tab.url ?? '').origin; } catch { /* keep raw */ }
         grant = deriveGrant(message.goal, o); }
@@ -115,6 +130,27 @@ async function triggerObservation() {
   }
 }
 
+/** The real planner call, extracted so the stub can stand in for it. */
+async function fetchPlan(
+  elements: unknown[],
+  pageIR: PageIR,
+): Promise<{ status: string; message: string; action: AgentAction }> {
+  const response = await fetch(`${backendUrl}/agent/step`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      goal: currentGoal,
+      page_ir: { ...pageIR, elements },
+      session_id: sessionId,
+    }),
+  });
+  if (!response.ok) {
+    const errBody = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(`Backend HTTP ${response.status}: ${errBody.detail ?? response.statusText}`);
+  }
+  return response.json();
+}
+
 async function processPageIR(pageIR: PageIR){
   notifyStatus('running', 'Planning next action...');
 
@@ -137,6 +173,11 @@ async function processPageIR(pageIR: PageIR){
     }).catch(() => {});
   }
 
+  const stubOnAtCapture = await chrome.storage.local
+    .get(STUB_ENABLED_KEY)
+    .then((r) => Boolean(r?.[STUB_ENABLED_KEY]))
+    .catch(() => false);
+
   emitPhase('BUILDING_SCENE');
   let scene;
   try {
@@ -148,26 +189,28 @@ async function processPageIR(pageIR: PageIR){
     return;
   }
   emitOutbound(scene.summary);
+  await recordEgress(scene.payload, stubOnAtCapture ? 'local (planner stubbed)' : backendUrl, {
+    fields: scene.summary.fieldsDescribed,
+    refs: redacted.redaction.textReferences,
+    redactions: redacted.redaction.textReferences + redacted.redaction.maskedRegions,
+  });
+  emitManifest(readManifest());
 
   emitPhase('PLANNING');
 
   try {
-    const response = await fetch(`${backendUrl}/agent/step`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        goal: currentGoal,
-        page_ir: { ...pageIR, elements: scene.payload.elements },
-        session_id: sessionId,
-      }),
-    });
+    // The planner is the only step that can be stubbed for the demo.
+    // Everything below this line is the real path, unchanged — the
+    // refusal is not mocked, only the hostile plan that provokes it.
+    const stubOn = await chrome.storage.local
+      .get(STUB_ENABLED_KEY)
+      .then((r) => Boolean(r?.[STUB_ENABLED_KEY]))
+      .catch(() => usePlannerStub);
 
-    if (!response.ok) {
-      const errBody = await response.json().catch(() => ({ detail: response.statusText }));
-      throw new Error(`Backend HTTP ${response.status}: ${errBody.detail ?? response.statusText}`);
-    }
+    const data = stubOn
+      ? stubPlan(stubStep++, scene.payload.elements)
+      : await fetchPlan(scene.payload.elements, pageIR);
 
-    const data = await response.json();
     const action: AgentAction = data.action;
 
     if (data.status === 'done') {
@@ -197,10 +240,24 @@ async function processPageIR(pageIR: PageIR){
     const verdict = checkAction(action, grant, currentOrigin);
 
     if (verdict.kind === 'refuse') {
+      // Refuse, log, and continue with the remaining steps. A refusal is a
+      // bounded outcome for one action, not a failure of the whole task —
+      // the agent carries on with what it is still authorised to do.
       emitActionResolved(verdict.effect, 'refused', verdict.reason);
-      emitPhase('REFUSED');
-      notifyStatus('error', `Refused: ${verdict.reason}`);
-      isAgentRunning = false;
+      recordAction(verdict.effect, 'refused', verdict.reason);
+      emitManifest(readManifest());
+      notifyStatus('running', `Refused: ${verdict.reason}`);
+      refusalCount += 1;
+
+      if (refusalCount >= MAX_REFUSALS) {
+        emitPhase('REFUSED');
+        emitError('Too many refused actions — stopping. The plan is not aligned with your task.');
+        isAgentRunning = false;
+        return;
+      }
+
+      await sleep(400);
+      await triggerObservation();
       return;
     }
 
@@ -228,7 +285,6 @@ async function processPageIR(pageIR: PageIR){
       if (grant) grant.usesRemaining -= 1;
     }
 
-    emitActionResolved(effectOf(action), 'executed');
     emitPhase('EXECUTING');
 
     if (activeTabId && isAgentRunning) {
@@ -238,8 +294,33 @@ async function processPageIR(pageIR: PageIR){
         action,
       }).catch((err: any) => ({ success: false, error: err.message }));
 
-      if (!execResult?.success) {
-        notifyStatus('running', `Execution warning: ${execResult?.error}. Retrying observation...`);
+      // The outcome is only known now. A handle refusal is the boundary
+      // working; a DOM failure is a bug. Both are logged, but they are not
+      // the same thing and the manifest must not conflate them.
+      const refusedByExecutor =
+        typeof execResult?.error === 'string' && execResult.error.startsWith('Refused (');
+
+      if (refusedByExecutor) {
+        emitActionResolved(effectOf(action), 'refused', execResult.error);
+        recordAction(effectOf(action), 'refused', execResult.error);
+        emitManifest(readManifest());
+        notifyStatus('running', execResult.error);
+        refusalCount += 1;
+        if (refusalCount >= MAX_REFUSALS) {
+          emitPhase('REFUSED');
+          emitError('Too many refused actions — stopping.');
+          isAgentRunning = false;
+          return;
+        }
+      } else if (!execResult?.success) {
+        emitActionResolved(effectOf(action), 'refused', execResult?.error ?? 'Execution failed.');
+        recordAction(effectOf(action), 'refused', execResult?.error ?? 'Execution failed.');
+        emitManifest(readManifest());
+        notifyStatus('running', `Execution failed: ${execResult?.error}. Re-observing…`);
+      } else {
+        emitActionResolved(effectOf(action), 'executed');
+        recordAction(effectOf(action), 'executed');
+        emitManifest(readManifest());
       }
 
       // After navigate: wait for tab to finish loading before re-observing

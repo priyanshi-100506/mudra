@@ -1,6 +1,6 @@
 import type {
   AgentEventMessage, AgentPhase, DetectionCounts, RedactionCounts,
-  OutboundSummary, RedactedField, GrantRequest,
+  OutboundSummary, RedactedField, GrantRequest, ManifestLine,
 } from '../shared/agent-events';
 
 /**
@@ -13,7 +13,7 @@ const snapshot: AgentEventMessage[] = [];
 /** Events that supersede an earlier one of the same type. */
 const REPLACES = new Set([
   'AGENT_PHASE', 'AGENT_PAGE', 'AGENT_DETECTION',
-  'AGENT_REDACTION', 'AGENT_OUTBOUND', 'AGENT_CONFIRM_REQUIRED',
+  'AGENT_REDACTION', 'AGENT_OUTBOUND', 'AGENT_CONFIRM_REQUIRED', 'AGENT_MANIFEST',
 ]);
 
 function remember(message: AgentEventMessage) {
@@ -58,6 +58,9 @@ export const emitActionResolved = (
   outcome: 'executed' | 'refused',
   reason?: string,
 ) => emit({ type: 'AGENT_ACTION_RESOLVED', effect, outcome, reason });
+
+export const emitManifest = (entries: ManifestLine[]) =>
+  emit({ type: 'AGENT_MANIFEST', entries });
 
 export async function emitActivePage() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
