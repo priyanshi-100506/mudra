@@ -16,6 +16,8 @@ let grant: Grant | null = null;
 let pendingResolve: ((decision: 'authorise' | 'refuse') => void) | null = null;
 let usePlannerStub = false;
 let stubStep = 0;
+let refusalCount = 0;
+const MAX_REFUSALS = 3;
 chrome.storage.local.get(STUB_ENABLED_KEY, (res) => {
   usePlannerStub = Boolean(res?.[STUB_ENABLED_KEY]);
 });
@@ -68,6 +70,7 @@ async function handleMessage(message: ExtensionMessage | PanelCommand) {
       activeTabId = tab.id;
       clearSnapshot();
       stubStep = 0;
+      refusalCount = 0;
       { let o = tab.url ?? '';
         try { o = new URL(tab.url ?? '').origin; } catch { /* keep raw */ }
         grant = deriveGrant(message.goal, o); }
@@ -224,10 +227,22 @@ async function processPageIR(pageIR: PageIR){
     const verdict = checkAction(action, grant, currentOrigin);
 
     if (verdict.kind === 'refuse') {
+      // Refuse, log, and continue with the remaining steps. A refusal is a
+      // bounded outcome for one action, not a failure of the whole task —
+      // the agent carries on with what it is still authorised to do.
       emitActionResolved(verdict.effect, 'refused', verdict.reason);
-      emitPhase('REFUSED');
-      notifyStatus('error', `Refused: ${verdict.reason}`);
-      isAgentRunning = false;
+      notifyStatus('running', `Refused: ${verdict.reason}`);
+      refusalCount += 1;
+
+      if (refusalCount >= MAX_REFUSALS) {
+        emitPhase('REFUSED');
+        emitError('Too many refused actions — stopping. The plan is not aligned with your task.');
+        isAgentRunning = false;
+        return;
+      }
+
+      await sleep(400);
+      await triggerObservation();
       return;
     }
 
