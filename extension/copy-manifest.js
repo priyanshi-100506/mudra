@@ -27,6 +27,16 @@ try {
   }
 
   fs.writeFileSync(destPath, JSON.stringify(manifest, null, 2), 'utf8');
+
+  // Icons are static assets outside the Vite graph; copy them across.
+  const iconSrc = path.join(__dirname, 'src', 'icons');
+  const iconDest = path.join(__dirname, 'dist', 'src', 'icons');
+  if (fs.existsSync(iconSrc)) {
+    fs.mkdirSync(iconDest, { recursive: true });
+    for (const f of fs.readdirSync(iconSrc)) {
+      fs.copyFileSync(path.join(iconSrc, f), path.join(iconDest, f));
+    }
+  }
   console.log('Manifest copied and updated successfully to dist/manifest.json');
 } catch (err) {
   console.error('Error copying manifest:', err);
