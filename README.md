@@ -1,90 +1,114 @@
-# MUDRA (SIH26171) 🛡️
-> **On-Device Visual Perception & Privacy-Preserving Execution for Browser Agents**  
-> *ISRO / Department of Space · Smart Automation · SIH 2024 Finalist*
+# MUDRA (SIH26171)
+**On-Device Visual Perception and Privacy-Preserving Execution for Autonomous Browser Agents**  
+*ISRO / Department of Space · Smart Automation*
 
 ---
 
-## ⚡ What is MUDRA?
-MUDRA ensures **zero raw PII leaves the browser** when using AI browser agents. It performs local perception, automated redacting of sensitive inputs into opaque reference tokens, on-device policy enforcement (grants), and audit logging before sending sanitized scene-graph data to the backend planner.
+## 1. Overview
+MUDRA provides a client-side perception and execution boundary for autonomous web agents. Current web agent architectures require transmitting raw screen captures, DOM values, and sensitive user credentials to cloud-hosted models. MUDRA moves perception, entity detection, value redaction, and action policy enforcement entirely onto the client device.
+
+All sensitive inputs are obfuscated into request-scoped opaque reference tokens (`ref_*`). The backend agent operates statelessly on an anonymous scene graph and returns high-level actions within a closed six-verb specification. Client-side grant policies enforce action boundaries before execution.
 
 ---
 
-## 🏗️ Core Architecture
+## 2. Architecture & System Flow
+
 ```
- ┌─────────────────────────────────────────────────────────────┐
- │                    USER DEVICE (BROWSER)                    │
- │ 1. Perception Walker ➔ Extract DOM & Visual Candidates      │
- │ 2. Detection Engine  ➔ Detect PII (PAN, Aadhaar, Cards)     │
- │ 3. Redaction Engine  ➔ Replace values with opaque tokens    │
- │ 4. Grant Manager     ➔ Enforce local action security policy │
- └──────────────────────────────┬──────────────────────────────┘
-                                │  Opaque Refs + Scene Graph
-                                ▼ (NO raw values / PII)
- ┌─────────────────────────────────────────────────────────────┐
- │                    STATALESS BACKEND AGENT                  │
- │ 5. Planner (Gemini)  ➔ Generates safe 6-verb agent action   │
- │ 6. Egress Manifest   ➔ Records audit trail of execution     │
- └─────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------------+
+|                        CLIENT BOUNDARY                            |
+| 1. Perception Walker   : Extracts interactive DOM & bounding boxes|
+| 2. Detection Engine    : Identifies PII (PAN, Aadhaar, Cards, etc)|
+| 3. Redaction Pipeline  : Replaces plaintext with opaque refs      |
+| 4. Grant Enforcement   : Enforces document- & task-scoped policy  |
+| 5. Action Executor     : Resolves refs & executes approved actions|
++---------------------------------+---------------------------------+
+                                  |
+            Opaque Scene Graph    | Closed 6-Verb Actions
+            (Zero Raw PII)        | (Opaque Handles)
+                                  v
++-------------------------------------------------------------------+
+|                        STATELESS BACKEND                          |
+| 6. Agent Planner (Gemini): Evaluates scene graph & plans action   |
+| 7. Egress Audit Manifest : Logs execution history & grant status  |
++-------------------------------------------------------------------+
 ```
 
 ---
 
-## 🚀 Key Features
+## 3. Core Technical Specifications
 
-### 1. 🔒 Local Redaction & Opaque Tokens
-- Detects PII locally via pattern rules & identity algorithms (PAN, Aadhaar with Verhoeff check, Credit Cards with Luhn check, IFSC, UPI VPA, Email, SSN, Passport).
-- Obfuscates field values into request-scoped opaque tokens (e.g. `ref_3a1b`). Raw values **never** cross the network.
+### Client-Side Detection & Redaction
+- **Identity-First Detection**: Flags sensitive inputs by structural metadata (`input_type`, `autocomplete`, field names) prior to content insertion.
+- **Rule-Based Algorithmic Validation**:
+  - Aadhaar detection integrated with Verhoeff checksum validation algorithm.
+  - Payment Cards verified via Luhn algorithm validation.
+  - Indian Tax (PAN), Banking (IFSC, UPI VPA), Passport (IN), SSN, and Email regex verification.
+- **Request-Scoped Reference Isolation**: Maps plaintext PII to unique opaque tokens (`ref_*`). Raw values are isolated in client memory and excluded from serialised network payloads.
 
-### 2. 🛡️ On-Device Action Execution & Grants
-- Restricts agent capabilities to strict, pre-authorized user grants (`click_handle`, `set_public_text`, `set_secret_ref`, `scroll`, `navigate_allowed_url`, `request_commit`).
-- Refuses unauthorized actions, cross-origin navigations, and ungranted operations automatically.
+### Grant Enforcement & Action Spec
+- Actions restricted to a closed 6-verb set: `click`, `type`, `select`, `scroll`, `navigate`, `wait`.
+- High-impact operations (`submit_form`, cross-origin navigation, credential insertion) require active policy grants. Unauthorized operations fail closed and emit audit events.
 
-### 3. 📜 Real-Time Egress Audit Manifest Viewer
-- Backend maintains a real-time audit manifest (`GET /manifests/viewer/html`).
-- Inspect allowed and refused outbound actions with zero exposure of sensitive data.
+### Egress Audit Manifest
+- Real-time audit endpoint (`GET /manifests`) and visual viewer (`GET /manifests/viewer/html`) logging outbound payload metadata, redacted token counts, and policy verdicts without exposing plaintext values.
 
 ---
 
-## 🛠️ Quick Start & Installation
+## 4. Repository Structure
 
-### 1. Run Backend Server
+```
+.
+├── backend/
+│   ├── app/
+│   │   ├── agent/            # Gemini client, loop, & action verifier
+│   │   ├── schemas/          # PageIR, AgentAction, & Manifest schemas
+│   │   ├── manifest_store.py # In-memory egress audit store
+│   │   └── main.py           # FastAPI entrypoint & manifest routes
+├── extension/
+│   ├── src/
+│   │   ├── content/          # Perception walker & redaction logic
+│   │   ├── background/       # Service worker & grant coordinator
+│   │   └── shared/           # Types, redact utilities, & grant rules
+├── tests/
+│   ├── backend/              # PyTest suite for schemas & endpoints
+│   └── extension/            # Vitest suite for redaction & safety
+```
+
+---
+
+## 5. Verification & Testing
+
+### Backend Test Suite
+```bash
+cd backend
+.venv\Scripts\python.exe -m pytest ..\tests\backend
+```
+- 40/40 tests passing (Schema validation, Mudra contract alignment, Egress Audit Manifest endpoints).
+
+### Extension Test Suite
+```bash
+cd extension
+npm test
+```
+- 60/60 tests passing (Redaction safety, Verhoeff/Luhn validation, Canvas rasterization, DOM walker).
+
+---
+
+## 6. Development Setup
+
+### Backend Setup
 ```bash
 cd backend
 python -m venv .venv
-# Windows PowerShell
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-
-# Start backend FastAPI server
 uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
-- **API Docs**: `http://127.0.0.1:8000/docs`
-- **Audit Manifest Viewer**: `http://127.0.0.1:8000/manifests/viewer/html`
 
-### 2. Build Chrome Extension
+### Extension Setup
 ```bash
 cd extension
 npm install
 npm run build
 ```
-- Open Chrome -> `chrome://extensions` -> Enable **Developer mode**.
-- Click **Load unpacked** and select `c:\Users\USER\Documents\clio\extension\dist`.
-
-### 3. Run Automated Tests
-```bash
-# Backend PyTest Suite (40 tests)
-cd backend
-.venv\Scripts\python.exe -m pytest ..\tests\backend
-
-# Extension Vitest Suite (60 tests)
-cd extension
-npm test
-```
-
----
-
-## 🧪 Current Implementation Status
-- ✅ **Local Detection & Redaction Engine** (PAN, Aadhaar + Verhoeff, Cards + Luhn, IFSC, UPI, Email, SSN, Passport).
-- ✅ **Stateless Agent Planner Backend** (FastAPI, 6-verb closed enum action space).
-- ✅ **Real-Time Egress Audit Manifest Viewer** (REST Endpoints & Visual HTML UI).
-- ✅ **100% Passing Test Suite** (40 Backend + 60 Extension Unit/Integration Tests).
+Load the unpacked extension directory (`extension/dist`) into Chrome via `chrome://extensions`.
