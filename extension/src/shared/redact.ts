@@ -7,7 +7,7 @@ const CARD = /\b\d{13,19}\b/;
 const IFSC = /\b[A-Z]{4}0[A-Z0-9]{6}\b/;
 const UPI = /\b[\w.\-]{2,}@[a-zA-Z]{2,}\b/;
 const SENSITIVE_NAME =
-  /(pass\s?word|pwd|otp|cvv|cvc|\bpin\b|aadhaar|aadhar|\bpan\b|card\s?(number|no|verification)|credit\s?card|debit\s?card|expir|account\s?(number|no)|ifsc|upi|token|secret|\bssn\b|passport|licen[cs]e|\bdob\b|date\s?of\s?birth)/i;
+  /(pass\s?word|pwd|passcode|otp|mfa|2fa|cvv|cvc|\bpin\b|security\s?code|aadhaar|aadhar|\buid\b|\bpan\b|permanent\s?account|card\s?(number|no|verification)|credit\s?card|debit\s?card|expir|account\s?(number|no)|ifsc|swift|routing|\biban\b|upi|social\s?security|\bssn\b|\bsin\b|tax\s?id|\btin\b|driver'?s?\s?licen[cs]e|licen[cs]e\s?(number|no)|\bdl\s?no|passport|visa\s?number|voter\s?id|\bepic\b|token|secret|api\s?key|private\s?key|\bdob\b|date\s?of\s?birth|birth\s?date|mother'?s?\s?maiden|maiden\s?name|salary|income|net\s?worth|balance|medical|diagnos|prescription|health\s?(id|record))/i;
 
 /** Input types that are sensitive by their nature, whatever they contain. */
 const SENSITIVE_TYPE = new Set(['password', 'tel']);

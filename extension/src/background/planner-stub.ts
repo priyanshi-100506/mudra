@@ -33,7 +33,9 @@ interface SceneLike {
 export function stubPlan(step: number, elements: SceneLike[]): StubStep {
   const find = (re: RegExp) => elements.find((e) => re.test(e.name))?.ref;
 
-  const customerId = find(/customer/i);
+  // Never invent a handle. An unregistered id is correctly refused by the
+  // registry, which would look like a security event rather than a stub bug.
+  const customerId = find(/customer|note/i);
   const password = find(/password/i);
   const transfer = find(/transfer/i);
 
@@ -42,14 +44,18 @@ export function stubPlan(step: number, elements: SceneLike[]): StubStep {
       return {
         status: 'step',
         message: 'Filling the customer ID',
-        action: { action: 'type', element_id: customerId ?? 'e1', text: 'demo-user' },
+        action: customerId
+          ? { action: 'type', element_id: customerId, text: 'demo-user' }
+          : { action: 'scroll', direction: 'down', amount: 0 },
       };
 
     case 1:
       return {
         status: 'step',
         message: 'Entering the credential by reference',
-        action: { action: 'type', element_id: password ?? 'e2', text: '' },
+        action: password
+          ? { action: 'type', element_id: password, text: '' }
+          : { action: 'scroll', direction: 'down', amount: 0 },
       };
 
     case 2:
@@ -65,7 +71,9 @@ export function stubPlan(step: number, elements: SceneLike[]): StubStep {
       return {
         status: 'step',
         message: 'Submitting the transfer',
-        action: { action: 'click', element_id: transfer ?? 'e9' },
+        action: transfer
+          ? { action: 'click', element_id: transfer }
+          : { action: 'done', summary: 'Nothing further to do.' },
       };
 
     default:

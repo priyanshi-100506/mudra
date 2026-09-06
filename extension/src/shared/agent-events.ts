@@ -77,7 +77,22 @@ export type AgentEventMessage =
   | { type: 'AGENT_OUTBOUND'; summary: OutboundSummary }
   | { type: 'AGENT_CONFIRM_REQUIRED'; request: GrantRequest }
   | { type: 'AGENT_ACTION_RESOLVED'; effect: string; outcome: 'executed' | 'refused'; reason?: string }
-  | { type: 'AGENT_ERROR'; message: string };
+  | { type: 'AGENT_ERROR'; message: string }
+  | { type: 'AGENT_MANIFEST'; entries: ManifestLine[] };
+
+/** One readable line of the egress manifest. Never carries a value. */
+export interface ManifestLine {
+  at: string;
+  kind: 'egress' | 'action';
+  digest?: string;
+  destination?: string;
+  fieldsSent?: number;
+  refsSent?: number;
+  redactionCount?: number;
+  effect?: string;
+  outcome?: 'executed' | 'refused';
+  reason?: string;
+}
 
 /** Sent by the side panel to the service worker. */
 export type PanelCommand =

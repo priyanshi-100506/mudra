@@ -3,9 +3,10 @@ import type { PanelCommand } from '../shared/agent-events';
 import { AgentAction, PageIR } from '../shared/types';
 import { redactPageIR, buildOutbound } from '../shared/redact';
 import { emitPhase, emitError, emitDetection, emitRedaction, emitOutbound, emitActivePage,
-         emitConfirmRequired, emitActionResolved, replaySnapshot, clearSnapshot } from './panel-events';
+         emitConfirmRequired, emitActionResolved, emitManifest, replaySnapshot, clearSnapshot } from './panel-events';
 import { deriveGrant, checkAction, confirmSentence, effectOf, type Grant } from '../shared/grant';
 import { stubPlan, STUB_ENABLED_KEY } from './planner-stub';
+import { recordEgress, recordAction, readManifest, clearManifest } from './manifest';
 
 let currentGoal = '';
 let isAgentRunning = false;
@@ -69,6 +70,7 @@ async function handleMessage(message: ExtensionMessage | PanelCommand) {
 
       activeTabId = tab.id;
       clearSnapshot();
+      clearManifest();
       stubStep = 0;
       refusalCount = 0;
       { let o = tab.url ?? '';
@@ -171,6 +173,11 @@ async function processPageIR(pageIR: PageIR){
     }).catch(() => {});
   }
 
+  const stubOnAtCapture = await chrome.storage.local
+    .get(STUB_ENABLED_KEY)
+    .then((r) => Boolean(r?.[STUB_ENABLED_KEY]))
+    .catch(() => false);
+
   emitPhase('BUILDING_SCENE');
   let scene;
   try {
@@ -182,6 +189,12 @@ async function processPageIR(pageIR: PageIR){
     return;
   }
   emitOutbound(scene.summary);
+  await recordEgress(scene.payload, stubOnAtCapture ? 'local (planner stubbed)' : backendUrl, {
+    fields: scene.summary.fieldsDescribed,
+    refs: redacted.redaction.textReferences,
+    redactions: redacted.redaction.textReferences + redacted.redaction.maskedRegions,
+  });
+  emitManifest(readManifest());
 
   emitPhase('PLANNING');
 
@@ -231,6 +244,8 @@ async function processPageIR(pageIR: PageIR){
       // bounded outcome for one action, not a failure of the whole task —
       // the agent carries on with what it is still authorised to do.
       emitActionResolved(verdict.effect, 'refused', verdict.reason);
+      recordAction(verdict.effect, 'refused', verdict.reason);
+      emitManifest(readManifest());
       notifyStatus('running', `Refused: ${verdict.reason}`);
       refusalCount += 1;
 
@@ -287,6 +302,8 @@ async function processPageIR(pageIR: PageIR){
 
       if (refusedByExecutor) {
         emitActionResolved(effectOf(action), 'refused', execResult.error);
+        recordAction(effectOf(action), 'refused', execResult.error);
+        emitManifest(readManifest());
         notifyStatus('running', execResult.error);
         refusalCount += 1;
         if (refusalCount >= MAX_REFUSALS) {
@@ -297,9 +314,13 @@ async function processPageIR(pageIR: PageIR){
         }
       } else if (!execResult?.success) {
         emitActionResolved(effectOf(action), 'refused', execResult?.error ?? 'Execution failed.');
+        recordAction(effectOf(action), 'refused', execResult?.error ?? 'Execution failed.');
+        emitManifest(readManifest());
         notifyStatus('running', `Execution failed: ${execResult?.error}. Re-observing…`);
       } else {
         emitActionResolved(effectOf(action), 'executed');
+        recordAction(effectOf(action), 'executed');
+        emitManifest(readManifest());
       }
 
       // After navigate: wait for tab to finish loading before re-observing
