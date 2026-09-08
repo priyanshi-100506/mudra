@@ -152,23 +152,38 @@ async function processPageIR(pageIR: PageIR){
   emitPhase('PLANNING');
 
   try {
+    const outboundElements = scene.payload.elements.map((element) => ({
+      id: element.ref,
+      role: element.role,
+      name: element.name,
+      input_type: element.input_type,
+      visible: true,
+      enabled: true,
+      bbox: element.bbox,
+    }));
     const response = await fetch(`${backendUrl}/agent/step`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         goal: currentGoal,
-        page_ir: { ...pageIR, elements: scene.payload.elements },
+        page_ir: { ...pageIR, elements: outboundElements },
         session_id: sessionId,
       }),
     });
 
     if (!response.ok) {
       const errBody = await response.json().catch(() => ({ detail: response.statusText }));
-      throw new Error(`Backend HTTP ${response.status}: ${errBody.detail ?? response.statusText}`);
+      const detail = Array.isArray(errBody.detail)
+        ? errBody.detail.map((item: { loc?: unknown[]; msg?: string }) =>
+          `${item.loc?.join('.') ?? 'request'}: ${item.msg ?? 'invalid value'}`).join('; ')
+        : String(errBody.detail ?? response.statusText);
+      throw new Error(`Backend HTTP ${response.status}: ${detail}`);
     }
 
     const data = await response.json();
-    const action: AgentAction = data.action;
+    const action: AgentAction = data.action?.element_id
+      ? { ...data.action, element_id: redacted.refMap.get(data.action.element_id)?.elementId ?? data.action.element_id }
+      : data.action;
 
     if (data.status === 'done') {
       isAgentRunning = false;
