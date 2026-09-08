@@ -35,3 +35,15 @@ chrome.runtime.onMessage.addListener((msg: { type?: string; targets?: HighlightT
     clearHighlights();
   }
 });
+
+import { askConfirmation, type ConfirmRequest } from './confirm-overlay';
+
+chrome.runtime.onMessage.addListener(
+  (msg: { type?: string; request?: ConfirmRequest }, _sender, sendResponse) => {
+    if (msg?.type !== 'MUDRA_CONFIRM') return;
+    askConfirmation(msg.request as ConfirmRequest).then((decision) =>
+      sendResponse({ decision }),
+    );
+    return true; // async
+  },
+);

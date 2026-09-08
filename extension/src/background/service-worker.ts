@@ -286,9 +286,29 @@ async function processPageIR(pageIR: PageIR){
         targetRef: (action as { element_id?: string }).element_id ?? '—',
       });
 
-      const decision = await new Promise<'authorise' | 'refuse'>((resolve) => {
-        pendingResolve = resolve;
-      });
+      // Ask in the page, over the action it concerns. A popup unmounts on
+      // blur and would leave this waiting on a decision nobody saw.
+      const request = {
+        sentence: confirmSentence(verdict.effect, currentOrigin),
+        origin: currentOrigin,
+        effect: verdict.effect,
+        targetRole: (action as { element_id?: string }).element_id ?? 'page',
+        targetRef: (action as { element_id?: string }).element_id ?? '—',
+      };
+
+      const inPage = activeTabId
+        ? await chrome.tabs
+            .sendMessage(activeTabId, { type: 'MUDRA_CONFIRM', request })
+            .then((r: { decision?: 'authorise' | 'refuse' }) => r?.decision ?? null)
+            .catch(() => null)
+        : null;
+
+      // Fall back to the popup only if the page could not ask.
+      const decision =
+        inPage ??
+        (await new Promise<'authorise' | 'refuse'>((resolve) => {
+          pendingResolve = resolve;
+        }));
 
       if (decision === 'refuse') {
         emitActionResolved(verdict.effect, 'refused', 'Declined by the user.');
