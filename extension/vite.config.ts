@@ -6,7 +6,10 @@ import { resolve } from 'path';
 // file with no imports. So they get their own build pass.
 const isContent = process.env.BUILD_TARGET === 'content';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const isContent = mode === 'content';
+
+  return {
   plugins: [react()],
   build: isContent
     ? {
@@ -38,4 +41,5 @@ export default defineConfig({
           },
         },
       },
+  };
 });

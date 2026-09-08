@@ -61,9 +61,8 @@ class AgentLoop:
         )
 
         # Validate element_id exists in current IR (for element-targeting actions).
-        # PageElement now uses `ref` (not `id`) as the unique handle.
         if hasattr(action, "element_id"):
-            valid_ids = {e.ref for e in current_ir.elements}
+            valid_ids = {e.id for e in current_ir.elements}
             if action.element_id not in valid_ids:
                 self.last_result = f"Error: element_id '{action.element_id}' does not exist in current Page IR."
                 return LoopStepResponse(
@@ -80,11 +79,14 @@ class AgentLoop:
         self.last_ir = current_ir
 
         # Auto-record egress manifest entry
-        redacted_count = len(getattr(current_ir, "text_snippets", []))
+        redacted_count = sum(
+            1 for element in current_ir.elements
+            if element.id.startswith("ref_")
+        )
         manifest_store.record(
             EgressManifestEntry(
-                session_id=self.last_ir.url if hasattr(self.last_ir, "url") else "default",
-                target_url=current_ir.url if hasattr(current_ir, "url") else "http://localhost",
+                session_id="default",
+                target_url=current_ir.url,
                 action_type=action.action,
                 status="allowed",
                 redacted_refs_count=redacted_count,
