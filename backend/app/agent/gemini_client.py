@@ -32,7 +32,12 @@ AVAILABLE ACTIONS (output exactly one per step):
 {"action": "done", "summary": "<explanation of what was accomplished or why it cannot be done>"}
 """
 
-_RETRY_DELAYS = [1.0, 2.0]  # seconds between retries
+_RETRY_DELAYS = [1.0, 2.0]  # seconds between model attempts
+
+# A planner call sits between the user and the page, so it must fail fast
+# rather than hang. Without a bound the SDK waits indefinitely and a single
+# slow request stalls the whole step.
+_REQUEST_TIMEOUT_MS = 15_000
 
 
 class GeminiAgentClient:
@@ -58,15 +63,25 @@ class GeminiAgentClient:
         contents = json.dumps(prompt_payload, default=str)
 
         last_error: Exception | None = None
-        for model_name in ["gemini-flash-lite-latest", "gemini-2.5-flash"]:
+        # Order matters: every request pays the timeout of each model ahead of
+        # the one that answers. gemini-flash-lite-latest was first and returns
+        # 504 DEADLINE_EXCEEDED consistently, so each plan cost ~23s before
+        # falling through to the model that responds in about a second.
+        models = ["gemini-2.5-flash", "gemini-flash-lite-latest"]
+        for attempt, model_name in enumerate(models):
             try:
-                response = self.client.models.generate_content(
+                # The async client, not the sync one. `generate_content` blocks,
+                # and awaiting a blocking call from this coroutine pinned the
+                # event loop for the length of the request — one slow plan
+                # stalled every other request the server was serving.
+                response = await self.client.aio.models.generate_content(
                     model=model_name,
                     contents=contents,
                     config=types.GenerateContentConfig(
                         system_instruction=SYSTEM_INSTRUCTION,
                         response_mime_type="application/json",
                         temperature=0.1,
+                        http_options=types.HttpOptions(timeout=_REQUEST_TIMEOUT_MS),
                     ),
                 )
                 raw = response.text.strip()
@@ -77,6 +92,8 @@ class GeminiAgentClient:
                 last_error = exc
                 if "ValidationError" in type(exc).__name__:
                     raise
+                if attempt < len(_RETRY_DELAYS):
+                    await asyncio.sleep(_RETRY_DELAYS[attempt])
                 continue
 
         # If quota is exhausted on all models, return a mock fallback action so the demo works
