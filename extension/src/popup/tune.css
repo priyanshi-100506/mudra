@@ -16,9 +16,14 @@
 }
 
 html,body{background:var(--paper)}
-body{width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
+body{
+  width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink);
+  /* Chrome sizes a popup to its content, so the window jumped every time the
+     view changed. Pin it: one height, whatever is on screen. */
+  min-height:560px;
+}
 
-.mudra-frame{margin:0;border-radius:0;border:none;background:var(--paper);box-shadow:none;overflow:visible}
+.mudra-frame{margin:0;border-radius:0;border:none;background:var(--paper);box-shadow:none;overflow:visible;min-height:560px}
 .mudra-frame::before{display:none}
 
 /* ── header: quiet, wide-tracked, one rule ── */
@@ -164,11 +169,13 @@ body{width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
      that clipped it top and bottom against a fixed layer that cannot scroll,
      so the buttons were simply unreachable. Anchor to the top and let the
      layer scroll; `auto` margins still centre it whenever it does fit. */
-  display:flex;align-items:flex-start;justify-content:center;
+  /* `safe center` centres the dialog when it fits and falls back to the
+     start edge when it does not. Plain centring — or auto margins — pushes
+     the overflow above the scroll origin, where it cannot be reached. */
+  display:flex;align-items:safe center;justify-content:center;
   padding:14px;overflow-y:auto;overscroll-behavior:contain;
   animation:mudra-fade 140ms ease;
 }
-.mudra-scrim > *{margin:auto 0}
 @keyframes mudra-fade{from{opacity:0}to{opacity:1}}
 .mudra-confirm{
   width:100%;max-width:100%;background:var(--paper);
