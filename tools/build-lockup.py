@@ -11,7 +11,7 @@ Wordmark and kolam are separated by bounding box, not by colour: the kolam's
 counters are painted near-white just like the letter counters, so colour alone
 cannot tell them apart.
 
-Outputs (light ground, and a variant whose counters match a #0F172A ground):
+Outputs (light ground, and a variant whose counters match the dark blue gradient's ground):
     extension/src/assets/mudra-lockup.svg
     extension/src/assets/mudra-lockup-dark.svg
     backend/app/static/{same two}
@@ -31,9 +31,9 @@ FONT = "/System/Library/Fonts/Supplemental/Impact.ttf"
 WORD = "MUDRA"
 
 NAVY = "#160B69"
-GROUND_DARK = "#0F172A"
-KOLAM_DARK = "#9C9686"
-NAVY_DARK = "#E7E4FF"
+GROUND_DARK = "#0E0840"
+KOLAM_DARK = "#8FA0E0"
+NAVY_DARK = "#FFFFFF"
 
 # Bounding box of the traced lowercase wordmark in the source art.
 WX0, WY0, WX1, WY1 = 326, 387, 866, 638

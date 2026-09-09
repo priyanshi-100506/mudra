@@ -1,14 +1,16 @@
 :root{
-  --paper:#FCFCFA;
-  --paper-2:#F4F4F1;
-  --rule:#E5E4DF;
-  --rule-2:#CFCEC8;
-  --ink:#0A0A0B;
-  --ink-2:#54555B;
-  --ink-3:#96979D;
-  --accent:#1B3AC4;
-  --ok:#0F5132;
-  --stop:#8B1A1A;
+  --paper:#FFFFFF;
+  --paper-2:#F3F6FE;
+  --rule:#E4EAF9;
+  --rule-2:#C6D2EF;
+  --ink:#0B1020;
+  --ink-2:#4A5570;
+  --ink-3:#8A93AC;
+  --accent:#2547D0;
+  --navy:#160B69;
+  --grad:linear-gradient(135deg,#160B69 0%,#2547D0 100%);
+  --ok:#1F6B4A;
+  --stop:#A32B22;
   --mono:'SF Mono',ui-monospace,Menlo,monospace;
   --sans:-apple-system,'Segoe UI',Helvetica,sans-serif;
 }
@@ -21,7 +23,7 @@ body{width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
 
 /* ── header: quiet, wide-tracked, one rule ── */
 .mudra-topbar{
-  padding:18px 22px 15px;border-bottom:1px solid var(--ink);
+  padding:18px 22px 15px;border-bottom:1px solid var(--rule-2);
   background:transparent;align-items:flex-start;
 }
 .mudra-id{gap:0;display:block}
@@ -71,7 +73,7 @@ body{width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
   color:var(--ink);padding:2px 0 10px;box-shadow:none;line-height:1.5;
   transition:border-color 160ms ease;
 }
-.mudra-input:focus{background:transparent;border-bottom-color:var(--ink);box-shadow:none;outline:none}
+.mudra-input:focus{background:transparent;border-bottom-color:var(--accent);box-shadow:none;outline:none}
 .mudra-input::placeholder{color:var(--ink-3)}
 
 .mudra-actions{margin-top:14px}
@@ -80,13 +82,13 @@ body{width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
 .mudra-btn{
   border-radius:0;padding:13px 24px;font-family:var(--sans);
   font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
-  background:var(--ink);color:var(--paper);border:1px solid var(--ink);box-shadow:none;
+  background:var(--grad);color:#fff;border:1px solid transparent;box-shadow:none;
 }
-.mudra-btn:hover:not(:disabled){background:#000}
-.mudra-btn:active:not(:disabled){transform:none}
+.mudra-btn:hover:not(:disabled){filter:brightness(1.12)}
+.mudra-btn:active:not(:disabled){transform:none;filter:brightness(.94)}
 .mudra-btn:disabled{opacity:1;background:transparent;color:var(--ink-3);border-color:var(--rule-2)}
-.mudra-btn-ghost{background:transparent;color:var(--ink);border-color:var(--ink);box-shadow:none}
-.mudra-btn-ghost:hover{background:var(--paper-2)}
+.mudra-btn-ghost{background:transparent;color:var(--accent);border-color:var(--rule-2);box-shadow:none}
+.mudra-btn-ghost:hover{background:var(--blue-soft,#E7ECFD);border-color:var(--accent)}
 
 /* ── tabs ── */
 .mudra-tabs{
@@ -99,7 +101,7 @@ body{width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
   letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);
   border-bottom:1.5px solid transparent;margin-bottom:-1px;padding:0;
 }
-.mudra-tab[aria-selected="true"]{background:transparent;color:var(--ink);border-bottom-color:var(--ink)}
+.mudra-tab[aria-selected="true"]{background:transparent;color:var(--accent);border-bottom-color:var(--accent)}
 
 /* ── status ── */
 .mudra-status{
@@ -157,14 +159,17 @@ body{width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
 
 /* ── confirmation ── */
 .mudra-scrim{
-  position:fixed;inset:0;z-index:20;background:rgba(10,10,11,.32);
+  position:fixed;inset:0;z-index:20;background:rgba(11,16,32,.44);
   display:flex;align-items:center;justify-content:center;padding:16px;
   animation:mudra-fade 140ms ease;
 }
 @keyframes mudra-fade{from{opacity:0}to{opacity:1}}
 .mudra-confirm{
-  width:100%;max-width:100%;background:var(--paper);border:1px solid var(--ink);
+  width:100%;max-width:100%;background:var(--paper);
+  border:1px solid var(--rule-2);border-top:3px solid transparent;
+  border-image:var(--grad) 1;
   border-radius:0;padding:22px;
+  box-shadow:0 24px 60px rgba(11,16,32,.28);
 }
 .mudra-confirm-eyebrow{
   font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.22em;
@@ -207,7 +212,7 @@ body{width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
 }
 .mudra-permits li::before{
   content:'';position:absolute;left:0;top:7px;
-  width:5px;height:5px;border-radius:50%;background:var(--ink-3);
+  width:5px;height:5px;border-radius:50%;background:var(--accent);
 }
 .mudra-confirm-actions{display:flex;flex-direction:column;gap:8px}
 .mudra-confirm-actions .mudra-btn{width:100%}

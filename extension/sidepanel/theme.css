@@ -1,7 +1,9 @@
 :root {
-  --bg:#F2F3F6; --card:#FFF; --inner:#EDEFF3; --inner-2:#E4E7EE;
-  --accent:#5B8DEF; --accent-press:#4A7BD8; --accent-soft:#E8EFFD;
-  --text:#151821; --text-2:#6B7280; --text-3:#9AA1AE; --dark:#12141A;
+  --bg:#F6F9FF; --card:#FFF; --inner:#F0F4FE; --inner-2:#E1E8F8;
+  --accent:#2547D0; --accent-press:#1B37A8; --accent-soft:#E7ECFD;
+  --text:#0B1020; --text-2:#4A5570; --text-3:#8A93AC; --dark:#160B69;
+  --navy:#160B69;
+  --grad:linear-gradient(135deg,#160B69 0%,#2547D0 100%);
   --ok:#3F7D5B; --ok-bg:#E6F0EA;
   --warn:#A9741F; --warn-bg:#F7EFDC;
   --stop:#A8443C; --stop-bg:#F7E5E3;

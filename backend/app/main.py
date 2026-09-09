@@ -114,19 +114,19 @@ def manifest_viewer_html():
     entries = manifest_store.list_entries()
     rows = ""
     for e in entries:
-        color = "#28a745" if e.status == "allowed" else "#dc3545"
+        color = "#5DE0A6" if e.status == "allowed" else "#FF8A8A"
         # Every field below originates in the extension. The audit page must not
         # be scriptable by the pages it audits, so nothing is interpolated raw.
         esc = lambda v: _html.escape(str(v), quote=True)
         rows += f"""
         <tr>
-            <td style="padding: 8px; border: 1px solid #ddd;">{esc(e.id)}</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">{esc(e.timestamp)}</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">{esc(e.session_id)}</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">{esc(e.target_url)}</td>
-            <td style="padding: 8px; border: 1px solid #ddd;"><code>{esc(e.action_type)}</code></td>
-            <td style="padding: 8px; border: 1px solid #ddd; color: {color}; font-weight: bold;">{esc(e.status.upper())}</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">{esc(e.redacted_refs_count)}</td>
+            <td style="padding: 10px 14px; border-top: 1px solid rgba(255,255,255,.08);">{esc(e.id)}</td>
+            <td style="padding: 10px 14px; border-top: 1px solid rgba(255,255,255,.08);">{esc(e.timestamp)}</td>
+            <td style="padding: 10px 14px; border-top: 1px solid rgba(255,255,255,.08);">{esc(e.session_id)}</td>
+            <td style="padding: 10px 14px; border-top: 1px solid rgba(255,255,255,.08);">{esc(e.target_url)}</td>
+            <td style="padding: 10px 14px; border-top: 1px solid rgba(255,255,255,.08);"><code>{esc(e.action_type)}</code></td>
+            <td style="padding: 10px 14px; border-top: 1px solid rgba(255,255,255,.08); color: {color}; font-weight: 700;">{esc(e.status.upper())}</td>
+            <td style="padding: 10px 14px; border-top: 1px solid rgba(255,255,255,.08);">{esc(e.redacted_refs_count)}</td>
         </tr>
         """
     html = f"""
@@ -135,13 +135,29 @@ def manifest_viewer_html():
     <head>
         <title>MUDRA Egress Audit Manifest Viewer</title>
         <style>
-            body {{ font-family: system-ui, sans-serif; margin: 20px; background: #0f172a; color: #f8fafc; }}
-            .masthead {{ display: flex; align-items: center; gap: 18px; margin-bottom: 22px; }}
+            body {{
+                font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 28px 24px 48px;
+                min-height: 100vh; color: #EAF0FF;
+                background: #0A0630;
+                background-image: linear-gradient(155deg, #0A0630 0%, #160B69 46%, #24309B 100%);
+                background-attachment: fixed;
+            }}
+            .masthead {{ display: flex; align-items: center; gap: 18px; margin: 0 0 26px; }}
             .lockup {{ height: 54px; width: auto; flex: none; }}
-            h1 {{ color: #38bdf8; margin: 0 0 4px; font-size: 20px; }}
-            .masthead p {{ margin: 0; color: #94a3b8; font-size: 13px; }}
-            table {{ width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; }}
-            th {{ background: #334155; padding: 12px; text-align: left; }}
+            h1 {{ color: #FFFFFF; margin: 0 0 5px; font-size: 21px; letter-spacing: -.01em; }}
+            .masthead p {{ margin: 0; color: #A9B6E8; font-size: 13px; }}
+            table {{
+                width: 100%; border-collapse: collapse; overflow: hidden;
+                background: rgba(255,255,255,.05); border-radius: 12px;
+                border: 1px solid rgba(255,255,255,.10);
+                backdrop-filter: blur(6px);
+            }}
+            th {{
+                background: rgba(255,255,255,.07); padding: 12px 14px; text-align: left;
+                font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #BCC7F2;
+                font-weight: 600;
+            }}
+            td {{ font-size: 13px; }}
         </style>
     </head>
     <body>
@@ -159,7 +175,7 @@ def manifest_viewer_html():
                 </tr>
             </thead>
             <tbody>
-                {rows if rows else '<tr><td colspan="7" style="padding: 16px; text-align: center;">No egress manifest entries recorded yet.</td></tr>'}
+                {rows if rows else '<tr><td colspan="7" style="padding: 22px; text-align: center; color: #A9B6E8;">No egress manifest entries recorded yet.</td></tr>'}
             </tbody>
         </table>
     </body>
