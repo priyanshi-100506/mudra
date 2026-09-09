@@ -160,15 +160,21 @@ body{width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
 /* ── confirmation ── */
 .mudra-scrim{
   position:fixed;inset:0;z-index:20;background:rgba(11,16,32,.44);
-  display:flex;align-items:center;justify-content:center;padding:16px;
+  /* A Chrome popup is capped at 600px tall. Centring a dialog taller than
+     that clipped it top and bottom against a fixed layer that cannot scroll,
+     so the buttons were simply unreachable. Anchor to the top and let the
+     layer scroll; `auto` margins still centre it whenever it does fit. */
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:14px;overflow-y:auto;overscroll-behavior:contain;
   animation:mudra-fade 140ms ease;
 }
+.mudra-scrim > *{margin:auto 0}
 @keyframes mudra-fade{from{opacity:0}to{opacity:1}}
 .mudra-confirm{
   width:100%;max-width:100%;background:var(--paper);
   border:1px solid var(--rule-2);border-top:3px solid transparent;
   border-image:var(--grad) 1;
-  border-radius:0;padding:22px;
+  border-radius:0;padding:18px;
   box-shadow:0 24px 60px rgba(11,16,32,.28);
 }
 .mudra-confirm-eyebrow{
@@ -179,10 +185,10 @@ body{width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
   font-size:19px;font-weight:400;letter-spacing:-.022em;line-height:1.25;
   color:var(--ink);margin:0 0 20px;
 }
-.mudra-kv{margin:0 0 22px;border-top:1px solid var(--rule)}
+.mudra-kv{margin:0 0 16px;border-top:1px solid var(--rule)}
 .mudra-kv > div{
   display:flex;justify-content:space-between;align-items:baseline;gap:14px;
-  padding:9px 0;border-bottom:1px solid var(--rule);
+  padding:7px 0;border-bottom:1px solid var(--rule);
 }
 /* A flex item defaults to min-width:auto, so a long origin or task refuses to
    shrink and pushes the whole dialog wider than the popup. */
@@ -200,11 +206,11 @@ body{width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
    as plain sentences rather than a key/value dump */
 .mudra-permits-head{
   font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--ink-3);margin:0 0 9px;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 7px;
 }
 .mudra-permits{
-  list-style:none;margin:0 0 22px;padding:0;
-  display:flex;flex-direction:column;gap:7px;
+  list-style:none;margin:0 0 16px;padding:0;
+  display:flex;flex-direction:column;gap:5px;
 }
 .mudra-permits li{
   font-size:12.5px;line-height:1.45;color:var(--ink-2);
