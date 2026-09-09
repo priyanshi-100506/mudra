@@ -40,6 +40,13 @@ class ExtractAction(BaseModel):
     element_id: str = Field(description="Target element ID to extract textual data from")
 
 
+class SubmitAction(BaseModel):
+    """High-impact commit. Always gated by a local grant and a user confirmation
+    inside the extension before it reaches the DOM."""
+    action: Literal["submit"]
+    element_id: str = Field(description="Target form or submit-control element ID")
+
+
 class DoneAction(BaseModel):
     action: Literal["done"]
     summary: str = Field(description="Final summary explanation of completed task")
@@ -55,6 +62,7 @@ class AgentAction(RootModel):
         NavigateAction,
         WaitAction,
         ExtractAction,
+        SubmitAction,
         DoneAction,
     ] = Field(..., discriminator="action")
 

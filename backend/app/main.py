@@ -1,7 +1,9 @@
+import html as _html
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from app.agent.gemini_client import GeminiAgentClient
@@ -10,6 +12,13 @@ from app.config import settings
 from app.schemas.page_ir import PageIR
 
 app = FastAPI(title="CLIO v0.1 Backend Agent API", version="0.1.0")
+
+# Brand assets for the pages this service renders (/test, the audit viewer).
+app.mount(
+    "/static",
+    StaticFiles(directory=Path(__file__).parent / "static"),
+    name="static",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -81,11 +90,93 @@ def session_status(session_id: str):
     }
 
 
+from typing import Optional, List
+from app.schemas.manifest import EgressManifestEntry
+from app.manifest_store import manifest_store
+
+@app.post("/manifest/record", response_model=EgressManifestEntry)
+def record_manifest(entry: EgressManifestEntry):
+    return manifest_store.record(entry)
+
+@app.get("/manifests", response_model=List[EgressManifestEntry])
+def list_manifests(session_id: Optional[str] = None, status: Optional[str] = None):
+    return manifest_store.list_entries(session_id=session_id, status=status)
+
+@app.get("/manifests/{entry_id}", response_model=EgressManifestEntry)
+def get_manifest_entry(entry_id: str):
+    entry = manifest_store.get_entry(entry_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Manifest entry not found")
+    return entry
+
+@app.get("/manifests/viewer/html", response_class=HTMLResponse)
+def manifest_viewer_html():
+    entries = manifest_store.list_entries()
+    rows = ""
+    for e in entries:
+        color = "#28a745" if e.status == "allowed" else "#dc3545"
+        # Every field below originates in the extension. The audit page must not
+        # be scriptable by the pages it audits, so nothing is interpolated raw.
+        esc = lambda v: _html.escape(str(v), quote=True)
+        rows += f"""
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;">{esc(e.id)}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{esc(e.timestamp)}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{esc(e.session_id)}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{esc(e.target_url)}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><code>{esc(e.action_type)}</code></td>
+            <td style="padding: 8px; border: 1px solid #ddd; color: {color}; font-weight: bold;">{esc(e.status.upper())}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">{esc(e.redacted_refs_count)}</td>
+        </tr>
+        """
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>MUDRA Egress Audit Manifest Viewer</title>
+        <style>
+            body {{ font-family: system-ui, sans-serif; margin: 20px; background: #0f172a; color: #f8fafc; }}
+            .masthead {{ display: flex; align-items: center; gap: 18px; margin-bottom: 22px; }}
+            .lockup {{ height: 54px; width: auto; flex: none; }}
+            h1 {{ color: #38bdf8; margin: 0 0 4px; font-size: 20px; }}
+            .masthead p {{ margin: 0; color: #94a3b8; font-size: 13px; }}
+            table {{ width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; }}
+            th {{ background: #334155; padding: 12px; text-align: left; }}
+        </style>
+    </head>
+    <body>
+        <header class="masthead">
+            <img src="/static/mudra-lockup-dark.svg" alt="Mudra" class="lockup" />
+            <div>
+                <h1>Egress Audit Manifest</h1>
+                <p>Zero raw PII leaves the client. Below is the active log of all outbound actions &amp; grant authorizations.</p>
+            </div>
+        </header>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Timestamp</th><th>Session</th><th>Target URL</th><th>Action</th><th>Status</th><th>Redacted PII Tokens</th>
+                </tr>
+            </thead>
+            <tbody>
+                {rows if rows else '<tr><td colspan="7" style="padding: 16px; text-align: center;">No egress manifest entries recorded yet.</td></tr>'}
+            </tbody>
+        </table>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html)
+
+
 @app.post("/agent/step", response_model=LoopStepResponse)
 async def run_agent_step(payload: AgentStepRequest):
     loop = get_session(payload.session_id)
     try:
-        response = await loop.step(goal=payload.goal, current_ir=payload.page_ir)
+        response = await loop.step(
+            goal=payload.goal,
+            current_ir=payload.page_ir,
+            session_id=payload.session_id,
+        )
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

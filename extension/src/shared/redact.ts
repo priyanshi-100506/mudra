@@ -1,5 +1,6 @@
 import type { PageIR, PageElement } from './types';
 import type { SceneElement, DetectionCounts, RedactionCounts, OutboundSummary, RedactedField } from './agent-events';
+import { redactSnippets, isPII } from '../content/redaction';
 
 const PAN = /\b[A-Z]{5}[0-9]{4}[A-Z]\b/;
 const AADHAAR = /\b\d{4}\s?\d{4}\s?\d{4}\b/;
@@ -127,9 +128,53 @@ export function redactPageIR(ir: PageIR): Redacted {
   };
 }
 
-/** Builds the outbound payload. Asserts no sensitive value survives. */
-export function buildOutbound(r: Redacted): { payload: { elements: SceneElement[] }; summary: OutboundSummary } {
-  const payload: { elements: SceneElement[] } = { elements: r.elements };
+/**
+ * The exact body sent as `page_ir`. Nothing outside this shape reaches the
+ * network — callers must not spread the raw PageIR alongside it.
+ */
+export interface OutboundPageIR {
+  url: string;
+  title: string;
+  elements: SceneElement[];
+  text_snippets: string[];
+  observed_at: string;
+}
+
+/**
+ * Drops query parameters whose key or value looks sensitive, and the fragment
+ * outright. A URL is metadata the planner needs for context, but query strings
+ * are a routine carrier for session tokens, emails and account numbers.
+ */
+function sanitiseUrl(raw: string): string {
+  let u: URL;
+  try { u = new URL(raw); } catch { return raw.split(/[?#]/)[0]; }
+  u.hash = '';
+  for (const key of [...u.searchParams.keys()]) {
+    const value = u.searchParams.get(key) ?? '';
+    if (SENSITIVE_NAME.test(key) || isPII(value)) u.searchParams.set(key, '[redacted]');
+  }
+  return u.toString();
+}
+
+/**
+ * Builds the outbound payload and asserts no sensitive value survives.
+ *
+ * The assertion covers the whole serialised body rather than the elements
+ * array alone: url, title and snippets are as capable of carrying a protected
+ * value as a field is, and this is the last point at which we can still refuse
+ * to send one.
+ */
+export function buildOutbound(
+  r: Redacted,
+  ir: PageIR,
+): { payload: OutboundPageIR; summary: OutboundSummary } {
+  const payload: OutboundPageIR = {
+    url: sanitiseUrl(ir.url),
+    title: redactSnippets([ir.title])[0] ?? '',
+    elements: r.elements,
+    text_snippets: redactSnippets(ir.text_snippets ?? []),
+    observed_at: ir.observed_at,
+  };
   const serialised = JSON.stringify(payload);
   for (const { value } of r.refMap.values()) {
     if (value && serialised.includes(value)) {

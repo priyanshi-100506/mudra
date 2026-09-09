@@ -1,4 +1,5 @@
 import React, { useReducer, useState, useEffect, useCallback, useRef } from 'react';
+import { Lockup } from './components/Lockup';
 import { subscribe, startTask, sendDecision } from './bridge';
 import { reducer, initialState, isBusy, isTerminal, PHASE_LABEL } from './state';
 import type { RedactedField } from '../src/shared/agent-events';
@@ -68,7 +69,7 @@ export const MudraOverlay: React.FC<{ onClose: () => void }> = ({ onClose }) => 
         onMouseDown={(e) => e.stopPropagation()}>
         <div className="mudra-head">
           <div>
-            <div className="mudra-brand">Mudra</div>
+            <Lockup height={26} className="mudra-brand-lockup" />
             <p className="mudra-tag">every value is sealed before it leaves.</p>
           </div>
           <button className="mudra-close" onClick={onClose} aria-label="Close">×</button>

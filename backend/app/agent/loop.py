@@ -5,6 +5,8 @@ from app.agent.gemini_client import GeminiAgentClient
 from app.agent.verifier import ActionVerifier
 from app.schemas.actions import AgentAction, DoneAction
 from app.schemas.page_ir import PageIR
+from app.manifest_store import manifest_store
+from app.schemas.manifest import EgressManifestEntry
 
 
 class LoopStepResponse(BaseModel):
@@ -30,7 +32,7 @@ class AgentLoop:
         self.last_result = None
         self.last_ir = None
 
-    async def step(self, goal: str, current_ir: PageIR) -> LoopStepResponse:
+    async def step(self, goal: str, current_ir: PageIR, session_id: str = "default") -> LoopStepResponse:
         # Verify previous action if we have prior state
         if self.last_ir and self.history:
             last_action_dict = self.history[-1]["action"]
@@ -58,7 +60,7 @@ class AgentLoop:
             last_result=self.last_result,
         )
 
-        # Validate element_id exists in current IR (for element-targeting actions)
+        # Validate element_id exists in current IR (for element-targeting actions).
         if hasattr(action, "element_id"):
             valid_ids = {e.id for e in current_ir.elements}
             if action.element_id not in valid_ids:
@@ -71,13 +73,26 @@ class AgentLoop:
 
         # Handle wait action: sleep on backend before responding so extension
         # doesn't immediately re-observe a page that is still loading
-        if action.action == "wait":
-            await asyncio.sleep(action.duration_ms / 1000)
-
         # Record step
         action_dict = action.model_dump()
         self.history.append({"action": action_dict, "result": self.last_result or "pending"})
         self.last_ir = current_ir
+
+        # Auto-record egress manifest entry
+        redacted_count = sum(
+            1 for element in current_ir.elements
+            if element.id.startswith("ref_")
+        )
+        manifest_store.record(
+            EgressManifestEntry(
+                session_id=session_id,
+                target_url=current_ir.url,
+                action_type=action.action,
+                status="allowed",
+                redacted_refs_count=redacted_count,
+                details={"action": action_dict}
+            )
+        )
 
         if action.action == "done":
             return LoopStepResponse(
@@ -112,4 +127,6 @@ def _action_label(action: Any) -> str:
         return f"wait({action.duration_ms}ms)"
     if a == "extract":
         return f"extract({action.element_id})"
+    if a == "submit":
+        return f"submit({action.element_id})"
     return a

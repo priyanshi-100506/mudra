@@ -1,7 +1,7 @@
 import { ExtensionMessage } from '../shared/messaging';
 import type { PanelCommand } from '../shared/agent-events';
 import { AgentAction, PageIR } from '../shared/types';
-import { redactPageIR, buildOutbound } from '../shared/redact';
+import { redactPageIR, buildOutbound, type OutboundPageIR } from '../shared/redact';
 import { emitPhase, emitError, emitDetection, emitRedaction, emitOutbound, emitActivePage,
          emitConfirmRequired, emitActionResolved, emitManifest, replaySnapshot, clearSnapshot } from './panel-events';
 import { deriveGrant, checkAction, confirmSentence, effectOf, type Grant } from '../shared/grant';
@@ -134,22 +134,48 @@ async function triggerObservation() {
 
 /** The real planner call, extracted so the stub can stand in for it. */
 async function fetchPlan(
-  elements: unknown[],
-  pageIR: PageIR,
+  payload: OutboundPageIR,
 ): Promise<{ status: string; message: string; action: AgentAction }> {
+  // The backend's PageElement is keyed by `id`. Our scene graph is keyed by
+  // `ref` — for sensitive fields that is a random handle, and the mapping
+  // back to a live element never leaves this worker.
+  //
+  // Only the payload `buildOutbound` produced is sent. The raw PageIR is not
+  // spread in alongside it: doing so previously carried unredacted
+  // `text_snippets` past the no-leak assertion and onto the wire.
+  const outboundElements = payload.elements.map((e) => ({
+    id: e.ref,
+    role: e.role,
+    name: e.name,
+    input_type: e.input_type,
+    visible: true,
+    enabled: true,
+    bbox: e.bbox,
+  }));
+
   const response = await fetch(`${backendUrl}/agent/step`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       goal: currentGoal,
-      page_ir: { ...pageIR, elements },
+      page_ir: { ...payload, elements: outboundElements },
       session_id: sessionId,
     }),
   });
+
   if (!response.ok) {
     const errBody = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new Error(`Backend HTTP ${response.status}: ${errBody.detail ?? response.statusText}`);
+    // FastAPI returns validation errors as an array; flatten them so a 422
+    // says which field was rejected rather than "[object Object]".
+    const detail = Array.isArray(errBody.detail)
+      ? errBody.detail
+          .map((item: { loc?: unknown[]; msg?: string }) =>
+            `${item.loc?.join('.') ?? 'request'}: ${item.msg ?? 'invalid value'}`)
+          .join('; ')
+      : String(errBody.detail ?? response.statusText);
+    throw new Error(`Backend HTTP ${response.status}: ${detail}`);
   }
+
   return response.json();
 }
 
@@ -184,7 +210,7 @@ async function processPageIR(pageIR: PageIR){
   emitPhase('BUILDING_SCENE');
   let scene;
   try {
-    scene = buildOutbound(redacted);
+    scene = buildOutbound(redacted, pageIR);
   } catch (err: any) {
     isAgentRunning = false;
     emitError(err.message);
@@ -224,7 +250,7 @@ async function processPageIR(pageIR: PageIR){
 
     const data = stubOn
       ? stubPlan(stubStep++, scene.payload.elements)
-      : await fetchPlan(scene.payload.elements, pageIR);
+      : await fetchPlan(scene.payload);
 
     const action: AgentAction = data.action;
 
@@ -278,16 +304,7 @@ async function processPageIR(pageIR: PageIR){
 
     if (verdict.kind === 'confirm') {
       emitPhase('AWAITING_CONFIRMATION');
-      emitConfirmRequired({
-        sentence: confirmSentence(verdict.effect, currentOrigin),
-        origin: currentOrigin,
-        effect: verdict.effect,
-        targetRole: (action as { element_id?: string }).element_id ?? 'page',
-        targetRef: (action as { element_id?: string }).element_id ?? '—',
-      });
 
-      // Ask in the page, over the action it concerns. A popup unmounts on
-      // blur and would leave this waiting on a decision nobody saw.
       const request = {
         sentence: confirmSentence(verdict.effect, currentOrigin),
         origin: currentOrigin,
@@ -295,20 +312,42 @@ async function processPageIR(pageIR: PageIR){
         targetRole: (action as { element_id?: string }).element_id ?? 'page',
         targetRef: (action as { element_id?: string }).element_id ?? '—',
       };
+      emitConfirmRequired(request);
 
-      const inPage = activeTabId
-        ? await chrome.tabs
+      // Both surfaces ask: in the page, over the action it concerns, and in
+      // the panel — a popup unmounts on blur and would otherwise leave this
+      // waiting on a decision nobody saw.
+      //
+      // They race, and the first answer wins. `pendingResolve` is armed
+      // BEFORE the page is asked: it used to be assigned only after the
+      // in-page dialog had resolved, so every click on the panel's button
+      // landed on a null resolver and was silently dropped. The user was
+      // left clicking Authorise over and over at a dialog that did nothing.
+      const fromPanel = new Promise<'authorise' | 'refuse'>((resolve) => {
+        pendingResolve = resolve;
+      });
+
+      const NEVER = new Promise<'authorise' | 'refuse'>(() => {});
+      const fromPage = activeTabId
+        ? chrome.tabs
             .sendMessage(activeTabId, { type: 'MUDRA_CONFIRM', request })
-            .then((r: { decision?: 'authorise' | 'refuse' }) => r?.decision ?? null)
-            .catch(() => null)
-        : null;
+            .then((r: { decision?: 'authorise' | 'refuse' }) =>
+              // No decision means the page could not ask. Yield to the panel
+              // rather than resolving, or the race would settle on nothing.
+              r?.decision ?? NEVER)
+            .catch(() => NEVER)
+        : NEVER;
 
-      // Fall back to the popup only if the page could not ask.
-      const decision =
-        inPage ??
-        (await new Promise<'authorise' | 'refuse'>((resolve) => {
-          pendingResolve = resolve;
-        }));
+      const decision = await Promise.race([fromPanel, fromPage]);
+
+      // Decided. Disarm the resolver so a late second click cannot re-enter,
+      // and take down the dialog on whichever surface did not answer.
+      pendingResolve = null;
+      if (activeTabId) {
+        chrome.tabs
+          .sendMessage(activeTabId, { type: 'MUDRA_DISMISS_CONFIRM' })
+          .catch(() => {});
+      }
 
       if (decision === 'refuse') {
         emitActionResolved(verdict.effect, 'refused', 'Declined by the user.');

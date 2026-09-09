@@ -1,10 +1,10 @@
 import React from 'react';
+import { Lockup } from './Lockup';
 
 export const PanelHeader: React.FC<{ onReset: () => void; busy: boolean }> = ({ onReset, busy }) => (
   <header className="panel-header">
     <div className="brand">
-      <span className="brand-mark" aria-hidden="true" />
-      <span className="brand-name">Clio</span>
+      <Lockup height={28} />
     </div>
     <div className="header-actions">
       <button className="icon-btn" onClick={onReset} aria-label="Start over" disabled={busy}>

@@ -222,15 +222,17 @@ class TestAgentLoopElementValidation:
         mock_client.plan_next_action = AsyncMock(return_value=good_action)
 
         loop = AgentLoop(gemini_client=mock_client, max_retries=2)
-        el = _el("e1", "button", "Submit")
+        # The element reports a value that will never match what we type. An
+        # element with no value at all is *unverifiable*, not failed — a
+        # redacting client omits values by design — so the mismatch has to be
+        # observed for this to exercise the retry path.
+        el = _el("e1", "textbox", "Username", value="something_else")
         ir = _make_ir(elements=[el])
 
         # Step 1 — establishes last_ir
         await loop.step(goal="g", current_ir=ir)
 
-        # Steps 2-4 — verification always fails (element count unchanged, URL unchanged)
-        # For a click action the verifier passes unconditionally, so we force a
-        # failed type action instead.
+        # Steps 2-4 — verification always fails (observed value never matches)
         bad_action = TypeAction(action="type", element_id="e1", text="expected_value")
         mock_client.plan_next_action = AsyncMock(return_value=bad_action)
 
@@ -396,3 +398,106 @@ class TestRefusalPath:
 
         assert resp.status == "error"
         assert "e_absent" in resp.message
+
+
+# ---------------------------------------------------------------------------
+# Integration parity with the redacting extension client
+# ---------------------------------------------------------------------------
+
+class TestRedactedClientParity:
+    """The extension omits `value` and `selected_options` by design. The backend
+    must treat that as unverifiable rather than failed, or every form-fill task
+    burns its retry budget and aborts."""
+
+    def test_type_into_value_less_element_is_not_a_failure(self):
+        el = _el("e1", "textbox", "Username")  # no value: redacted client
+        ir = _make_ir(elements=[el])
+        action = TypeAction(action="type", element_id="e1", text="alice")
+        ok, msg = ActionVerifier.verify(action, ir, ir)
+        assert ok is True
+        assert "not verifiable" in msg
+
+    def test_type_still_fails_on_an_observed_mismatch(self):
+        el = _el("e1", "textbox", "Username", value="bob")
+        ir = _make_ir(elements=[el])
+        action = TypeAction(action="type", element_id="e1", text="alice")
+        ok, _ = ActionVerifier.verify(action, ir, ir)
+        assert ok is False
+
+    def test_select_without_options_is_not_a_failure(self):
+        el = _el("e1", "select", "Country")
+        ir = _make_ir(elements=[el])
+        action = SelectAction(action="select", element_id="e1", option="IN")
+        ok, msg = ActionVerifier.verify(action, ir, ir)
+        assert ok is True
+        assert "not verifiable" in msg
+
+    def test_ref_handles_are_accepted_as_element_ids(self):
+        """Element ids arriving from the extension are opaque ref_* handles."""
+        ir = _make_ir(elements=[_el("ref_9fa21c04", "textbox", "Password")])
+        assert ir.elements[0].id == "ref_9fa21c04"
+
+
+class TestSubmitVerb:
+    """`submit` is in the extension's action union, grant gate and executor. The
+    backend union has to carry it too or the verb is unreachable."""
+
+    def test_submit_action_validates(self):
+        action = AgentAction.model_validate({"action": "submit", "element_id": "e7"})
+        assert action.action == "submit"
+        assert action.element_id == "e7"
+
+    def test_submit_is_advertised_to_the_planner(self):
+        from app.agent.gemini_client import SYSTEM_INSTRUCTION
+        assert '"action": "submit"' in SYSTEM_INSTRUCTION
+
+    def test_submit_verifies_on_a_changed_page(self):
+        action = AgentAction.model_validate({"action": "submit", "element_id": "e1"})
+        before = _make_ir(elements=[_el("e1")], url="https://example.com/form")
+        after = _make_ir(elements=[_el("e1")], url="https://example.com/thanks")
+        ok, _ = ActionVerifier.verify(action, before, after)
+        assert ok is True
+
+    def test_unknown_action_is_rejected(self):
+        with pytest.raises(ValidationError):
+            AgentAction.model_validate({"action": "wire_funds", "element_id": "e1"})
+
+
+class TestManifestAttribution:
+    """Every planned step is recorded against the session that planned it."""
+
+    @pytest.mark.asyncio
+    async def test_manifest_records_the_real_session_id(self):
+        from app.manifest_store import manifest_store
+
+        mock_client = MagicMock()
+        mock_client.plan_next_action = AsyncMock(
+            return_value=ClickAction(action="click", element_id="ref_abc123")
+        )
+        loop = AgentLoop(gemini_client=mock_client)
+        ir = _make_ir(elements=[_el("ref_abc123", "button", "Continue")])
+
+        await loop.step(goal="g", current_ir=ir, session_id="sess-1234")
+
+        entries = manifest_store.list_entries(session_id="sess-1234")
+        assert entries, "step was not recorded against its session"
+        assert entries[-1].session_id == "sess-1234"
+        assert entries[-1].redacted_refs_count == 1
+
+
+class TestAuditViewerEscaping:
+    """The viewer renders extension-supplied strings. It must not be scriptable
+    by the pages it audits."""
+
+    def test_viewer_escapes_hostile_field_content(self):
+        client = TestClient(app)
+        client.post("/manifest/record", json={
+            "session_id": "sess-xss",
+            "target_url": "https://evil.test/<script>alert(1)</script>",
+            "action_type": "click",
+            "status": "allowed",
+            "redacted_refs_count": 0,
+        })
+        body = client.get("/manifests/viewer/html").text
+        assert "<script>alert(1)</script>" not in body
+        assert "&lt;script&gt;" in body

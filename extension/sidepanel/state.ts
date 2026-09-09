@@ -29,7 +29,12 @@ export function reducer(state: AgentState, e: AgentEvent): AgentState {
   switch (e.type) {
     case 'PAGE': return { ...state, page: e.page };
     case 'TASK_STARTED': return { ...initialState, page: state.page, task: e.task, phase: 'CAPTURING' };
-    case 'PHASE': return { ...state, phase: e.phase };
+    // Any phase other than the wait itself means the question is settled;
+    // drop the pending request so the dialog cannot be clicked twice.
+    case 'PHASE': return {
+      ...state, phase: e.phase,
+      pending: e.phase === 'AWAITING_CONFIRMATION' ? state.pending : null,
+    };
     case 'DETECTION': return { ...state, detection: e.detection };
     case 'REDACTION': return { ...state, redaction: e.redaction, fields: e.fields };
     case 'OUTBOUND': return { ...state, outbound: e.outbound };

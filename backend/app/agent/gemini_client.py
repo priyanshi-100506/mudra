@@ -17,7 +17,8 @@ RULES:
 4. Always scroll to reveal off-screen content before clicking or typing.
 5. After navigating, wait for the new page to load before acting further.
 6. When the goal is fully accomplished, emit the 'done' action with a clear human-readable summary.
-7. If the goal is impossible given the current page (e.g. login page without credential fields visible), emit 'done' explaining why.
+7. Use 'submit' rather than 'click' to commit a filled form. It is high-impact: the client will ask the user to confirm before it runs, and may refuse it.
+8. If the goal is impossible given the current page (e.g. login page without credential fields visible), emit 'done' explaining why.
 
 AVAILABLE ACTIONS (output exactly one per step):
 {"action": "click", "element_id": "<id from Page IR>"}
@@ -27,6 +28,7 @@ AVAILABLE ACTIONS (output exactly one per step):
 {"action": "navigate", "url": "<full absolute url>"}
 {"action": "wait", "duration_ms": <milliseconds 0-10000>}
 {"action": "extract", "element_id": "<id from Page IR>"}
+{"action": "submit", "element_id": "<id of the form or submit control>"}
 {"action": "done", "summary": "<explanation of what was accomplished or why it cannot be done>"}
 """
 

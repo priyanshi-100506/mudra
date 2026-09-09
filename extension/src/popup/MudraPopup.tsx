@@ -1,6 +1,7 @@
 import React, { useReducer, useState, useEffect, useCallback } from 'react';
 import { subscribe, startTask, sendDecision } from '../../sidepanel/bridge';
 import { ConfirmDialog } from './ConfirmDialog';
+import { Lockup } from '../../sidepanel/components/Lockup';
 import { reducer, initialState, isBusy, isTerminal, PHASE_LABEL } from '../../sidepanel/state';
 import type { RedactedField } from '../shared/agent-events';
 
@@ -70,9 +71,9 @@ export const MudraPopup: React.FC = () => {
     <div className="mudra-frame">
       <div className="mudra-topbar">
         <div className="mudra-id">
-          <span className="mudra-icon" aria-hidden="true" />
           <div>
-            <div className="mudra-name">Mudra</div>
+            {/* The lockup carries the wordmark, so no separate name label. */}
+            <Lockup height={30} className="mudra-lockup" />
             <p className="mudra-sub">{state.page?.origin ?? 'on-device perception'}</p>
           </div>
         </div>

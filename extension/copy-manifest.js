@@ -37,6 +37,17 @@ try {
       fs.copyFileSync(path.join(iconSrc, f), path.join(iconDest, f));
     }
   }
+  // Brand assets are referenced by chrome.runtime.getURL, so they live outside
+  // the Vite graph and are copied verbatim.
+  const assetSrc = path.join(__dirname, 'src', 'assets');
+  const assetDest = path.join(__dirname, 'dist', 'src', 'assets');
+  if (fs.existsSync(assetSrc)) {
+    fs.mkdirSync(assetDest, { recursive: true });
+    for (const f of fs.readdirSync(assetSrc)) {
+      fs.copyFileSync(path.join(assetSrc, f), path.join(assetDest, f));
+    }
+  }
+
   console.log('Manifest copied and updated successfully to dist/manifest.json');
 } catch (err) {
   console.error('Error copying manifest:', err);

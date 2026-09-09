@@ -390,3 +390,25 @@ export function redactCanvas(
   // ImageData — no embedded camera/GPS/IPTC metadata survives.
   return output;
 }
+
+/**
+ * Sanitises free-text snippets for egress.
+ *
+ * The service worker sends `text_snippets` alongside the scene graph so the
+ * planner has page context. Headings on an authenticated page routinely carry
+ * the user's name, account number or balance, so every snippet passes through
+ * the same detectors used for field values before it is allowed onto the wire.
+ *
+ * Unlike `redactPageIR` this returns no reference map: the caller is the egress
+ * path and has no need to resolve a snippet ref back to plaintext. The internal
+ * stores are cleared on the way out so no PII lifted out of page text lingers
+ * in service-worker memory after the payload is built.
+ */
+export function redactSnippets(snippets: string[]): string[] {
+  const scratch: Record<string, string> = {};
+  try {
+    return snippets.map((s) => redactString(s, scratch));
+  } finally {
+    resetStores();
+  }
+}
