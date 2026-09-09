@@ -163,7 +163,7 @@ body{width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
 }
 @keyframes mudra-fade{from{opacity:0}to{opacity:1}}
 .mudra-confirm{
-  width:100%;background:var(--paper);border:1px solid var(--ink);
+  width:100%;max-width:100%;background:var(--paper);border:1px solid var(--ink);
   border-radius:0;padding:22px;
 }
 .mudra-confirm-eyebrow{
@@ -179,12 +179,36 @@ body{width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
   display:flex;justify-content:space-between;align-items:baseline;gap:14px;
   padding:9px 0;border-bottom:1px solid var(--rule);
 }
+/* A flex item defaults to min-width:auto, so a long origin or task refuses to
+   shrink and pushes the whole dialog wider than the popup. */
+.mudra-kv dt{flex:none}
 .mudra-kv dt{
   font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--ink-3);margin:0;
 }
-.mudra-kv dd{margin:0;font-size:12.5px;text-align:right;word-break:break-all}
+.mudra-kv dd{
+  margin:0;font-size:12.5px;text-align:right;
+  min-width:0;flex:1 1 auto;overflow-wrap:anywhere;
+}
 .mudra-kv-mono{font-family:var(--mono);font-size:11px;color:var(--ink)}
+/* what the one authorisation covers — read before deciding, so it is set
+   as plain sentences rather than a key/value dump */
+.mudra-permits-head{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 9px;
+}
+.mudra-permits{
+  list-style:none;margin:0 0 22px;padding:0;
+  display:flex;flex-direction:column;gap:7px;
+}
+.mudra-permits li{
+  font-size:12.5px;line-height:1.45;color:var(--ink-2);
+  padding-left:16px;position:relative;
+}
+.mudra-permits li::before{
+  content:'';position:absolute;left:0;top:7px;
+  width:5px;height:5px;border-radius:50%;background:var(--ink-3);
+}
 .mudra-confirm-actions{display:flex;flex-direction:column;gap:8px}
 .mudra-confirm-actions .mudra-btn{width:100%}
 .mudra-confirm-foot{

@@ -61,6 +61,10 @@ export interface GrantRequest {
   effect: string;
   targetRole: string;
   targetRef: string;
+  /** What the authorisation covers, in plain language, for the dialog. */
+  permits?: string[];
+  /** How many times a high-impact effect may run under this grant. */
+  uses?: number;
 }
 
 export type AgentPhase =

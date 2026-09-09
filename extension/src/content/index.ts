@@ -36,20 +36,5 @@ chrome.runtime.onMessage.addListener((msg: { type?: string; targets?: HighlightT
   }
 });
 
-import { askConfirmation, dismissConfirmation, type ConfirmRequest } from './confirm-overlay';
 
-chrome.runtime.onMessage.addListener(
-  (msg: { type?: string; request?: ConfirmRequest }, _sender, sendResponse) => {
-    // The panel asks the same question at the same time. Whichever surface the
-    // user answers first wins, and the worker tells the other to stand down.
-    if (msg?.type === 'MUDRA_DISMISS_CONFIRM') {
-      dismissConfirmation();
-      return;
-    }
-    if (msg?.type !== 'MUDRA_CONFIRM') return;
-    askConfirmation(msg.request as ConfirmRequest).then((decision) =>
-      sendResponse({ decision }),
-    );
-    return true; // async
-  },
-);
+

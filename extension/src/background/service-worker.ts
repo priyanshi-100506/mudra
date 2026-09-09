@@ -4,7 +4,7 @@ import { AgentAction, PageIR } from '../shared/types';
 import { redactPageIR, buildOutbound, type OutboundPageIR } from '../shared/redact';
 import { emitPhase, emitError, emitDetection, emitRedaction, emitOutbound, emitActivePage,
          emitConfirmRequired, emitActionResolved, emitManifest, replaySnapshot, clearSnapshot } from './panel-events';
-import { deriveGrant, checkAction, confirmSentence, effectOf, type Grant } from '../shared/grant';
+import { deriveGrant, checkAction, taskSentence, grantSummary, effectOf, type Grant } from '../shared/grant';
 import { stubPlan, STUB_ENABLED_KEY } from './planner-stub';
 import { recordEgress, recordAction, readManifest, clearManifest } from './manifest';
 
@@ -75,11 +75,41 @@ async function handleMessage(message: ExtensionMessage | PanelCommand) {
       clearManifest();
       stubStep = 0;
       refusalCount = 0;
-      { let o = tab.url ?? '';
-        try { o = new URL(tab.url ?? '').origin; } catch { /* keep raw */ }
-        grant = deriveGrant(message.goal, o); }
-      notifyStatus('running', `Session ${sessionId.slice(0, 8)} started.`);
+      let origin = tab.url ?? '';
+      try { origin = new URL(tab.url ?? '').origin; } catch { /* keep raw */ }
+      grant = deriveGrant(message.goal, origin);
+
       await emitActivePage();
+
+      // One question, asked before anything is observed: the user sees the
+      // task, the origin and exactly what the grant permits, and decides once.
+      // Nothing is read from the page until they have.
+      emitPhase('AWAITING_CONFIRMATION');
+      emitConfirmRequired({
+        sentence: taskSentence(grant),
+        origin,
+        effect: grant.task,
+        targetRole: 'task',
+        targetRef: message.goal,
+        permits: grantSummary(grant),
+        uses: grant.maxUses,
+      });
+
+      const authorised = await new Promise<'authorise' | 'refuse'>((resolve) => {
+        pendingResolve = resolve;
+      });
+      pendingResolve = null;
+
+      if (authorised === 'refuse') {
+        isAgentRunning = false;
+        grant = null;
+        emitPhase('IDLE');
+        notifyStatus('idle', 'Task declined.');
+        break;
+      }
+
+      grant.authorised = true;
+      notifyStatus('running', `Session ${sessionId.slice(0, 8)} started.`);
       emitPhase('CAPTURING');
       await triggerObservation();
       break;
@@ -302,62 +332,10 @@ async function processPageIR(pageIR: PageIR){
       return;
     }
 
-    if (verdict.kind === 'confirm') {
-      emitPhase('AWAITING_CONFIRMATION');
-
-      const request = {
-        sentence: confirmSentence(verdict.effect, currentOrigin),
-        origin: currentOrigin,
-        effect: verdict.effect,
-        targetRole: (action as { element_id?: string }).element_id ?? 'page',
-        targetRef: (action as { element_id?: string }).element_id ?? '—',
-      };
-      emitConfirmRequired(request);
-
-      // Both surfaces ask: in the page, over the action it concerns, and in
-      // the panel — a popup unmounts on blur and would otherwise leave this
-      // waiting on a decision nobody saw.
-      //
-      // They race, and the first answer wins. `pendingResolve` is armed
-      // BEFORE the page is asked: it used to be assigned only after the
-      // in-page dialog had resolved, so every click on the panel's button
-      // landed on a null resolver and was silently dropped. The user was
-      // left clicking Authorise over and over at a dialog that did nothing.
-      const fromPanel = new Promise<'authorise' | 'refuse'>((resolve) => {
-        pendingResolve = resolve;
-      });
-
-      const NEVER = new Promise<'authorise' | 'refuse'>(() => {});
-      const fromPage = activeTabId
-        ? chrome.tabs
-            .sendMessage(activeTabId, { type: 'MUDRA_CONFIRM', request })
-            .then((r: { decision?: 'authorise' | 'refuse' }) =>
-              // No decision means the page could not ask. Yield to the panel
-              // rather than resolving, or the race would settle on nothing.
-              r?.decision ?? NEVER)
-            .catch(() => NEVER)
-        : NEVER;
-
-      const decision = await Promise.race([fromPanel, fromPage]);
-
-      // Decided. Disarm the resolver so a late second click cannot re-enter,
-      // and take down the dialog on whichever surface did not answer.
-      pendingResolve = null;
-      if (activeTabId) {
-        chrome.tabs
-          .sendMessage(activeTabId, { type: 'MUDRA_DISMISS_CONFIRM' })
-          .catch(() => {});
-      }
-
-      if (decision === 'refuse') {
-        emitActionResolved(verdict.effect, 'refused', 'Declined by the user.');
-        emitPhase('REFUSED');
-        notifyStatus('idle', 'Action declined.');
-        isAgentRunning = false;
-        return;
-      }
-      if (grant) grant.usesRemaining -= 1;
-    }
+    // No second question. The task was authorised before the page was read,
+    // and the gate above has already decided this action against that grant.
+    // A high-impact effect spends the grant's single use as it runs.
+    if (verdict.consumesUse && grant) grant.usesRemaining -= 1;
 
     emitPhase('EXECUTING');
 
