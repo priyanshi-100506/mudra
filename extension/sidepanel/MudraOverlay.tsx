@@ -69,7 +69,7 @@ export const MudraOverlay: React.FC<{ onClose: () => void }> = ({ onClose }) => 
         onMouseDown={(e) => e.stopPropagation()}>
         <div className="mudra-head">
           <div>
-            <Lockup height={26} className="mudra-brand-lockup" />
+            <Lockup variant="dark" height={26} className="mudra-brand-lockup" />
             <p className="mudra-tag">every value is sealed before it leaves.</p>
           </div>
           <button className="mudra-close" onClick={onClose} aria-label="Close">×</button>

@@ -1,12 +1,13 @@
 :root{
-  --bg:#FFFFFF; --panel:#FFFFFF; --panel-2:#F3F6FE; --line:#E1E8F8;
-  --ink:#0B1020; --ink-2:#4A5570; --ink-3:#8A93AC;
-  --blue:#2547D0; --blue-soft:#E7ECFD; --blue-press:#1B37A8;
+  --bg:#0A0630; --panel:rgba(255,255,255,.07); --panel-2:rgba(255,255,255,.12);
+  --line:rgba(255,255,255,.12);
+  --ink:#FFFFFF; --ink-2:#C3CDF5; --ink-3:#93A0DC;
+  --blue:#8AA0FF; --blue-soft:rgba(138,160,255,.16); --blue-press:#6D8BFF;
   --navy:#160B69; --navy-2:#2A1B8C;
-  --grad:linear-gradient(135deg,#160B69 0%,#2547D0 100%);
-  --ok:#1F6B4A; --stop:#A32B22;
-  --sh:0 1px 3px rgba(11,16,32,.05), 0 10px 30px rgba(11,16,32,.09);
-  --sh-sm:0 1px 4px rgba(11,16,32,.06);
+  --grad:linear-gradient(135deg,#3A5BE0 0%,#7C93F5 100%);
+  --ok:#5DE0A6; --stop:#FF8A8A;
+  --sh:0 1px 3px rgba(3,2,18,.30), 0 18px 44px rgba(3,2,18,.45);
+  --sh-sm:0 1px 4px rgba(3,2,18,.30);
   --mono:ui-monospace,'SF Mono',Menlo,monospace;
 }
 *{box-sizing:border-box}

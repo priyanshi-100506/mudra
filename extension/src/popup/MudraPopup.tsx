@@ -73,7 +73,7 @@ export const MudraPopup: React.FC = () => {
         <div className="mudra-id">
           <div>
             {/* The lockup carries the wordmark, so no separate name label. */}
-            <Lockup height={30} className="mudra-lockup" />
+            <Lockup variant="dark" height={30} className="mudra-lockup" />
             <p className="mudra-sub">{state.page?.origin ?? 'on-device perception'}</p>
           </div>
         </div>

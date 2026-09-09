@@ -1,9 +1,11 @@
 :root {
-  --bg:#F6F9FF; --card:#FFF; --inner:#F0F4FE; --inner-2:#E1E8F8;
-  --accent:#2547D0; --accent-press:#1B37A8; --accent-soft:#E7ECFD;
-  --text:#0B1020; --text-2:#4A5570; --text-3:#8A93AC; --dark:#160B69;
+  --bg:#0A0630; --card:rgba(255,255,255,.07); --inner:rgba(255,255,255,.06);
+  --inner-2:rgba(255,255,255,.12);
+  --accent:#8AA0FF; --accent-press:#6D8BFF; --accent-soft:rgba(138,160,255,.16);
+  --text:#FFFFFF; --text-2:#C3CDF5; --text-3:#93A0DC; --dark:#0A0630;
   --navy:#160B69;
-  --grad:linear-gradient(135deg,#160B69 0%,#2547D0 100%);
+  --ground:linear-gradient(158deg,#0A0630 0%,#160B69 48%,#24309B 100%);
+  --grad:linear-gradient(135deg,#3A5BE0 0%,#7C93F5 100%);
   --ok:#3F7D5B; --ok-bg:#E6F0EA;
   --warn:#A9741F; --warn-bg:#F7EFDC;
   --stop:#A8443C; --stop-bg:#F7E5E3;
@@ -15,7 +17,7 @@
   --mono:ui-monospace,'SF Mono',Menlo,monospace;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--ground);background-attachment:fixed;color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
 button{font-family:inherit;cursor:pointer}
 button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 

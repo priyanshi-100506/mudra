@@ -1,34 +1,40 @@
 :root{
-  --paper:#FFFFFF;
-  --paper-2:#F3F6FE;
-  --rule:#E4EAF9;
-  --rule-2:#C6D2EF;
-  --ink:#0B1020;
-  --ink-2:#4A5570;
-  --ink-3:#8A93AC;
-  --accent:#2547D0;
+  /* Glass on gradient: the ground is the brand gradient, surfaces are
+     translucent white lifted off it, and every rule is a light hairline at
+     low alpha rather than a drawn border. */
+  --ground:linear-gradient(158deg,#0A0630 0%,#160B69 48%,#24309B 100%);
+  --paper:rgba(255,255,255,.07);
+  --paper-2:rgba(255,255,255,.12);
+  --rule:rgba(255,255,255,.10);
+  --rule-2:rgba(255,255,255,.20);
+  --ink:#FFFFFF;
+  --ink-2:#C3CDF5;
+  --ink-3:#93A0DC;
+  --accent:#8AA0FF;
   --navy:#160B69;
-  --grad:linear-gradient(135deg,#160B69 0%,#2547D0 100%);
-  --ok:#1F6B4A;
-  --stop:#A32B22;
+  --grad:linear-gradient(135deg,#3A5BE0 0%,#7C93F5 100%);
+  --glow:0 6px 22px rgba(90,124,255,.42);
+  --ok:#5DE0A6;
+  --stop:#FF8A8A;
   --mono:'SF Mono',ui-monospace,Menlo,monospace;
   --sans:-apple-system,'Segoe UI',Helvetica,sans-serif;
 }
 
-html,body{background:var(--paper)}
+html,body{background:#0A0630}
 body{
   width:392px;font-family:var(--sans);font-size:13.5px;color:var(--ink);
+  background:var(--ground);background-attachment:fixed;
   /* Chrome sizes a popup to its content, so the window jumped every time the
      view changed. Pin it: one height, whatever is on screen. */
   min-height:560px;
 }
 
-.mudra-frame{margin:0;border-radius:0;border:none;background:var(--paper);box-shadow:none;overflow:visible;min-height:560px}
+.mudra-frame{margin:0;border-radius:0;border:none;background:transparent;box-shadow:none;overflow:visible;min-height:560px}
 .mudra-frame::before{display:none}
 
 /* ── header: quiet, wide-tracked, one rule ── */
 .mudra-topbar{
-  padding:18px 22px 15px;border-bottom:1px solid var(--rule-2);
+  padding:18px 22px 15px;border-bottom:1px solid var(--rule);
   background:transparent;align-items:flex-start;
 }
 .mudra-id{gap:0;display:block}
@@ -74,26 +80,36 @@ body{
 /* ── input: underline, not a box ── */
 .mudra-input{
   min-height:58px;border-radius:0;font-family:var(--sans);font-size:14.5px;
-  background:transparent;border:none;border-bottom:1px solid var(--rule-2);
-  color:var(--ink);padding:2px 0 10px;box-shadow:none;line-height:1.5;
-  transition:border-color 160ms ease;
+  background:rgba(255,255,255,.06);border:1px solid var(--rule);
+  border-radius:12px;color:var(--ink);padding:12px 14px;box-shadow:none;
+  line-height:1.5;transition:border-color 160ms ease,background 160ms ease;
 }
-.mudra-input:focus{background:transparent;border-bottom-color:var(--accent);box-shadow:none;outline:none}
+.mudra-input:focus{
+  background:rgba(255,255,255,.10);border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(138,160,255,.18);outline:none;
+}
 .mudra-input::placeholder{color:var(--ink-3)}
 
 .mudra-actions{margin-top:14px}
 .mudra-count{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:.08em}
 
 .mudra-btn{
-  border-radius:0;padding:13px 24px;font-family:var(--sans);
+  border-radius:12px;padding:14px 24px;font-family:var(--sans);
   font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
-  background:var(--grad);color:#fff;border:1px solid transparent;box-shadow:none;
+  background:var(--grad);color:#fff;border:1px solid rgba(255,255,255,.22);
+  box-shadow:var(--glow);
 }
-.mudra-btn:hover:not(:disabled){filter:brightness(1.12)}
+.mudra-btn:hover:not(:disabled){filter:brightness(1.10)}
 .mudra-btn:active:not(:disabled){transform:none;filter:brightness(.94)}
-.mudra-btn:disabled{opacity:1;background:transparent;color:var(--ink-3);border-color:var(--rule-2)}
-.mudra-btn-ghost{background:transparent;color:var(--accent);border-color:var(--rule-2);box-shadow:none}
-.mudra-btn-ghost:hover{background:var(--blue-soft,#E7ECFD);border-color:var(--accent)}
+.mudra-btn:disabled{
+  opacity:1;background:rgba(255,255,255,.05);color:var(--ink-3);
+  border-color:var(--rule);box-shadow:none;
+}
+.mudra-btn-ghost{
+  background:rgba(255,255,255,.05);color:var(--ink);
+  border-color:var(--rule-2);box-shadow:none;
+}
+.mudra-btn-ghost:hover{background:rgba(255,255,255,.12);border-color:var(--accent)}
 
 /* ── tabs ── */
 .mudra-tabs{
@@ -114,7 +130,7 @@ body{
   font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;
   text-transform:uppercase;color:var(--ink-2);border:none;
 }
-.mudra-dot{width:4px;height:4px;border-radius:0;background:var(--ink)}
+.mudra-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px rgba(138,160,255,.9)}
 
 /* ── reel: hairline rows, generous height ── */
 .mudra-reel{gap:0;margin:0}
@@ -134,7 +150,7 @@ body{
 
 /* ── boundary ── */
 .mudra-boundary{margin:26px 0 24px;gap:12px}
-.mudra-bline{border-top:1px solid var(--ink);opacity:1}
+.mudra-bline{border-top:1px solid var(--rule-2);opacity:1}
 .mudra-blabel{
   font-family:var(--mono);font-size:9px;font-weight:500;
   letter-spacing:.22em;text-transform:uppercase;color:var(--ink);
@@ -156,15 +172,16 @@ body{
 }
 
 .mudra-err{
-  border-radius:0;background:transparent;border:none;
+  border-radius:10px;background:rgba(255,138,138,.10);border:none;
   border-left:2px solid var(--stop);color:var(--stop);
-  font-family:var(--mono);font-size:11px;padding:2px 0 2px 14px;margin-top:22px;
+  font-family:var(--mono);font-size:11px;padding:10px 12px 10px 14px;margin-top:22px;
   letter-spacing:.02em;
 }
 
 /* ── confirmation ── */
 .mudra-scrim{
-  position:fixed;inset:0;z-index:20;background:rgba(11,16,32,.44);
+  position:fixed;inset:0;z-index:20;
+  background:rgba(5,3,24,.58);backdrop-filter:blur(3px);
   /* A Chrome popup is capped at 600px tall. Centring a dialog taller than
      that clipped it top and bottom against a fixed layer that cannot scroll,
      so the buttons were simply unreachable. Anchor to the top and let the
@@ -178,11 +195,12 @@ body{
 }
 @keyframes mudra-fade{from{opacity:0}to{opacity:1}}
 .mudra-confirm{
-  width:100%;max-width:100%;background:var(--paper);
-  border:1px solid var(--rule-2);border-top:3px solid transparent;
-  border-image:var(--grad) 1;
-  border-radius:0;padding:18px;
-  box-shadow:0 24px 60px rgba(11,16,32,.28);
+  width:100%;max-width:100%;
+  background:linear-gradient(160deg,rgba(255,255,255,.13),rgba(255,255,255,.06));
+  backdrop-filter:blur(20px) saturate(140%);
+  border:1px solid rgba(255,255,255,.20);
+  border-radius:18px;padding:20px;
+  box-shadow:0 28px 70px rgba(3,2,18,.55), inset 0 1px 0 rgba(255,255,255,.22);
 }
 .mudra-confirm-eyebrow{
   font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.22em;

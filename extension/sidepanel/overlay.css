@@ -1,10 +1,14 @@
 .mudra-root{
-  --cream:#FFFFFF; --cream-2:#F3F6FE; --cream-3:#E1E8F8;
-  --ink:#0B1020; --ink-2:#4A5570; --ink-3:#8A93AC;
-  --blue:#2547D0; --blue-soft:#E7ECFD; --blue-press:#1B37A8;
+  /* Glass on gradient, matching the popup: the card carries the brand
+     ground, its surfaces are translucent white lifted off it. */
+  --ground:linear-gradient(158deg,#0A0630 0%,#160B69 48%,#24309B 100%);
+  --cream:rgba(255,255,255,.08); --cream-2:rgba(255,255,255,.07); --cream-3:rgba(255,255,255,.16);
+  --ink:#FFFFFF; --ink-2:#C3CDF5; --ink-3:#93A0DC;
+  --blue:#8AA0FF; --blue-soft:rgba(138,160,255,.16); --blue-press:#6D8BFF;
   --navy:#160B69;
-  --grad:linear-gradient(135deg,#160B69 0%,#2547D0 100%);
-  --ok:#1F6B4A; --stop:#A32B22;
+  --grad:linear-gradient(135deg,#3A5BE0 0%,#7C93F5 100%);
+  --glow:0 6px 22px rgba(90,124,255,.42);
+  --ok:#5DE0A6; --stop:#FF8A8A;
   --r:20px; --r-in:14px; --r-ctrl:11px;
   --sh:0 2px 6px rgba(20,18,12,.05), 0 24px 60px rgba(20,18,12,.16);
   --mono:ui-monospace,'SF Mono',Menlo,monospace;
@@ -12,7 +16,7 @@
   display:flex; align-items:center; justify-content:center;
   font-family:'Outfit','Poppins',ui-rounded,-apple-system,sans-serif;
   font-size:14px; line-height:1.5; color:var(--ink);
-  background:rgba(20,18,12,.30); backdrop-filter:blur(2px);
+  background:rgba(5,3,24,.52); backdrop-filter:blur(3px);
   animation:mudra-fade 160ms ease;
 }
 @keyframes mudra-fade{from{opacity:0}to{opacity:1}}
@@ -20,8 +24,10 @@
 
 .mudra-card{
   width:460px; max-width:calc(100vw - 40px); max-height:calc(100vh - 80px);
-  overflow:auto; background:var(--cream); border-radius:var(--r);
-  box-shadow:var(--sh); padding:26px 28px;
+  overflow:auto; border-radius:var(--r); padding:26px 28px;
+  background:var(--ground);
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow:0 34px 90px rgba(3,2,18,.62), inset 0 1px 0 rgba(255,255,255,.20);
   animation:mudra-rise 240ms cubic-bezier(.2,.8,.3,1);
 }
 @keyframes mudra-rise{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
@@ -36,21 +42,21 @@
 
 .mudra-q{font-size:21px;font-weight:500;letter-spacing:-.015em;margin:0 0 12px}
 .mudra-input{width:100%;min-height:96px;resize:none;background:var(--cream-2);border:1px solid var(--cream-3);border-radius:var(--r-in);padding:13px 15px;font-family:inherit;font-size:14.5px;color:var(--ink);transition:border-color 140ms ease,background 140ms ease}
-.mudra-input:focus{outline:none;background:#FCFAF6;border-color:var(--blue)}
+.mudra-input:focus{outline:none;background:rgba(255,255,255,.12);border-color:var(--blue);box-shadow:0 0 0 3px rgba(138,160,255,.18)}
 .mudra-input::placeholder{color:var(--ink-3)}
 
 .mudra-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:10px}
 .mudra-count{font-size:12px;color:var(--ink-3);font-family:var(--mono)}
-.mudra-btn{border:none;border-radius:999px;background:var(--ink);color:var(--cream);padding:13px 30px;font-family:inherit;font-size:14.5px;font-weight:500;cursor:pointer;transition:background 140ms ease,transform 90ms ease}
-.mudra-btn:hover:not(:disabled){background:#000}
+.mudra-btn{border:1px solid rgba(255,255,255,.22);border-radius:999px;background:var(--grad);color:#fff;box-shadow:var(--glow);padding:13px 30px;font-family:inherit;font-size:14.5px;font-weight:500;cursor:pointer;transition:background 140ms ease,transform 90ms ease}
+.mudra-btn:hover:not(:disabled){filter:brightness(1.10)}
 .mudra-btn:active:not(:disabled){transform:scale(.98)}
 .mudra-btn:disabled{opacity:.3;cursor:not-allowed}
-.mudra-btn-ghost{background:none;color:var(--ink-2);border:1px solid var(--cream-3);padding:12px 22px}
-.mudra-btn-ghost:hover{background:var(--cream-2);color:var(--ink)}
+.mudra-btn-ghost{background:rgba(255,255,255,.05);color:var(--ink);border:1px solid var(--cream-3);padding:12px 22px;box-shadow:none}
+.mudra-btn-ghost:hover{background:rgba(255,255,255,.12);color:var(--ink)}
 .mudra-foot{font-size:12.5px;color:var(--ink-2);margin:14px 0 0}
 
 .mudra-status{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);background:var(--cream-2);border-radius:999px;padding:6px 14px}
-.mudra-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);flex:none;animation:mudra-pulse 1.3s ease-in-out infinite}
+.mudra-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px rgba(138,160,255,.9);flex:none;animation:mudra-pulse 1.3s ease-in-out infinite}
 @keyframes mudra-pulse{0%,100%{opacity:1}50%{opacity:.25}}
 
 .mudra-reel{display:flex;flex-direction:column;gap:6px;margin-top:16px}
