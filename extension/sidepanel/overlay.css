@@ -1,13 +1,13 @@
 .mudra-root{
   /* Glass on gradient, matching the popup: the card carries the brand
      ground, its surfaces are translucent white lifted off it. */
-  --ground:linear-gradient(158deg,#0A0630 0%,#160B69 48%,#24309B 100%);
+  --ground:linear-gradient(158deg,#082F49 0%,#0C4A6E 46%,#0369A1 100%);
   --cream:rgba(255,255,255,.08); --cream-2:rgba(255,255,255,.07); --cream-3:rgba(255,255,255,.16);
-  --ink:#FFFFFF; --ink-2:#C3CDF5; --ink-3:#93A0DC;
-  --blue:#8AA0FF; --blue-soft:rgba(138,160,255,.16); --blue-press:#6D8BFF;
+  --ink:#FFFFFF; --ink-2:#C9E9FA; --ink-3:#7FC0DE;
+  --blue:#38BDF8; --blue-soft:rgba(56,189,248,.16); --blue-press:#0EA5E9;
   --navy:#160B69;
-  --grad:linear-gradient(135deg,#3A5BE0 0%,#7C93F5 100%);
-  --glow:0 6px 22px rgba(90,124,255,.42);
+  --grad:linear-gradient(135deg,#0284C7 0%,#38BDF8 100%);
+  --glow:0 6px 22px rgba(56,189,248,.40);
   --ok:#5DE0A6; --stop:#FF8A8A;
   --r:20px; --r-in:14px; --r-ctrl:11px;
   --sh:0 2px 6px rgba(20,18,12,.05), 0 24px 60px rgba(20,18,12,.16);
@@ -16,7 +16,7 @@
   display:flex; align-items:center; justify-content:center;
   font-family:'Outfit','Poppins',ui-rounded,-apple-system,sans-serif;
   font-size:14px; line-height:1.5; color:var(--ink);
-  background:rgba(5,3,24,.52); backdrop-filter:blur(3px);
+  background:rgba(3,20,32,.54); backdrop-filter:blur(3px);
   animation:mudra-fade 160ms ease;
 }
 @keyframes mudra-fade{from{opacity:0}to{opacity:1}}
@@ -27,7 +27,7 @@
   overflow:auto; border-radius:var(--r); padding:26px 28px;
   background:var(--ground);
   border:1px solid rgba(255,255,255,.18);
-  box-shadow:0 34px 90px rgba(3,2,18,.62), inset 0 1px 0 rgba(255,255,255,.20);
+  box-shadow:0 34px 90px rgba(2,16,26,.62), inset 0 1px 0 rgba(255,255,255,.20);
   animation:mudra-rise 240ms cubic-bezier(.2,.8,.3,1);
 }
 @keyframes mudra-rise{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
@@ -42,7 +42,7 @@
 
 .mudra-q{font-size:21px;font-weight:500;letter-spacing:-.015em;margin:0 0 12px}
 .mudra-input{width:100%;min-height:96px;resize:none;background:var(--cream-2);border:1px solid var(--cream-3);border-radius:var(--r-in);padding:13px 15px;font-family:inherit;font-size:14.5px;color:var(--ink);transition:border-color 140ms ease,background 140ms ease}
-.mudra-input:focus{outline:none;background:rgba(255,255,255,.12);border-color:var(--blue);box-shadow:0 0 0 3px rgba(138,160,255,.18)}
+.mudra-input:focus{outline:none;background:rgba(255,255,255,.12);border-color:var(--blue);box-shadow:0 0 0 3px rgba(56,189,248,.18)}
 .mudra-input::placeholder{color:var(--ink-3)}
 
 .mudra-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:10px}
@@ -56,7 +56,7 @@
 .mudra-foot{font-size:12.5px;color:var(--ink-2);margin:14px 0 0}
 
 .mudra-status{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);background:var(--cream-2);border-radius:999px;padding:6px 14px}
-.mudra-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px rgba(138,160,255,.9);flex:none;animation:mudra-pulse 1.3s ease-in-out infinite}
+.mudra-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px rgba(56,189,248,.9);flex:none;animation:mudra-pulse 1.3s ease-in-out infinite}
 @keyframes mudra-pulse{0%,100%{opacity:1}50%{opacity:.25}}
 
 .mudra-reel{display:flex;flex-direction:column;gap:6px;margin-top:16px}

@@ -138,14 +138,14 @@ def manifest_viewer_html():
             body {{
                 font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 28px 24px 48px;
                 min-height: 100vh; color: #EAF0FF;
-                background: #0A0630;
-                background-image: linear-gradient(155deg, #0A0630 0%, #160B69 46%, #24309B 100%);
+                background: #082F49;
+                background-image: linear-gradient(158deg, #082F49 0%, #0C4A6E 46%, #0369A1 100%);
                 background-attachment: fixed;
             }}
             .masthead {{ display: flex; align-items: center; gap: 18px; margin: 0 0 26px; }}
             .lockup {{ height: 54px; width: auto; flex: none; }}
             h1 {{ color: #FFFFFF; margin: 0 0 5px; font-size: 21px; letter-spacing: -.01em; }}
-            .masthead p {{ margin: 0; color: #A9B6E8; font-size: 13px; }}
+            .masthead p {{ margin: 0; color: #C9E9FA; font-size: 13px; }}
             table {{
                 width: 100%; border-collapse: collapse; overflow: hidden;
                 background: rgba(255,255,255,.05); border-radius: 12px;
@@ -154,7 +154,7 @@ def manifest_viewer_html():
             }}
             th {{
                 background: rgba(255,255,255,.07); padding: 12px 14px; text-align: left;
-                font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #BCC7F2;
+                font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #BAE6FD;
                 font-weight: 600;
             }}
             td {{ font-size: 13px; }}
@@ -175,7 +175,7 @@ def manifest_viewer_html():
                 </tr>
             </thead>
             <tbody>
-                {rows if rows else '<tr><td colspan="7" style="padding: 22px; text-align: center; color: #A9B6E8;">No egress manifest entries recorded yet.</td></tr>'}
+                {rows if rows else '<tr><td colspan="7" style="padding: 22px; text-align: center; color: #C9E9FA;">No egress manifest entries recorded yet.</td></tr>'}
             </tbody>
         </table>
     </body>

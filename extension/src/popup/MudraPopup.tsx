@@ -147,8 +147,10 @@ export const MudraPopup: React.FC = () => {
               </div>
             )}
             {done && (
-              <div style={{ marginTop: 13 }}>
-                <button className="mudra-btn mudra-btn-ghost" onClick={reset}>New task</button>
+              <div className="mudra-done-actions">
+                {/* Once the run is over this is the only thing left to do, so
+                    it takes the primary treatment rather than the ghost. */}
+                <button className="mudra-btn" onClick={reset}>New task</button>
               </div>
             )}
           </>

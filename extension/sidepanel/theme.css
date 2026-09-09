@@ -1,11 +1,11 @@
 :root {
-  --bg:#0A0630; --card:rgba(255,255,255,.07); --inner:rgba(255,255,255,.06);
+  --bg:#082F49; --card:rgba(255,255,255,.07); --inner:rgba(255,255,255,.06);
   --inner-2:rgba(255,255,255,.12);
-  --accent:#8AA0FF; --accent-press:#6D8BFF; --accent-soft:rgba(138,160,255,.16);
-  --text:#FFFFFF; --text-2:#C3CDF5; --text-3:#93A0DC; --dark:#0A0630;
+  --accent:#38BDF8; --accent-press:#0EA5E9; --accent-soft:rgba(56,189,248,.16);
+  --text:#FFFFFF; --text-2:#C9E9FA; --text-3:#7FC0DE; --dark:#082F49;
   --navy:#160B69;
-  --ground:linear-gradient(158deg,#0A0630 0%,#160B69 48%,#24309B 100%);
-  --grad:linear-gradient(135deg,#3A5BE0 0%,#7C93F5 100%);
+  --ground:linear-gradient(158deg,#082F49 0%,#0C4A6E 46%,#0369A1 100%);
+  --grad:linear-gradient(135deg,#0284C7 0%,#38BDF8 100%);
   --ok:#3F7D5B; --ok-bg:#E6F0EA;
   --warn:#A9741F; --warn-bg:#F7EFDC;
   --stop:#A8443C; --stop-bg:#F7E5E3;

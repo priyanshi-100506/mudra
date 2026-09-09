@@ -31,8 +31,8 @@ FONT = "/System/Library/Fonts/Supplemental/Impact.ttf"
 WORD = "MUDRA"
 
 NAVY = "#160B69"
-GROUND_DARK = "#0E0840"
-KOLAM_DARK = "#8FA0E0"
+GROUND_DARK = "#08334F"
+KOLAM_DARK = "#7FD4F5"
 NAVY_DARK = "#FFFFFF"
 
 # Bounding box of the traced lowercase wordmark in the source art.
