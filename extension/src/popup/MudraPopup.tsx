@@ -1,5 +1,5 @@
 import React, { useReducer, useState, useEffect, useCallback } from 'react';
-import { subscribe, startTask, sendDecision } from '../../sidepanel/bridge';
+import { subscribe, startTask, sendDecision, stopTask } from '../../sidepanel/bridge';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Lockup } from '../../sidepanel/components/Lockup';
 import { reducer, initialState, isBusy, isTerminal, PHASE_LABEL } from '../../sidepanel/state';
@@ -56,7 +56,13 @@ export const MudraPopup: React.FC = () => {
       dispatch({ type: 'ERROR', message: 'Could not reach the agent worker.' }));
   }, [draft]);
 
-  const reset = () => { setDraft(''); setTab(TABS[0]); dispatch({ type: 'RESET' }); };
+  // Clearing this view is only half of it — the worker holds the run.
+  const reset = () => {
+    setDraft('');
+    setTab(TABS[0]);
+    dispatch({ type: 'RESET' });
+    void stopTask().catch(() => {});
+  };
 
   const decide = (decision: 'authorise' | 'refuse') => {
     void sendDecision(decision).catch(() =>
@@ -78,7 +84,7 @@ export const MudraPopup: React.FC = () => {
           </div>
         </div>
         <div className="mudra-tools">
-          <button className="mudra-tool" onClick={reset} aria-label="Start over" disabled={isBusy(state.phase)}>
+          <button className="mudra-tool" onClick={reset} aria-label="Start over" title="Start over">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
               strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 4v5h-5" />

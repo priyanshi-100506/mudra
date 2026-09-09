@@ -126,15 +126,42 @@ async function handleMessage(message: ExtensionMessage | PanelCommand) {
     }
 
     case 'STOP_TASK': {
+      // A full teardown, not just a flag. This used to leave the worker's
+      // snapshot, grant, ref map and manifest in place, so the panel cleared
+      // itself while the run carried on underneath and reopening the popup
+      // replayed the old task.
       isAgentRunning = false;
-      emitPhase('IDLE');
+
+      // A task parked on the authorisation dialog is awaiting this promise.
+      // Settle it, or START_TASK stays suspended for the life of the worker.
+      pendingResolve?.('refuse');
+      pendingResolve = null;
+
+      grant = null;
+      lastRefMap.clear();
+      clearManifest();
+      clearSnapshot();
+      stubStep = 0;
+      refusalCount = 0;
+      currentGoal = '';
+
+      if (activeTabId) {
+        chrome.tabs.sendMessage(activeTabId, { type: 'MUDRA_HIGHLIGHT_CLEAR' }).catch(() => {});
+      }
+
       // Reset backend session state
-      fetch(`${backendUrl}/agent/reset`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId }),
-      }).catch(() => {});
-      notifyStatus('idle', 'Task stopped by user.');
+      if (sessionId) {
+        fetch(`${backendUrl}/agent/reset`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId }),
+        }).catch(() => {});
+      }
+      sessionId = '';
+
+      emitPhase('IDLE');
+      void emitActivePage();
+      notifyStatus('idle', 'Ready.');
       break;
     }
 

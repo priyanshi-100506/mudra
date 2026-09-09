@@ -52,3 +52,8 @@ export function startTask(goal: string): Promise<unknown> {
 export function sendDecision(decision: 'authorise' | 'refuse'): Promise<unknown> {
   return sendPanelCommand({ type: 'PANEL_CONFIRM', decision });
 }
+
+/** Tears the run down in the worker, not just in this view. */
+export function stopTask(): Promise<unknown> {
+  return chrome.runtime.sendMessage({ type: 'STOP_TASK' });
+}
