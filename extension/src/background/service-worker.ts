@@ -40,10 +40,20 @@ chrome.storage.onChanged.addListener((changes) => {
 });
 
 chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendResponse) => {
-  handleMessage(message).catch((err) => {
+  // Acknowledge synchronously, then let the work run on its own.
+  //
+  // This used to return true — "a response is coming" — and never send one.
+  // START_TASK now awaits the user's authorisation and then the whole agent
+  // run, so the channel was held open for the length of the task; when the
+  // popup closed, Chrome tore it down and the sender saw "A listener
+  // indicated an asynchronous response by returning true, but the message
+  // channel closed before a response was received". No caller reads a reply
+  // here — progress arrives as AGENT_* events — so the ack is the response.
+  void handleMessage(message).catch((err) => {
     notifyStatus('error', `Unexpected error: ${err.message}`);
   });
-  return true; // keep channel open for async
+  sendResponse({ ok: true });
+  return false;
 });
 
 async function handleMessage(message: ExtensionMessage | PanelCommand) {

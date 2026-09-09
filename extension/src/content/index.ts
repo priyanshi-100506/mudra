@@ -13,9 +13,16 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
     });
     sendResponse({ success: true });
   } else if (message.type === 'EXECUTE_ACTION') {
-    executeAction(message.action).then((result) => {
-      sendResponse(result);
-    });
+    // Always answer, including on a throw: an unanswered channel surfaces to
+    // the sender as "the message channel closed before a response was
+    // received" rather than as the execution failure it actually is.
+    executeAction(message.action)
+      .then((result) => sendResponse(result))
+      .catch((err: unknown) =>
+        sendResponse({
+          success: false,
+          error: err instanceof Error ? err.message : String(err),
+        }));
     return true; // Asynchronous response signal
   }
 });
