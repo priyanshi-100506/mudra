@@ -10,6 +10,7 @@ export interface PageElement {
   role: string;
   name: string;
   input_type?: string | null;
+  autocomplete?: string | null;
   value?: string | null;
   checked?: boolean | null;
   selected_options?: string[] | null;
