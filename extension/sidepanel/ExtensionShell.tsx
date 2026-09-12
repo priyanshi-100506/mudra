@@ -1,23 +1,14 @@
 import React, { useReducer, useState, useCallback, useEffect } from 'react';
-import { subscribe, startTask, sendDecision } from './bridge';
-import { reducer, initialState, isBusy, isTerminal } from './state';
-import { Hero } from './components/Hero';
-import { PageContext } from './components/PageContext';
-import { AgentStatus } from './components/AgentStatus';
-import { RedactionReel } from './components/RedactionReel';
-import { OutboundPayload } from './components/OutboundPayload';
+import { subscribe, startTask, sendDecision, stopTask } from './bridge';
+import { reducer, initialState } from './state';
+import { LivePanel } from './components/LivePanel';
 import { ConfirmationDialog } from './components/ConfirmationDialog';
-import { AuditSummary } from './components/AuditSummary';
 import { ErrorState } from './components/ErrorState';
-import { PanelHeader } from './components/PanelHeader';
-import { PanelFooter } from './components/PanelFooter';
-import { TabSwitcher, Card, PrimaryButton } from './components/primitives';
-
-const TABS = ['Activity', 'Payload'] as const;
+import { Hero } from './components/Hero';
+import { PrimaryButton } from './components/primitives';
 
 export const ExtensionShell: React.FC = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const [tab, setTab] = useState<string>(TABS[0]);
   const [draft, setDraft] = useState('');
 
   useEffect(() => subscribe(dispatch), []);
@@ -30,9 +21,15 @@ export const ExtensionShell: React.FC = () => {
       dispatch({ type: 'ERROR', message: 'Could not reach the agent worker.' }));
   }, [draft]);
 
+  const reset = useCallback(() => {
+    setDraft('');
+    dispatch({ type: 'RESET' });
+    void stopTask().catch(() => {});
+  }, []);
+
   const resolve = (decision: 'authorise' | 'refuse') => {
     if (!state.pending) return;
-    dispatch({ type: 'PHASE', phase: decision === 'refuse' ? 'REFUSED' : 'EXECUTING' });
+    dispatch({ type: 'PHASE', phase: decision === 'refuse' ? 'REFUSED' : 'CAPTURING' });
     void sendDecision(decision).catch(() =>
       dispatch({ type: 'ERROR', message: 'Could not send your decision to the executor.' }));
   };
@@ -40,26 +37,19 @@ export const ExtensionShell: React.FC = () => {
   if (state.phase === 'ERROR') {
     return (
       <main className="shell">
-        <PanelHeader onReset={() => dispatch({ type: 'RESET' })} busy={false} />
-        <PageContext page={state.page} />
-        <ErrorState message={state.error ?? 'Unknown error.'} onRetry={() => dispatch({ type: 'RESET' })} />
+        <ErrorState message={state.error ?? 'Unknown error.'} onRetry={reset} />
       </main>
     );
   }
 
-  const idle = state.phase === 'IDLE';
-
-  return (
-    <main className="shell">
-      <PanelHeader onReset={() => { setDraft(''); dispatch({ type: 'RESET' }); }} busy={isBusy(state.phase)} />
-      {idle
-        ? <Hero origin={state.page?.origin ?? null} title={state.page?.title ?? null} />
-        : <PageContext page={state.page} />}
-
-      {!idle && <TabSwitcher tabs={TABS} active={tab} onChange={setTab} />}
-
-      {idle ? (
-        <Card>
+  // Before a run there is nothing to monitor, so the panel is not shown. The
+  // authorisation dialog belongs to this moment — before the page is read —
+  // and the shell cannot render it at any other point.
+  if (state.phase === 'IDLE' && !state.pending) {
+    return (
+      <main className="shell">
+        <Hero origin={state.page?.origin ?? null} title={state.page?.title ?? null} />
+        <div className="idle-task">
           <label className="h2" htmlFor="task">What should the agent do?</label>
           <input
             id="task"
@@ -72,24 +62,14 @@ export const ExtensionShell: React.FC = () => {
           <div style={{ marginTop: 10 }}>
             <PrimaryButton onClick={start} disabled={!draft.trim()}>Start task</PrimaryButton>
           </div>
-        </Card>
-      ) : tab === 'Activity' ? (
-        <>
-          <AgentStatus phase={state.phase} task={state.task} />
-          <RedactionReel fields={state.fields} outboundReady={state.outbound !== null} />
-          <AuditSummary audit={state.audit} />
-          {isTerminal(state.phase) && (
-            <Card>
-              <PrimaryButton onClick={() => { setDraft(''); dispatch({ type: 'RESET' }); }}>
-                New task
-              </PrimaryButton>
-            </Card>
-          )}
-        </>
-      ) : (
-        <OutboundPayload outbound={state.outbound} />
-      )}
+        </div>
+      </main>
+    );
+  }
 
+  return (
+    <main className="shell">
+      <LivePanel state={state} onReset={reset} />
       {state.pending && (
         <ConfirmationDialog
           pending={state.pending}
@@ -97,9 +77,6 @@ export const ExtensionShell: React.FC = () => {
           onRefuse={() => resolve('refuse')}
         />
       )}
-
-      <PanelFooter onTab={setTab} active={tab} show={!idle} />
-      <span className="sr-only" aria-live="polite">{isBusy(state.phase) ? 'Working' : 'Idle'}</span>
     </main>
   );
 };

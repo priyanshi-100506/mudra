@@ -15,6 +15,39 @@
   --sh-sm:0 1px 3px rgba(16,24,40,.06);
   --font:'Outfit','Poppins',ui-rounded,-apple-system,sans-serif;
   --mono:ui-monospace,'SF Mono',Menlo,monospace;
+
+  /* ── Live panel roles ──────────────────────────────────────────────────
+     The spec names nine roles. Each binds to this theme's sky-blue glass
+     palette rather than the reference's light palette; structure, spacing,
+     type and motion follow the spec exactly, colour does not.
+
+     The three that carry meaning must stay readable apart from across a
+     room: ok (zero / executed), sky (active / sealed), no (refused). On a
+     dark ground that means lifting all three well above the background
+     rather than reusing the muted --ok/--stop, which were mixed for light
+     chips and go muddy here. */
+  --p-bg:var(--bg);                        /* panel ground              */
+  --p-card:rgba(255,255,255,.07);          /* cards, fixed zones        */
+  --p-line:rgba(255,255,255,.13);          /* hairlines, borders        */
+
+  --p-ink:#FFFFFF;                         /* titles                    */
+  --p-ink2:var(--text-2);                  /* body text                 */
+  --p-ink3:var(--text-3);                  /* labels, timestamps        */
+
+  --p-sky:var(--accent);                   /* active state              */
+  --p-sky-d:#BAE6FD;                       /* code text on dark         */
+  --p-sky-l:rgba(56,189,248,.16);          /* seal chips, code bg       */
+
+  --p-ok:#5DE0A6;                          /* zero counter, executed    */
+  --p-ok-l:rgba(93,224,166,.15);
+
+  --p-no:#FF8A8A;                          /* refused                   */
+  --p-no-l:rgba(255,138,138,.14);
+  --p-no-line:rgba(255,138,138,.42);
+  --p-no-ink:#FFC2C2;                      /* refuse detail text        */
+
+  --p-idle:rgba(255,255,255,.22);          /* idle stage dot, connector */
+  --p-neutral:rgba(255,255,255,.08);       /* send chip                 */
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--ground);background-attachment:fixed;color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}

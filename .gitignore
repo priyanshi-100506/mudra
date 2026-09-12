@@ -5,3 +5,10 @@ __pycache__/
 *.pyc
 .env
 .vite/
+
+# Compiled output must never sit beside its TypeScript source. Vite emits to
+# dist/; a .js next to a .ts here is a stale build that will shadow the real
+# module. (extension/copy-manifest.js and *.config.js are genuine sources and
+# live outside these paths.)
+extension/src/**/*.js
+extension/sidepanel/**/*.js

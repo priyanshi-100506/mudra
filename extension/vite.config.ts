@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => {
         rollupOptions: {
           input: {
             popup: resolve(__dirname, 'index.html'),
+            sidepanel: resolve(__dirname, 'sidepanel/index.html'),
             background: resolve(__dirname, 'src/background/service-worker.ts'),
           },
           output: {

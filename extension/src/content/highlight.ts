@@ -4,6 +4,18 @@
  * only in the popup. Purely visual — it reads no values and mutates nothing.
  */
 
+/**
+ * The overlay lives in a shadow root on the host page, which cannot see the
+ * panel's theme.css. These mirror the --p-* role tokens defined there and are
+ * the single place this file names a colour; nothing below hardcodes one.
+ */
+const PALETTE = {
+  sky: '#38BDF8',
+  skyDim: 'rgba(56,189,248,.10)',
+  seal: '#082F49',
+  ink: '#FFFFFF',
+};
+
 const HOST_ID = 'mudra-highlight-host';
 let host: HTMLElement | null = null;
 let shadow: ShadowRoot | null = null;
@@ -18,31 +30,31 @@ const CSS = `
   }
   .box {
     position: absolute;
-    border: 1.5px solid #1B3AC4;
-    background: rgba(27,58,196,.07);
+    border: 1.5px solid ${PALETTE.sky};
+    background: ${PALETTE.skyDim};
     opacity: 0;
     transform: scale(.98);
     transition: opacity 180ms ease, transform 180ms cubic-bezier(.2,.8,.3,1);
   }
   .box.on { opacity: 1; transform: none; }
   .box.sealed {
-    background: #0A0A0B;
-    border-color: #0A0A0B;
+    background: ${PALETTE.seal};
+    border-color: ${PALETTE.seal};
     transition: background 220ms ease, border-color 220ms ease;
   }
   .tag {
     position: absolute; top: -19px; left: -1.5px;
     font: 500 9.5px/1 ui-monospace, 'SF Mono', Menlo, monospace;
     letter-spacing: .1em; text-transform: uppercase;
-    color: #fff; background: #1B3AC4;
+    color: ${PALETTE.ink}; background: ${PALETTE.sky};
     padding: 4px 6px; white-space: nowrap;
     opacity: 0; transition: opacity 200ms ease;
   }
-  .box.sealed .tag { opacity: 1; background: #0A0A0B; }
+  .box.sealed .tag { opacity: 1; background: ${PALETTE.seal}; }
   .scan {
     position: absolute; left: 0; right: 0; height: 1px;
-    background: #1B3AC4; opacity: .55;
-    box-shadow: 0 0 14px 2px rgba(27,58,196,.35);
+    background: ${PALETTE.sky}; opacity: .55;
+    box-shadow: 0 0 14px 2px ${PALETTE.skyDim};
   }
 `;
 
@@ -129,7 +141,11 @@ export function runRedactionOverlay(
     box.style.height = `${r.height + 4}px`;
   };
 
-  targets.forEach((t, i) => {
+  // Only sensitive fields are drawn. A field we deliberately left visible
+  // gets no overlay at all — the contrast between the two is the argument.
+  const sensitive = targets.filter((t) => t.sensitive);
+
+  sensitive.forEach((t, i) => {
     const el = resolve(t.elementId);
     if (!el) return;
     const r = el.getBoundingClientRect();
@@ -139,17 +155,19 @@ export function runRedactionOverlay(
     box.className = 'box';
     place(box, el);
 
-    if (t.sensitive) {
-      const tag = document.createElement('span');
-      tag.className = 'tag';
-      tag.textContent = t.ref;
-      box.appendChild(tag);
-    }
+    // The ref is shown on the page as well as in the panel, so the audience
+    // can see both surfaces naming the same handle.
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.textContent = t.ref;
+    box.appendChild(tag);
 
     root.appendChild(box);
-    boxes.push({ box, sensitive: t.sensitive, el });
+    boxes.push({ box, sensitive: true, el });
 
-    timers.push(window.setTimeout(() => box.classList.add('on'), 600 + i * 45));
+    // Staggered, so detection reads as something happening rather than one
+    // flash of everything at once.
+    timers.push(window.setTimeout(() => box.classList.add('on'), 600 + i * 60));
   });
 
   // then seal the sensitive ones in sequence
@@ -164,11 +182,27 @@ export function runRedactionOverlay(
     }, delay));
   });
 
-  const reposition = () => boxes.forEach(({ box, el }) => place(box, el));
-  window.addEventListener('scroll', reposition, { passive: true });
+  // Rects are viewport-relative, so every scroll and resize invalidates them.
+  // A seal that drifts under the page destroys the illusion instantly, and a
+  // seal recomputed per scroll event costs a layout read per event — so this
+  // coalesces to one repositioning pass per frame.
+  //
+  // getBoundingClientRect and a position:fixed layer are both in CSS pixels,
+  // so this is already correct under devicePixelRatio; no manual scaling.
+  let frame = 0;
+  const reposition = () => {
+    if (frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      boxes.forEach(({ box, el }) => place(box, el));
+    });
+  };
+  window.addEventListener('scroll', reposition, { passive: true, capture: true });
   window.addEventListener('resize', reposition, { passive: true });
   cleanupListeners = () => {
-    window.removeEventListener('scroll', reposition);
+    if (frame) cancelAnimationFrame(frame);
+    frame = 0;
+    window.removeEventListener('scroll', reposition, { capture: true } as EventListenerOptions);
     window.removeEventListener('resize', reposition);
   };
 

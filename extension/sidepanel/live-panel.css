@@ -1,0 +1,283 @@
+/**
+ * Live panel.
+ *
+ * Structure, spacing, type scale and motion follow the design spec exactly.
+ * Colour does not: every hue resolves to a --p-* role token defined in
+ * theme.css and bound to this project's sky-blue glass palette. There is no
+ * hex in this file.
+ */
+
+.lp {
+  width: 400px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 13px;
+  border: 1px solid var(--p-line);
+  background: var(--p-bg);
+  color: var(--p-ink2);
+  font-size: 12px;
+}
+
+/* ── Zone 1 · header ────────────────────────────────────────────────── */
+.lp-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 13px;
+  background: var(--p-card);
+  border-bottom: 1px solid var(--p-line);
+  flex: none;
+}
+.lp-mark {
+  width: 26px; height: 26px; border-radius: 8px;
+  background: linear-gradient(145deg, var(--p-sky), var(--accent-press));
+  display: flex; align-items: center; justify-content: center; flex: none;
+}
+.lp-word {
+  font-size: 13.5px; font-weight: 600; letter-spacing: .2px;
+  color: var(--p-ink); margin-right: auto;
+}
+.lp-live {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 700; letter-spacing: .8px;
+  color: var(--p-ok); background: var(--p-ok-l);
+  padding: 4px 8px; border-radius: 20px;
+}
+.lp-live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--p-ok); flex: none;
+  animation: lp-blip 1.1s infinite;
+}
+@keyframes lp-blip { 50% { opacity: .35; transform: scale(.75); } }
+
+/* ── Zone 2 · counters ──────────────────────────────────────────────── */
+/* The container's background shows through a 1px gap, so the dividers are
+   hairlines rather than borders that would double up at the seams. */
+.lp-counters {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  background: var(--p-line); flex: none;
+}
+.lp-cell { background: var(--p-card); padding: 12px 10px; text-align: center; }
+.lp-num {
+  font-family: var(--mono); font-size: 26px; font-weight: 600;
+  line-height: 1; color: var(--p-ink);
+}
+.lp-num.is-ok { color: var(--p-ok); }
+.lp-num.is-no { color: var(--p-no); }
+.lp-num.bump { animation: lp-bump .32s ease-out; }
+@keyframes lp-bump { 40% { transform: scale(1.28); color: var(--p-sky); } }
+.lp-clabel {
+  font-size: 9.5px; color: var(--p-ink3); margin-top: 5px;
+  line-height: 1.25; white-space: pre-line;
+}
+
+/* ── Zone 3 · stage rail ────────────────────────────────────────────── */
+.lp-rail {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  padding: 9px 13px; flex: none;
+}
+.lp-stage {
+  position: relative; display: flex; flex-direction: column;
+  align-items: center; gap: 5px;
+}
+.lp-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--p-idle); transition: background .25s, box-shadow .25s;
+}
+.lp-slabel {
+  font-size: 8.5px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .3px; color: var(--p-ink3); transition: color .25s;
+}
+.lp-stage.is-active .lp-dot {
+  background: var(--p-sky);
+  box-shadow: 0 0 0 4px var(--p-sky-l);
+}
+.lp-stage.is-active .lp-slabel { color: var(--p-sky); }
+.lp-stage.is-done .lp-dot { background: var(--p-ok); }
+.lp-stage.is-done .lp-slabel { color: var(--p-ok); }
+
+.lp-conn {
+  position: absolute; top: 4px; height: 1.5px;
+  right: calc(50% + 9px); left: calc(-50% + 9px);
+  background: var(--p-idle); transition: background .25s;
+}
+.lp-conn.is-done { background: var(--p-ok); }
+
+/* ── Zone 4 · feed header ───────────────────────────────────────────── */
+.lp-feedhead {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 9px 13px 6px; flex: none;
+}
+.lp-feedlabel {
+  font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .9px; color: var(--p-ink3);
+}
+.lp-clock {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0; color: var(--p-ink3);
+}
+
+/* ── Zone 5 · feed — the only scroller ──────────────────────────────── */
+.lp-feed {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  padding: 0 11px 11px;
+  overscroll-behavior: contain; scroll-behavior: smooth;
+}
+.lp-feed::-webkit-scrollbar { width: 7px; }
+.lp-feed::-webkit-scrollbar-thumb {
+  background: var(--p-line); border-radius: 4px;
+}
+.lp-empty { font-size: 11px; color: var(--p-ink3); padding: 6px 2px; margin: 0; }
+
+.lp-card {
+  display: flex; gap: 9px; padding: 9px 10px;
+  border-radius: 9px; border: 1px solid var(--p-line);
+  background: var(--p-card); margin-bottom: 6px;
+  animation: lp-in .28s ease-out;
+}
+/* Replayed history is real, but it already happened; animating it would
+   claim the run is progressing when the panel merely reopened. */
+.lp-card.is-replay { animation: none; }
+@keyframes lp-in { from { opacity: 0; transform: translateY(7px); } }
+
+.lp-chip {
+  width: 22px; height: 22px; border-radius: 6px; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center; flex: none;
+}
+.lp-card.is-seal   .lp-chip { background: var(--p-sky-l); color: var(--p-sky-d); }
+.lp-card.is-send   .lp-chip { background: var(--p-neutral); color: var(--p-ink2); }
+.lp-card.is-exec   .lp-chip { background: var(--p-ok-l); color: var(--p-ok); }
+.lp-card.is-refuse .lp-chip { background: var(--p-card); color: var(--p-no); }
+
+.lp-body { min-width: 0; flex: 1 1 auto; }
+.lp-title {
+  font-size: 12px; font-weight: 600; color: var(--p-ink);
+  line-height: 1.3; margin: 0;
+}
+.lp-detail {
+  font-size: 10.5px; color: var(--p-ink2);
+  line-height: 1.45; margin: 2px 0 0; overflow-wrap: anywhere;
+}
+.lp-detail code {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--p-sky-d); background: var(--p-sky-l);
+  padding: 1px 4px; border-radius: 3px;
+}
+.lp-time {
+  font-family: var(--mono); font-size: 9.5px; color: var(--p-ink3);
+  margin: 2px 0 0; text-align: right;
+}
+
+/* A refusal overrides the whole card. It is deliberately louder than
+   everything else on screen — it must register in peripheral vision. */
+.lp-card.is-refuse {
+  background: var(--p-no-l);
+  border-color: var(--p-no-line);
+  box-shadow: 0 2px 10px var(--p-no-l);
+}
+.lp-card.is-refuse .lp-title { color: var(--p-no); }
+.lp-card.is-refuse .lp-detail { color: var(--p-no-ink); }
+
+/* ── Zone 6 · footer ────────────────────────────────────────────────── */
+.lp-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 13px; background: var(--p-card);
+  border-top: 1px solid var(--p-line); flex: none;
+}
+.lp-footline {
+  font-size: 10.5px; color: var(--p-ink3); line-height: 1.35; margin: 0;
+}
+.lp-footline b {
+  font-family: var(--mono); font-weight: 600; color: var(--p-ok);
+}
+.lp-btn {
+  border: 1px solid var(--p-line); background: var(--p-card);
+  color: var(--p-ink2); border-radius: 7px; padding: 7px 12px;
+  font: 600 11.5px var(--font); cursor: pointer; flex: none;
+  transition: background .2s;
+}
+.lp-btn:hover { background: var(--p-bg); }
+
+/* ── reduced motion ─────────────────────────────────────────────────── */
+/* Colour state changes and auto-scroll stay: they carry meaning. Only the
+   decorative motion goes. */
+@media (prefers-reduced-motion: reduce) {
+  .lp-card { animation: none; }
+  .lp-num.bump { animation: none; }
+  .lp-live-dot { animation: none; }
+}
+
+/* ── authorisation dialog ───────────────────────────────────────────── */
+.cg-scrim {
+  position: fixed; inset: 0; z-index: 30;
+  background: rgba(3, 20, 32, .62);
+  backdrop-filter: blur(3px);
+  display: flex; align-items: safe center; justify-content: center;
+  padding: 14px; overflow-y: auto; overscroll-behavior: contain;
+}
+.cg-card {
+  width: 100%; max-width: 100%;
+  background: var(--p-card);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--p-line);
+  border-radius: 14px; padding: 18px;
+  box-shadow: 0 28px 70px rgba(2, 16, 26, .55);
+  outline: none;
+}
+.cg-eyebrow {
+  font-family: var(--mono); font-size: 9px; font-weight: 500;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--p-ink3); margin: 0 0 10px;
+}
+.cg-q {
+  font-size: 17.5px; font-weight: 500; line-height: 1.25;
+  letter-spacing: -.022em; color: var(--p-ink); margin: 0 0 16px;
+}
+.cg-kv { margin: 0 0 16px; border-top: 1px solid var(--p-line); }
+.cg-kv > div {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 14px; padding: 7px 0; border-bottom: 1px solid var(--p-line);
+}
+.cg-kv dt {
+  flex: none; margin: 0;
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--p-ink3);
+}
+.cg-kv dd {
+  margin: 0; min-width: 0; flex: 1 1 auto;
+  text-align: right; overflow-wrap: anywhere;
+}
+.cg-mono { font-family: var(--mono); font-size: 11px; color: var(--p-ink); }
+
+.cg-permits-head {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--p-ink3); margin: 0 0 7px;
+}
+.cg-permits { list-style: none; margin: 0 0 16px; padding: 0; }
+.cg-permits li {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 12.5px; line-height: 1.45; color: var(--p-ink2);
+  margin-bottom: 5px;
+}
+.cg-permits li svg { flex: none; margin-top: 3px; color: var(--p-ok); }
+
+/* Equal weight, deliberately. Neither is the default. */
+.cg-actions { display: flex; gap: 8px; }
+.cg-btn {
+  flex: 1 1 0; min-width: 0;
+  border: 1px solid var(--p-line); background: var(--p-neutral);
+  color: var(--p-ink); border-radius: 10px; padding: 12px 10px;
+  font: 600 11px var(--font); letter-spacing: .12em; text-transform: uppercase;
+  cursor: pointer; transition: background .14s, border-color .14s;
+}
+.cg-btn:hover { background: var(--p-sky-l); border-color: var(--p-sky); }
+.cg-btn:focus-visible { outline: 2px solid var(--p-sky); outline-offset: 2px; }
+.cg-foot {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .06em;
+  color: var(--p-ink3); margin: 14px 0 0; text-align: center;
+}
+
+/* ── idle task entry ────────────────────────────────────────────────── */
+.idle-task { padding: 18px 16px; }

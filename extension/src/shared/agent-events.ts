@@ -73,8 +73,15 @@ export type AgentPhase =
   | 'COMPLETE' | 'REFUSED' | 'ERROR';
 
 /** Emitted by the service worker; consumed by the side panel only. */
-export type AgentEventMessage =
+export type AgentEventBody =
   | { type: 'AGENT_PHASE'; phase: AgentPhase }
+  /**
+   * One observation pass. `elements` is every interactive element the
+   * perception layer described; `sensitive` is how many of those were sealed.
+   * The panel needs the total at observation time — every other event that
+   * carries it arrives later, after the payload is built.
+   */
+  | { type: 'AGENT_OBSERVED'; elements: number; sensitive: number }
   | { type: 'AGENT_PAGE'; origin: string; title: string }
   | { type: 'AGENT_DETECTION'; counts: DetectionCounts }
   | { type: 'AGENT_REDACTION'; counts: RedactionCounts; fields: RedactedField[] }
@@ -83,6 +90,22 @@ export type AgentEventMessage =
   | { type: 'AGENT_ACTION_RESOLVED'; effect: string; outcome: 'executed' | 'refused'; reason?: string }
   | { type: 'AGENT_ERROR'; message: string }
   | { type: 'AGENT_MANIFEST'; entries: ManifestLine[] };
+
+/**
+ * The envelope every emitted event carries.
+ *
+ * `seq` is monotonic for the worker's lifetime. The worker replays its
+ * history whenever a panel reconnects, so the panel dedupes on `seq` — that
+ * is what stops a replay double-counting the counters. `replay` marks those
+ * repeats so the panel can render them without entry animation, and `at` is
+ * stamped once at emit time so a replayed event still shows when it really
+ * happened rather than when it was replayed.
+ */
+export type AgentEventMessage = AgentEventBody & {
+  at?: string;
+  seq?: number;
+  replay?: boolean;
+};
 
 /** One readable line of the egress manifest. Never carries a value. */
 export interface ManifestLine {

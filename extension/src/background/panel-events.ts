@@ -1,5 +1,5 @@
 import type {
-  AgentEventMessage, AgentPhase, DetectionCounts, RedactionCounts,
+  AgentEventBody, AgentEventMessage, AgentPhase, DetectionCounts, RedactionCounts,
   OutboundSummary, RedactedField, GrantRequest, ManifestLine,
 } from '../shared/agent-events';
 
@@ -9,6 +9,14 @@ import type {
  * the UI is a view onto it.
  */
 const snapshot: AgentEventMessage[] = [];
+
+/**
+ * Monotonic for the worker's lifetime — deliberately not reset with the
+ * snapshot. A panel dedupes on this, and a counter that restarted could
+ * collide with an id the panel had already seen and silently swallow a real
+ * event.
+ */
+let seq = 0;
 
 /** Events that supersede an earlier one of the same type. */
 const REPLACES = new Set([
@@ -29,7 +37,10 @@ function remember(message: AgentEventMessage) {
   snapshot.push(message);
 }
 
-function emit(message: AgentEventMessage) {
+function emit(body: AgentEventBody) {
+  // Stamped once, here. A replayed event then reports when it happened
+  // rather than when it was replayed.
+  const message: AgentEventMessage = { ...body, at: new Date().toISOString(), seq: ++seq };
   remember(message);
   chrome.runtime.sendMessage(message).catch(() => {});
 }
@@ -37,7 +48,7 @@ function emit(message: AgentEventMessage) {
 /** Replayed in order when a popup sends PANEL_READY. */
 export function replaySnapshot() {
   for (const m of snapshot) {
-    chrome.runtime.sendMessage(m).catch(() => {});
+    chrome.runtime.sendMessage({ ...m, replay: true }).catch(() => {});
   }
 }
 
@@ -46,6 +57,10 @@ export function clearSnapshot() {
 }
 
 export const emitPhase = (phase: AgentPhase) => emit({ type: 'AGENT_PHASE', phase });
+
+/** One observation pass: how much was described, and how much was sealed. */
+export const emitObserved = (elements: number, sensitive: number) =>
+  emit({ type: 'AGENT_OBSERVED', elements, sensitive });
 export const emitError = (message: string) => emit({ type: 'AGENT_ERROR', message });
 export const emitDetection = (counts: DetectionCounts) => emit({ type: 'AGENT_DETECTION', counts });
 export const emitRedaction = (counts: RedactionCounts, fields: RedactedField[]) =>

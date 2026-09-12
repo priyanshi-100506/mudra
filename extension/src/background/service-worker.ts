@@ -2,7 +2,7 @@ import { ExtensionMessage } from '../shared/messaging';
 import type { PanelCommand } from '../shared/agent-events';
 import { AgentAction, PageIR } from '../shared/types';
 import { redactPageIR, buildOutbound, type OutboundPageIR } from '../shared/redact';
-import { emitPhase, emitError, emitDetection, emitRedaction, emitOutbound, emitActivePage,
+import { emitPhase, emitError, emitDetection, emitRedaction, emitOutbound, emitActivePage, emitObserved,
          emitConfirmRequired, emitActionResolved, emitManifest, replaySnapshot, clearSnapshot } from './panel-events';
 import { deriveGrant, checkAction, taskSentence, grantSummary, effectOf, type Grant } from '../shared/grant';
 import { stubPlan, STUB_ENABLED_KEY } from './planner-stub';
@@ -252,6 +252,10 @@ async function processPageIR(pageIR: PageIR){
   const t0 = performance.now();
   emitPhase('DETECTING');
   const redacted = redactPageIR(pageIR);
+  // The panel needs the totals at observation time: how much of the page was
+  // described, and how much of it was sealed. Everything else that carries a
+  // count arrives later, once the payload has been built.
+  emitObserved(redacted.elements.length, redacted.refMap.size);
   emitDetection(redacted.detection);
 
   emitPhase('REDACTING');
@@ -477,6 +481,10 @@ function notifyStatus(status: 'idle' | 'running' | 'completed' | 'error', messag
   }).catch(() => {});
 }
 
+
+// The action opens the side panel. The live panel is full height by design,
+// which a popup cannot be.
+chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: true }).catch(() => {});
 
 chrome.tabs.onActivated.addListener(() => { void emitActivePage(); });
 chrome.tabs.onUpdated.addListener((_id, info) => { if (info.status === 'complete') void emitActivePage(); });
