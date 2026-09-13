@@ -106,39 +106,39 @@
 }
 .lp-conn.is-done { background: var(--p-ok); }
 
-/* ── planner response window ────────────────────────────────────────── */
+/* ── planner output sheet ───────────────────────────────────────────── */
+/* Opened from the footer, sitting directly above it so the reply and the
+   refusal it provoked can be read together without either scrolling away. */
 .lp-plan {
-  flex: none; margin: 0 11px; border: 1px solid var(--p-line);
-  border-radius: 9px; background: var(--p-neutral); overflow: hidden;
+  flex: none; border-top: 1px solid var(--p-line);
+  background: var(--p-neutral); padding: 10px 13px 11px;
+  max-height: 46vh; overflow-y: auto;
+  animation: lp-rise .2s ease-out;
 }
-.lp-plan-head {
-  display: flex; align-items: baseline; gap: 8px; width: 100%;
-  padding: 8px 10px; background: none; border: none; cursor: pointer;
-  text-align: left; font-family: var(--font);
-}
+@keyframes lp-rise { from { opacity: 0; transform: translateY(6px); } }
+.lp-plan-head { display: flex; align-items: baseline; gap: 8px; }
 .lp-plan-label {
   font-family: var(--mono); font-size: 9px; font-weight: 600;
   letter-spacing: .18em; text-transform: uppercase; color: var(--p-ink3);
-  flex: none;
 }
 .lp-plan-tag {
   font-family: var(--mono); font-size: 8.5px; letter-spacing: .1em;
   text-transform: uppercase; color: var(--p-no);
-  background: var(--p-no-l); border-radius: 3px; padding: 1px 4px; flex: none;
+  background: var(--p-no-l); border-radius: 3px; padding: 1px 4px;
+}
+.lp-plan-status {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--p-sky); margin-left: auto;
 }
 .lp-plan-msg {
-  font-size: 10.5px; color: var(--p-ink2); flex: 1 1 auto; min-width: 0;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.lp-plan.is-open .lp-plan-msg { white-space: normal; overflow: visible; }
-.lp-plan-caret {
-  font-family: var(--mono); font-size: 12px; color: var(--p-ink3); flex: none;
+  font-size: 11.5px; line-height: 1.45; color: var(--p-ink);
+  margin: 7px 0 8px; overflow-wrap: anywhere;
 }
 .lp-plan-json {
   font-family: var(--mono); font-size: 10px; line-height: 1.5;
   color: var(--p-sky-d); background: var(--p-card);
   margin: 0; padding: 9px 10px; overflow-x: auto;
-  border-top: 1px solid var(--p-line); max-height: 150px; overflow-y: auto;
+  border: 1px solid var(--p-line); border-radius: 7px;
 }
 
 /* ── Zone 4 · feed header ───────────────────────────────────────────── */
@@ -229,10 +229,12 @@
 
 /* ── Zone 6 · footer ────────────────────────────────────────────────── */
 .lp-foot {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  display: flex; flex-direction: column; align-items: stretch; gap: 8px;
   padding: 10px 13px; background: var(--p-card);
   border-top: 1px solid var(--p-line); flex: none;
 }
+.lp-footrow { display: flex; gap: 8px; }
+.lp-footrow .lp-btn { flex: 1 1 0; min-width: 0; }
 .lp-footline {
   font-size: 10.5px; color: var(--p-ink3); line-height: 1.35; margin: 0;
 }
@@ -245,7 +247,8 @@
   font: 600 11.5px var(--font); cursor: pointer; flex: none;
   transition: background .2s;
 }
-.lp-btn:hover { background: var(--p-bg); }
+.lp-btn:hover:not(:disabled) { background: var(--p-bg); }
+.lp-btn:disabled { opacity: .45; cursor: not-allowed; }
 
 /* ── reduced motion ─────────────────────────────────────────────────── */
 /* Colour state changes and auto-scroll stay: they carry meaning. Only the

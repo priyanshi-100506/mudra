@@ -82,25 +82,17 @@ const Rail: React.FC<{ state: AgentState }> = ({ state }) => {
  * Collapsed by default so it cannot crowd the counters, which must stay
  * readable at any moment.
  */
-const PlanWindow: React.FC<{ plan: PlanReply | null }> = ({ plan }) => {
-  const [open, setOpen] = useState(false);
-  if (!plan) return null;
-
-  return (
-    <section className={`lp-plan${open ? ' is-open' : ''}`}>
-      <button className="lp-plan-head" onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}>
-        <span className="lp-plan-label">Planner</span>
-        {plan.stubbed && <span className="lp-plan-tag">stubbed</span>}
-        <span className="lp-plan-msg">{plan.message}</span>
-        <span className="lp-plan-caret" aria-hidden="true">{open ? '\u2212' : '+'}</span>
-      </button>
-      {open && (
-        <pre className="lp-plan-json">{plan.action}</pre>
-      )}
-    </section>
-  );
-};
+const PlanSheet: React.FC<{ plan: PlanReply }> = ({ plan }) => (
+  <section className="lp-plan" aria-label="Planner output">
+    <div className="lp-plan-head">
+      <span className="lp-plan-label">Planner output</span>
+      {plan.stubbed && <span className="lp-plan-tag">stubbed</span>}
+      <span className="lp-plan-status">{plan.status}</span>
+    </div>
+    <p className="lp-plan-msg">{plan.message}</p>
+    <pre className="lp-plan-json">{plan.action}</pre>
+  </section>
+);
 
 // ── Zone 5 · feed ──────────────────────────────────────────────────────────
 const Row: React.FC<{ item: FeedItem }> = ({ item }) => (
@@ -154,13 +146,15 @@ export const LivePanel: React.FC<{ state: AgentState; onReset: () => void }> = (
   const values = state.outbound?.piiValuesSent ?? 0;
   const pixels = state.outbound?.rawPixelsSent ?? 0;
 
+  // The planner's reply is one button away rather than always on screen, so
+  // it cannot crowd the counters — which have to stay readable at any moment.
+  const [showPlan, setShowPlan] = useState(false);
+
   return (
     <div className="lp">
       <Header />
       <Counters state={state} />
       <Rail state={state} />
-
-      <PlanWindow plan={state.plan} />
 
       <div className="lp-feedhead">
         <span className="lp-feedlabel">Live activity</span>
@@ -169,11 +163,23 @@ export const LivePanel: React.FC<{ state: AgentState; onReset: () => void }> = (
 
       <Feed items={state.feed} />
 
+      {showPlan && state.plan && <PlanSheet plan={state.plan} />}
+
       <footer className="lp-foot">
         <p className="lp-footline">
           <b>{values}</b> values and <b>{pixels}</b> raw pixels have left this device.
         </p>
-        <button className="lp-btn" onClick={onReset}>New task</button>
+        <div className="lp-footrow">
+          <button
+            className="lp-btn"
+            onClick={() => setShowPlan((v) => !v)}
+            disabled={!state.plan}
+            aria-expanded={showPlan}
+          >
+            {showPlan ? 'Hide output' : 'View output'}
+          </button>
+          <button className="lp-btn" onClick={onReset}>New task</button>
+        </div>
       </footer>
     </div>
   );
