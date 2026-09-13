@@ -74,6 +74,11 @@ export const emitActionResolved = (
   reason?: string,
 ) => emit({ type: 'AGENT_ACTION_RESOLVED', effect, outcome, reason });
 
+/** The planner's reply, verbatim, before the gate runs. */
+export const emitPlan = (
+  status: string, message: string, action: unknown, stubbed: boolean,
+) => emit({ type: 'AGENT_PLAN', status, message, action, stubbed });
+
 export const emitManifest = (entries: ManifestLine[]) =>
   emit({ type: 'AGENT_MANIFEST', entries });
 

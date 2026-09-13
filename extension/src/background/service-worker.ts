@@ -3,7 +3,7 @@ import type { PanelCommand } from '../shared/agent-events';
 import { AgentAction, PageIR } from '../shared/types';
 import { redactPageIR, buildOutbound, type OutboundPageIR } from '../shared/redact';
 import { emitPhase, emitError, emitDetection, emitRedaction, emitOutbound, emitActivePage, emitObserved,
-         emitConfirmRequired, emitActionResolved, emitManifest, replaySnapshot, clearSnapshot } from './panel-events';
+         emitConfirmRequired, emitActionResolved, emitManifest, emitPlan, replaySnapshot, clearSnapshot } from './panel-events';
 import { deriveGrant, checkAction, taskSentence, grantSummary, effectOf, type Grant } from '../shared/grant';
 import { stubPlan, STUB_ENABLED_KEY } from './planner-stub';
 import { recordEgress, recordAction, readManifest, clearManifest } from './manifest';
@@ -324,6 +324,10 @@ async function processPageIR(pageIR: PageIR){
       : await fetchPlan(scene.payload);
 
     const action: AgentAction = data.action;
+
+    // Report the reply before the gate sees it. If the gate then refuses,
+    // the panel shows both halves: what was asked for, and what happened.
+    emitPlan(data.status, data.message, data.action, stubOn);
 
     if (data.status === 'done') {
       isAgentRunning = false;

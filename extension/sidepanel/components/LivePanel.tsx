@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import type { AgentState, FeedItem, StageName, StageState } from '../types';
+import type { AgentState, FeedItem, PlanReply, StageName, StageState } from '../types';
 import { STAGES, stageStates } from '../state';
 import { Icon } from './icons';
 import { Lockup } from './Lockup';
@@ -70,6 +70,38 @@ const Rail: React.FC<{ state: AgentState }> = ({ state }) => {
   );
 };
 
+// ── planner response window ────────────────────────────────────────────────
+/**
+ * What the planner actually replied, before the gate ruled on it.
+ *
+ * Deliberately separate from the feed: the feed records what *happened*, this
+ * records what was *asked for*. When the two disagree — a proposal sits here
+ * while a refusal sits below — that gap is the argument the whole project is
+ * making, and it is only visible if both are on screen at once.
+ *
+ * Collapsed by default so it cannot crowd the counters, which must stay
+ * readable at any moment.
+ */
+const PlanWindow: React.FC<{ plan: PlanReply | null }> = ({ plan }) => {
+  const [open, setOpen] = useState(false);
+  if (!plan) return null;
+
+  return (
+    <section className={`lp-plan${open ? ' is-open' : ''}`}>
+      <button className="lp-plan-head" onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}>
+        <span className="lp-plan-label">Planner</span>
+        {plan.stubbed && <span className="lp-plan-tag">stubbed</span>}
+        <span className="lp-plan-msg">{plan.message}</span>
+        <span className="lp-plan-caret" aria-hidden="true">{open ? '\u2212' : '+'}</span>
+      </button>
+      {open && (
+        <pre className="lp-plan-json">{plan.action}</pre>
+      )}
+    </section>
+  );
+};
+
 // ── Zone 5 · feed ──────────────────────────────────────────────────────────
 const Row: React.FC<{ item: FeedItem }> = ({ item }) => (
   <article className={`lp-card is-${item.kind}${item.replay ? ' is-replay' : ''}`}>
@@ -127,6 +159,8 @@ export const LivePanel: React.FC<{ state: AgentState; onReset: () => void }> = (
       <Header />
       <Counters state={state} />
       <Rail state={state} />
+
+      <PlanWindow plan={state.plan} />
 
       <div className="lp-feedhead">
         <span className="lp-feedlabel">Live activity</span>

@@ -1,5 +1,5 @@
 import type {
-  AgentState, AgentPhase, EventMeta, FeedItem, StageName, StageState,
+  AgentState, AgentPhase, EventMeta, FeedItem, PlanReply, StageName, StageState,
 } from './types';
 import type { ManifestLine } from '../src/shared/agent-events';
 
@@ -9,7 +9,7 @@ export const FEED_CAP = 200;
 export const initialState: AgentState = {
   phase: 'IDLE', page: null, task: null, detection: null,
   redaction: null, fields: [], outbound: null, pending: null, audit: [], error: null,
-  feed: [], observed: null, seen: [], refused: 0,
+  feed: [], observed: null, seen: [], refused: 0, plan: null,
 };
 
 export type AgentEvent =
@@ -22,6 +22,7 @@ export type AgentEvent =
   | { type: 'OUTBOUND'; outbound: AgentState['outbound']; meta?: EventMeta }
   | { type: 'CONFIRM_REQUIRED'; pending: AgentState['pending']; meta?: EventMeta }
   | { type: 'ACTION_RESOLVED'; entry: AuditLike; meta?: EventMeta }
+  | { type: 'PLAN'; plan: PlanReply; meta?: EventMeta }
   | { type: 'MANIFEST'; entries: ManifestLine[]; meta?: EventMeta }
   | { type: 'COMPLETE'; meta?: EventMeta }
   | { type: 'ERROR'; message: string; meta?: EventMeta }
@@ -216,6 +217,13 @@ export function reducer(state: AgentState, e: AgentEvent): AgentState {
         feed: append(state, [row], e.meta),
         seen: mark(state, e.meta),
       };
+    }
+
+    case 'PLAN': {
+      // Replaces rather than appends: the window shows the current reply, and
+      // what became of each earlier one is already in the feed.
+      if (alreadySeen(state, e.meta)) return { ...state, plan: e.plan };
+      return { ...state, plan: e.plan, seen: mark(state, e.meta) };
     }
 
     case 'MANIFEST': {

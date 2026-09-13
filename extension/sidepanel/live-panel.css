@@ -106,6 +106,41 @@
 }
 .lp-conn.is-done { background: var(--p-ok); }
 
+/* ── planner response window ────────────────────────────────────────── */
+.lp-plan {
+  flex: none; margin: 0 11px; border: 1px solid var(--p-line);
+  border-radius: 9px; background: var(--p-neutral); overflow: hidden;
+}
+.lp-plan-head {
+  display: flex; align-items: baseline; gap: 8px; width: 100%;
+  padding: 8px 10px; background: none; border: none; cursor: pointer;
+  text-align: left; font-family: var(--font);
+}
+.lp-plan-label {
+  font-family: var(--mono); font-size: 9px; font-weight: 600;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--p-ink3);
+  flex: none;
+}
+.lp-plan-tag {
+  font-family: var(--mono); font-size: 8.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--p-no);
+  background: var(--p-no-l); border-radius: 3px; padding: 1px 4px; flex: none;
+}
+.lp-plan-msg {
+  font-size: 10.5px; color: var(--p-ink2); flex: 1 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lp-plan.is-open .lp-plan-msg { white-space: normal; overflow: visible; }
+.lp-plan-caret {
+  font-family: var(--mono); font-size: 12px; color: var(--p-ink3); flex: none;
+}
+.lp-plan-json {
+  font-family: var(--mono); font-size: 10px; line-height: 1.5;
+  color: var(--p-sky-d); background: var(--p-card);
+  margin: 0; padding: 9px 10px; overflow-x: auto;
+  border-top: 1px solid var(--p-line); max-height: 150px; overflow-y: auto;
+}
+
 /* ── Zone 4 · feed header ───────────────────────────────────────────── */
 .lp-feedhead {
   display: flex; align-items: baseline; justify-content: space-between;

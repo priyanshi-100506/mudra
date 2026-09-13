@@ -89,6 +89,13 @@ export type AgentEventBody =
   | { type: 'AGENT_CONFIRM_REQUIRED'; request: GrantRequest }
   | { type: 'AGENT_ACTION_RESOLVED'; effect: string; outcome: 'executed' | 'refused'; reason?: string }
   | { type: 'AGENT_ERROR'; message: string }
+  /**
+   * What the planner sent back, before the gate has had a say. Carried
+   * separately from AGENT_ACTION_RESOLVED because the two answer different
+   * questions: this is what was *proposed*, that is what was *allowed*. Seeing
+   * a proposal that never ran is the whole point of showing it.
+   */
+  | { type: 'AGENT_PLAN'; status: string; message: string; action: unknown; stubbed: boolean }
   | { type: 'AGENT_MANIFEST'; entries: ManifestLine[] };
 
 /**

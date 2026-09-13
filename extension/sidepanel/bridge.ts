@@ -39,6 +39,18 @@ export function toAgentEvent(msg: AgentEventMessage): AgentEvent | null {
           reason: msg.reason,
         },
       };
+    case 'AGENT_PLAN':
+      return {
+        type: 'PLAN',
+        plan: {
+          status: msg.status,
+          message: msg.message,
+          action: JSON.stringify(msg.action, null, 2),
+          stubbed: msg.stubbed,
+          at: msg.at ?? new Date().toISOString(),
+        },
+        meta,
+      };
     case 'AGENT_MANIFEST':
       return { type: 'MANIFEST', entries: msg.entries, meta };
     case 'AGENT_ERROR':

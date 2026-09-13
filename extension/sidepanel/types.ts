@@ -65,6 +65,19 @@ export interface AgentState {
   seen: number[];
   /** Monotonic: how many actions the gate has refused this run. */
   refused: number;
+  /** The planner's most recent reply, shown in the response window. */
+  plan: PlanReply | null;
+}
+
+/** The planner's last reply, as received. */
+export interface PlanReply {
+  status: string;
+  message: string;
+  /** Pretty-printed JSON of the action the planner proposed. */
+  action: string;
+  /** True when the scripted stand-in produced it, not the model. */
+  stubbed: boolean;
+  at: string;
 }
 
 /** Event envelope carried alongside every worker event. */
