@@ -139,6 +139,153 @@
     color-mix(in srgb, var(--p-ok) 55%, transparent), var(--p-ok));
 }
 
+/* ── answer view ────────────────────────────────────────────────────── */
+.lp-back {
+  width: 28px; height: 28px; border-radius: 9px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg,
+    color-mix(in srgb, var(--p-card) 100%, transparent),
+    color-mix(in srgb, var(--p-card) 55%, transparent));
+  border: 1px solid var(--p-line); color: var(--p-ink);
+  font-size: 14px; line-height: 1; cursor: pointer;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--p-hi) 12%, transparent);
+  transition: background .2s ease, border-color .2s ease;
+}
+.lp-back:hover { background: var(--p-sky-l); border-color: var(--p-sky); }
+.lp-answer-tag {
+  font-family: var(--mono); font-size: 9px; font-weight: 600;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--p-ink3);
+}
+
+.lp-thread {
+  position: relative; flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  padding: 18px 14px 8px; overscroll-behavior: contain; scroll-behavior: smooth;
+}
+.lp-thread::-webkit-scrollbar { width: 7px; }
+.lp-thread::-webkit-scrollbar-thumb { background: var(--p-line); border-radius: 4px; }
+
+/* Something for the glass to refract. A blurred surface with nothing behind
+   it just reads as flat grey. */
+.lp-glow {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  filter: blur(46px); opacity: .5; z-index: 0;
+}
+.lp-glow-a {
+  width: 210px; height: 210px; top: -40px; right: -60px;
+  background: color-mix(in srgb, var(--p-sky) 55%, transparent);
+}
+.lp-glow-b {
+  width: 180px; height: 180px; bottom: 40px; left: -70px;
+  background: color-mix(in srgb, var(--p-ok) 34%, transparent);
+}
+
+.lp-turn {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; gap: 5px;
+  margin-bottom: 16px; animation: lp-turn-in .3s cubic-bezier(.2,.8,.3,1);
+}
+@keyframes lp-turn-in { from { opacity: 0; transform: translateY(8px); } }
+.lp-turn.is-you { align-items: flex-end; }
+.lp-turn-who {
+  font-family: var(--mono); font-size: 8px; font-weight: 600;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--p-ink3);
+  padding: 0 4px;
+}
+
+.lp-bubble {
+  max-width: 88%; padding: 12px 14px;
+  font-size: 12.5px; line-height: 1.6; color: var(--p-ink);
+  overflow-wrap: anywhere;
+  border: 1px solid var(--p-line);
+  backdrop-filter: blur(18px) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--p-hi) 15%, transparent),
+    0 8px 26px color-mix(in srgb, var(--p-shade) 24%, transparent);
+}
+/* The tucked corner points back at its author, so the thread reads even
+   without the labels. */
+.lp-turn.is-mudra .lp-bubble {
+  border-radius: 16px 16px 16px 5px;
+  background: linear-gradient(160deg,
+    color-mix(in srgb, var(--p-hi) 13%, transparent),
+    color-mix(in srgb, var(--p-hi) 5%, transparent));
+}
+.lp-turn.is-you .lp-bubble {
+  border-radius: 16px 16px 5px 16px;
+  border-color: color-mix(in srgb, var(--p-sky) 34%, transparent);
+  background: linear-gradient(160deg,
+    color-mix(in srgb, var(--p-sky) 26%, transparent),
+    color-mix(in srgb, var(--p-sky) 11%, transparent));
+}
+
+.lp-typing { display: inline-flex; gap: 5px; align-items: center; padding: 14px; }
+.lp-typing i {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--p-ink3);
+  animation: lp-dot 1.2s ease-in-out infinite;
+}
+.lp-typing i:nth-child(2) { animation-delay: .16s; }
+.lp-typing i:nth-child(3) { animation-delay: .32s; }
+@keyframes lp-dot {
+  0%, 60%, 100% { opacity: .3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+
+.lp-thread-err {
+  position: relative; z-index: 1;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .06em;
+  color: var(--p-no); margin: 0 0 10px;
+}
+
+.lp-ask { flex: none; padding: 10px 14px 14px; background: transparent; }
+.lp-composer {
+  display: flex; align-items: flex-end; gap: 8px;
+  padding: 7px 7px 7px 14px; border-radius: 20px;
+  border: 1px solid var(--p-line);
+  background: linear-gradient(160deg,
+    color-mix(in srgb, var(--p-hi) 12%, transparent),
+    color-mix(in srgb, var(--p-hi) 5%, transparent));
+  backdrop-filter: blur(20px) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--p-hi) 16%, transparent),
+    0 10px 30px color-mix(in srgb, var(--p-shade) 30%, transparent);
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.lp-composer:focus-within {
+  border-color: color-mix(in srgb, var(--p-sky) 55%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--p-hi) 16%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--p-sky) 16%, transparent),
+    0 10px 30px color-mix(in srgb, var(--p-shade) 30%, transparent);
+}
+.lp-ask-input {
+  flex: 1 1 auto; min-width: 0; resize: none; border: none;
+  background: transparent; padding: 7px 0; max-height: 88px;
+  font-family: var(--font); font-size: 12.5px; line-height: 1.5;
+  color: var(--p-ink);
+}
+.lp-ask-input:focus { outline: none; }
+.lp-ask-input::placeholder { color: var(--p-ink3); }
+
+.lp-send {
+  flex: none; width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--p-hi) 22%, transparent);
+  background: var(--grad); color: var(--p-on-accent); cursor: pointer;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--p-sky) 45%, transparent);
+  transition: filter .15s ease, transform .12s ease;
+}
+.lp-send:hover:not(:disabled) { filter: brightness(1.12); }
+.lp-send:active:not(:disabled) { transform: scale(.94); }
+.lp-send:disabled {
+  background: var(--p-neutral); color: var(--p-ink3);
+  border-color: var(--p-line); box-shadow: none; cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-turn { animation: none; }
+  .lp-typing i { animation: none; }
+}
+
 /* ── Zone 4 · feed header ───────────────────────────────────────────── */
 .lp-feedhead {
   display: flex; align-items: baseline; justify-content: space-between;

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { AgentState } from '../types';
 import { sendChat } from '../bridge';
 import { Lockup } from './Lockup';
+import { Icon } from './icons';
 
 interface Turn { role: 'you' | 'mudra'; text: string }
 
@@ -110,29 +111,50 @@ export const AnswerView: React.FC<{ state: AgentState; onBack: () => void }> = (
       </header>
 
       <div className="lp-thread" ref={thread}>
+        {/* Two soft lights behind the glass. A blurred surface with nothing
+            behind it just reads as flat grey. */}
+        <span className="lp-glow lp-glow-a" aria-hidden="true" />
+        <span className="lp-glow lp-glow-b" aria-hidden="true" />
+
         {turns.map((t, i) => (
           <div key={i} className={`lp-turn is-${t.role}`}>
             <span className="lp-turn-who">{t.role === 'you' ? 'You' : 'Mudra'}</span>
-            <p className="lp-turn-text">{t.text}</p>
+            <div className="lp-bubble">{t.text}</div>
           </div>
         ))}
-        {busy && <p className="lp-thinking">Thinking…</p>}
+
+        {busy && (
+          <div className="lp-turn is-mudra">
+            <span className="lp-turn-who">Mudra</span>
+            <div className="lp-bubble lp-typing" aria-label="Thinking">
+              <i /><i /><i />
+            </div>
+          </div>
+        )}
         {error && <p className="lp-thread-err">{error}</p>}
       </div>
 
       <footer className="lp-ask">
-        <textarea
-          className="lp-ask-input"
-          value={draft}
-          rows={2}
-          placeholder="Ask about this run…"
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(draft.trim()); }
-          }}
-        />
-        <button className="lp-btn" onClick={() => void ask(draft.trim())}
-          disabled={busy || !draft.trim()}>Send</button>
+        <div className="lp-composer">
+          <textarea
+            className="lp-ask-input"
+            value={draft}
+            rows={1}
+            placeholder="Ask about this run…"
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void ask(draft.trim()); }
+            }}
+          />
+          <button
+            className="lp-send"
+            onClick={() => void ask(draft.trim())}
+            disabled={busy || !draft.trim()}
+            aria-label="Send"
+          >
+            <Icon name="up" size={14} />
+          </button>
+        </div>
       </footer>
     </div>
   );
