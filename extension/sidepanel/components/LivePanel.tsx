@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import type { AgentState, FeedItem, PlanReply, StageName, StageState } from '../types';
+import type { AgentState, FeedItem, StageName, StageState } from '../types';
 import { STAGES, stageStates } from '../state';
 import { Icon } from './icons';
 import { Lockup } from './Lockup';
@@ -82,18 +82,6 @@ const Rail: React.FC<{ state: AgentState }> = ({ state }) => {
  * Collapsed by default so it cannot crowd the counters, which must stay
  * readable at any moment.
  */
-const PlanSheet: React.FC<{ plan: PlanReply }> = ({ plan }) => (
-  <section className="lp-plan" aria-label="Planner output">
-    <div className="lp-plan-head">
-      <span className="lp-plan-label">Planner output</span>
-      {plan.stubbed && <span className="lp-plan-tag">stubbed</span>}
-      <span className="lp-plan-status">{plan.status}</span>
-    </div>
-    <p className="lp-plan-msg">{plan.message}</p>
-    <pre className="lp-plan-json">{plan.action}</pre>
-  </section>
-);
-
 // ── Zone 5 · feed ──────────────────────────────────────────────────────────
 const Row: React.FC<{ item: FeedItem }> = ({ item }) => (
   <article className={`lp-card is-${item.kind}${item.replay ? ' is-replay' : ''}`}>
@@ -133,9 +121,11 @@ const Feed: React.FC<{ items: FeedItem[] }> = ({ items }) => {
 };
 
 // ── the panel ──────────────────────────────────────────────────────────────
-export const LivePanel: React.FC<{ state: AgentState; onReset: () => void }> = ({
-  state, onReset,
-}) => {
+export const LivePanel: React.FC<{
+  state: AgentState;
+  onReset: () => void;
+  onOpenAnswer: () => void;
+}> = ({ state, onReset, onOpenAnswer }) => {
   const [now, setNow] = useState(() => new Date().toLocaleTimeString('en-GB', { hour12: false }));
   useEffect(() => {
     const t = window.setInterval(
@@ -146,9 +136,7 @@ export const LivePanel: React.FC<{ state: AgentState; onReset: () => void }> = (
   const values = state.outbound?.piiValuesSent ?? 0;
   const pixels = state.outbound?.rawPixelsSent ?? 0;
 
-  // The planner's reply is one button away rather than always on screen, so
-  // it cannot crowd the counters — which have to stay readable at any moment.
-  const [showPlan, setShowPlan] = useState(false);
+
 
   return (
     <div className="lp">
@@ -163,21 +151,12 @@ export const LivePanel: React.FC<{ state: AgentState; onReset: () => void }> = (
 
       <Feed items={state.feed} />
 
-      {showPlan && state.plan && <PlanSheet plan={state.plan} />}
-
       <footer className="lp-foot">
         <p className="lp-footline">
           <b>{values}</b> values and <b>{pixels}</b> raw pixels have left this device.
         </p>
         <div className="lp-footrow">
-          <button
-            className="lp-btn"
-            onClick={() => setShowPlan((v) => !v)}
-            disabled={!state.plan}
-            aria-expanded={showPlan}
-          >
-            {showPlan ? 'Hide output' : 'View output'}
-          </button>
+          <button className="lp-btn" onClick={onOpenAnswer}>View output</button>
           <button className="lp-btn" onClick={onReset}>New task</button>
         </div>
       </footer>

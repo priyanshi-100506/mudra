@@ -1,10 +1,11 @@
 import html as _html
+from typing import Optional, List
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.agent.gemini_client import GeminiAgentClient
 from app.agent.loop import AgentLoop, LoopStepResponse
@@ -58,6 +59,25 @@ class ResetRequest(BaseModel):
     session_id: str = "default"
 
 
+class ChatRequest(BaseModel):
+    session_id: str = "default"
+    message: str = Field(max_length=2000)
+    """Redacted context only: the goal, and labels/refs the planner already
+    saw. Never values — the extension has none to send, and this endpoint must
+    not become the one place they could arrive."""
+    goal: Optional[str] = None
+    context: Optional[str] = Field(default=None, max_length=8000)
+
+
+class ChatReply(BaseModel):
+    reply: str
+    turns: int
+
+
+# Per-session conversation, separate from the action loop's history.
+_chats: dict[str, list[dict[str, str]]] = {}
+
+
 @app.get("/health")
 def health_check():
     return {"status": "ok", "gemini_configured": bool(settings.GEMINI_API_KEY)}
@@ -74,7 +94,29 @@ def test_page():
 def reset_session(req: ResetRequest):
     if req.session_id in _sessions:
         _sessions[req.session_id].reset()
+    _chats.pop(req.session_id, None)
     return {"status": "reset", "session_id": req.session_id}
+
+
+@app.post("/agent/chat", response_model=ChatReply)
+async def agent_chat(req: ChatRequest):
+    """Plain-prose answers about the run, for the panel's answer view."""
+    if not gemini_client:
+        raise HTTPException(
+            status_code=500,
+            detail="Gemini client not initialized. Check GEMINI_API_KEY in .env file.",
+        )
+    history = _chats.setdefault(req.session_id, [])
+    context = req.context
+    if req.goal:
+        context = f"Task: {req.goal}\n{context or ''}".strip()
+    try:
+        reply = await gemini_client.chat(req.message, history, context)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    history.append({"role": "user", "text": req.message})
+    history.append({"role": "assistant", "text": reply})
+    return ChatReply(reply=reply, turns=len(history) // 2)
 
 
 @app.get("/agent/status/{session_id}")
@@ -90,7 +132,6 @@ def session_status(session_id: str):
     }
 
 
-from typing import Optional, List
 from app.schemas.manifest import EgressManifestEntry
 from app.manifest_store import manifest_store
 

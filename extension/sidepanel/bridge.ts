@@ -79,6 +79,15 @@ export function sendDecision(decision: 'authorise' | 'refuse'): Promise<unknown>
   return sendPanelCommand({ type: 'PANEL_CONFIRM', decision });
 }
 
+/** Asks the planner a question in prose. The worker owns the call. */
+export async function sendChat(message: string, context?: string): Promise<string> {
+  const r = await chrome.runtime.sendMessage({ type: 'PANEL_CHAT', message, context }) as
+    { reply?: string; error?: string } | undefined;
+  if (!r) throw new Error('No response from the agent worker.');
+  if (r.error) throw new Error(r.error);
+  return r.reply ?? '';
+}
+
 /** Tears the run down in the worker, not just in this view. */
 export function stopTask(): Promise<unknown> {
   return chrome.runtime.sendMessage({ type: 'STOP_TASK' });

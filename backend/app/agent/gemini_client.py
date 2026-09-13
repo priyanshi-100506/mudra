@@ -32,6 +32,23 @@ AVAILABLE ACTIONS (output exactly one per step):
 {"action": "done", "summary": "<explanation of what was accomplished or why it cannot be done>"}
 """
 
+CHAT_INSTRUCTION = """
+You are MUDRA's assistant, answering questions about a browser task the agent
+has just run for the user.
+
+WHAT YOU CAN SEE: the user's goal, and a redacted description of the page —
+element roles, labels and opaque references like ref_8k2wm1. You never see the
+values behind those references. Passwords, card numbers, Aadhaar and PAN
+numbers are sealed on the user's device and are not sent to you.
+
+RULES:
+1. Answer in plain prose. No JSON, no code fences, no action objects.
+2. Never claim to know a sealed value. If asked for one, say plainly that it
+   stayed on the device and you only ever saw a reference to it.
+3. Refer to a field by its label, or by its reference if that is clearer.
+4. Be brief — two or three sentences unless more is genuinely needed.
+"""
+
 _RETRY_DELAYS = [1.0, 2.0]  # seconds between model attempts
 
 # A planner call sits between the user and the page, so it must fail fast
@@ -104,3 +121,35 @@ class GeminiAgentClient:
             )
 
         raise RuntimeError(f"Gemini API failed after retries: {last_error}")
+
+    async def chat(self, message: str, history: List[Dict[str, str]],
+                   context: str | None = None) -> str:
+        """A plain-prose reply, for the panel's answer view.
+
+        Deliberately separate from plan_next_action: that one is constrained to
+        emit a single JSON action, and reusing it for conversation would either
+        break the schema or teach the planner to chat.
+        """
+        payload = {
+            "context": context or "No page context available.",
+            "history": history[-12:],
+            "question": message,
+        }
+        last_error: Exception | None = None
+        for attempt, model_name in enumerate(["gemini-2.5-flash", "gemini-flash-lite-latest"]):
+            try:
+                response = await self.client.aio.models.generate_content(
+                    model=model_name,
+                    contents=json.dumps(payload, default=str),
+                    config=types.GenerateContentConfig(
+                        system_instruction=CHAT_INSTRUCTION,
+                        temperature=0.4,
+                        http_options=types.HttpOptions(timeout=_REQUEST_TIMEOUT_MS),
+                    ),
+                )
+                return (response.text or "").strip()
+            except Exception as exc:
+                last_error = exc
+                if attempt < len(_RETRY_DELAYS):
+                    await asyncio.sleep(_RETRY_DELAYS[attempt])
+        raise RuntimeError(f"Gemini chat failed: {last_error}")

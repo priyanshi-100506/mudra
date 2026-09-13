@@ -39,7 +39,38 @@ chrome.storage.onChanged.addListener((changes) => {
   }
 });
 
+/** Relays a question to the backend and hands the prose answer back. */
+async function handleChat(message: { message: string; context?: string }) {
+  const response = await fetch(`${backendUrl}/agent/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      session_id: sessionId || 'panel',
+      message: message.message,
+      goal: currentGoal || undefined,
+      // Redacted context only. The panel builds this from what it was shown,
+      // which never contained a value in the first place.
+      context: message.context,
+    }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(String(body.detail ?? response.statusText));
+  }
+  return response.json() as Promise<{ reply: string; turns: number }>;
+}
+
 chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendResponse) => {
+  // The one message that genuinely returns something. Everything else is
+  // acknowledged immediately; see the note below.
+  if (message.type === 'PANEL_CHAT') {
+    handleChat(message)
+      .then((r) => sendResponse(r))
+      .catch((err: unknown) =>
+        sendResponse({ error: err instanceof Error ? err.message : String(err) }));
+    return true;
+  }
+
   // Acknowledge synchronously, then let the work run on its own.
   //
   // This used to return true — "a response is coming" — and never send one.

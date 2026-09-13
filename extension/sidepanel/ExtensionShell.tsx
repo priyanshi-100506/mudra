@@ -1,13 +1,15 @@
-import React, { useReducer, useCallback, useEffect } from 'react';
+import React, { useReducer, useCallback, useEffect, useState } from 'react';
 import { subscribe, startTask, sendDecision, stopTask } from './bridge';
 import { reducer, initialState } from './state';
 import { LivePanel } from './components/LivePanel';
 import { ConfirmationDialog } from './components/ConfirmationDialog';
 import { ErrorState } from './components/ErrorState';
 import { EntryScreen } from './components/EntryScreen';
+import { AnswerView } from './components/AnswerView';
 
 export const ExtensionShell: React.FC = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [answer, setAnswer] = useState(false);
 
   useEffect(() => subscribe(dispatch), []);
 
@@ -18,6 +20,7 @@ export const ExtensionShell: React.FC = () => {
   }, []);
 
   const reset = useCallback(() => {
+    setAnswer(false);
     dispatch({ type: 'RESET' });
     void stopTask().catch(() => {});
   }, []);
@@ -48,9 +51,17 @@ export const ExtensionShell: React.FC = () => {
     );
   }
 
+  if (answer) {
+    return (
+      <main className="panel-host">
+        <AnswerView state={state} onBack={() => setAnswer(false)} />
+      </main>
+    );
+  }
+
   return (
     <main className="panel-host">
-      <LivePanel state={state} onReset={reset} />
+      <LivePanel state={state} onReset={reset} onOpenAnswer={() => setAnswer(true)} />
       {state.pending && (
         <ConfirmationDialog
           pending={state.pending}

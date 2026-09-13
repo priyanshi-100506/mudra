@@ -106,40 +106,62 @@
 }
 .lp-conn.is-done { background: var(--p-ok); }
 
-/* ── planner output sheet ───────────────────────────────────────────── */
-/* Opened from the footer, sitting directly above it so the reply and the
-   refusal it provoked can be read together without either scrolling away. */
-.lp-plan {
-  flex: none; border-top: 1px solid var(--p-line);
-  background: var(--p-neutral); padding: 10px 13px 11px;
-  max-height: 46vh; overflow-y: auto;
-  animation: lp-rise .2s ease-out;
+/* ── answer view ────────────────────────────────────────────────────── */
+.lp-back {
+  width: 26px; height: 26px; border-radius: 8px; flex: none;
+  background: var(--p-neutral); border: 1px solid var(--p-line);
+  color: var(--p-ink); font-size: 14px; line-height: 1; cursor: pointer;
 }
-@keyframes lp-rise { from { opacity: 0; transform: translateY(6px); } }
-.lp-plan-head { display: flex; align-items: baseline; gap: 8px; }
-.lp-plan-label {
+.lp-back:hover { background: var(--p-sky-l); border-color: var(--p-sky); }
+.lp-answer-tag {
   font-family: var(--mono); font-size: 9px; font-weight: 600;
   letter-spacing: .18em; text-transform: uppercase; color: var(--p-ink3);
 }
-.lp-plan-tag {
-  font-family: var(--mono); font-size: 8.5px; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--p-no);
-  background: var(--p-no-l); border-radius: 3px; padding: 1px 4px;
+
+.lp-thread {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  padding: 14px 13px; overscroll-behavior: contain; scroll-behavior: smooth;
 }
-.lp-plan-status {
-  font-family: var(--mono); font-size: 9px; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--p-sky); margin-left: auto;
+.lp-thread::-webkit-scrollbar { width: 7px; }
+.lp-thread::-webkit-scrollbar-thumb { background: var(--p-line); border-radius: 4px; }
+
+.lp-turn { margin-bottom: 14px; }
+.lp-turn-who {
+  font-family: var(--mono); font-size: 8.5px; font-weight: 600;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--p-ink3);
 }
-.lp-plan-msg {
-  font-size: 11.5px; line-height: 1.45; color: var(--p-ink);
-  margin: 7px 0 8px; overflow-wrap: anywhere;
+.lp-turn-text {
+  margin: 4px 0 0; font-size: 12.5px; line-height: 1.55;
+  color: var(--p-ink2); overflow-wrap: anywhere;
 }
-.lp-plan-json {
-  font-family: var(--mono); font-size: 10px; line-height: 1.5;
-  color: var(--p-sky-d); background: var(--p-card);
-  margin: 0; padding: 9px 10px; overflow-x: auto;
-  border: 1px solid var(--p-line); border-radius: 7px;
+.lp-turn.is-mudra .lp-turn-text {
+  color: var(--p-ink); background: var(--p-neutral);
+  border: 1px solid var(--p-line); border-radius: 9px; padding: 10px 12px;
 }
+.lp-thinking, .lp-thread-err {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .08em;
+  margin: 0; color: var(--p-ink3);
+}
+.lp-thread-err { color: var(--p-no); }
+
+.lp-ask {
+  flex: none; display: flex; gap: 8px; align-items: flex-end;
+  padding: 10px 13px; background: var(--p-card);
+  border-top: 1px solid var(--p-line);
+}
+.lp-ask-input {
+  flex: 1 1 auto; min-width: 0; resize: none;
+  background: var(--p-neutral); border: 1px solid var(--p-line);
+  border-radius: 10px; padding: 9px 11px;
+  font-family: var(--font); font-size: 12.5px; line-height: 1.45;
+  color: var(--p-ink);
+}
+.lp-ask-input:focus {
+  outline: none; border-color: var(--p-sky);
+  box-shadow: 0 0 0 3px var(--p-sky-l);
+}
+.lp-ask-input::placeholder { color: var(--p-ink3); }
+.lp-ask .lp-btn { flex: none; }
 
 /* ── Zone 4 · feed header ───────────────────────────────────────────── */
 .lp-feedhead {
