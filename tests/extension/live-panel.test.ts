@@ -171,3 +171,53 @@ describe('the stage rail follows the worker, never a timer', () => {
     expect(s[4]).toBe('idle');
   });
 });
+
+// ── the record the answer view sends ───────────────────────────────────────
+import { buildContext } from '../../extension/sidepanel/components/AnswerView';
+
+describe('the run record sent with a question', () => {
+  const withRun = (audit: AgentState['audit']): AgentState => ({
+    ...run(pass(1)),
+    audit,
+    fields: [
+      field('ref_a1', 'Password', true),
+      field('e9', 'Home Branch', false),
+      field('e10', 'Customer ID', false),
+    ],
+  });
+
+  it('says plainly when nothing ran', () => {
+    // The first version listed visible fields beside target-less effects and
+    // the model reported filling fields it had never touched.
+    const c = buildContext(withRun([]));
+    expect(c).toMatch(/ACTIONS EXECUTED: none/);
+    expect(c).toMatch(/Nothing was changed/);
+  });
+
+  it('marks untouched fields as not acted on', () => {
+    const c = buildContext(withRun([]));
+    expect(c).toMatch(/NOT ACTED ON[^\n]*Home Branch/);
+    expect(c).toMatch(/NOT filled in/);
+  });
+
+  it('names the handle each executed action acted on', () => {
+    const c = buildContext(withRun([
+      { at: AT, effect: 'set_secret', outcome: 'executed', target: 'ref_a1' },
+    ]));
+    expect(c).toMatch(/ACTIONS EXECUTED[^\n]*set_secret on ref_a1/);
+  });
+
+  it('keeps refused actions out of the executed list and says they did not happen', () => {
+    const c = buildContext(withRun([
+      { at: AT, effect: 'submit_form', outcome: 'refused', target: 'e12', reason: 'spent' },
+    ]));
+    expect(c).toMatch(/ACTIONS EXECUTED: none/);
+    expect(c).toMatch(/REFUSED[^\n]*did NOT happen[^\n]*submit_form on e12/);
+  });
+
+  it('never puts a sealed value in the record — only its reference', () => {
+    const c = buildContext(withRun([]));
+    expect(c).toMatch(/Password = ref_a1/);
+    expect(c).toMatch(/never left the device/);
+  });
+});

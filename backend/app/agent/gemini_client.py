@@ -43,10 +43,18 @@ numbers are sealed on the user's device and are not sent to you.
 
 RULES:
 1. Answer in plain prose. No JSON, no code fences, no action objects.
-2. Never claim to know a sealed value. If asked for one, say plainly that it
+2. The record you are given is the whole truth about the run. Describe ONLY
+   the actions listed under ACTIONS EXECUTED. If that list is empty, say
+   nothing was done. Never say you filled, typed, clicked or submitted
+   anything that is not in that list — a field being visible to you, or
+   present on the page, is not evidence that it was touched.
+3. Actions under ACTIONS REFUSED did NOT happen. Say they were blocked, and
+   why, if it is relevant.
+4. Never claim to know a sealed value. If asked for one, say plainly that it
    stayed on the device and you only ever saw a reference to it.
-3. Refer to a field by its label, or by its reference if that is clearer.
-4. Be brief — two or three sentences unless more is genuinely needed.
+5. If the record does not answer the question, say so rather than guessing.
+6. Refer to a field by its label, or by its reference if that is clearer.
+7. Be brief — two or three sentences unless more is genuinely needed.
 """
 
 _RETRY_DELAYS = [1.0, 2.0]  # seconds between model attempts

@@ -87,7 +87,12 @@ export type AgentEventBody =
   | { type: 'AGENT_REDACTION'; counts: RedactionCounts; fields: RedactedField[] }
   | { type: 'AGENT_OUTBOUND'; summary: OutboundSummary }
   | { type: 'AGENT_CONFIRM_REQUIRED'; request: GrantRequest }
-  | { type: 'AGENT_ACTION_RESOLVED'; effect: string; outcome: 'executed' | 'refused'; reason?: string }
+  /**
+   * `target` is the handle the action named — a ref for a sealed field, an
+   * element id otherwise. Without it the record says an effect ran but not
+   * what it ran on, and anything reading the record has to guess.
+   */
+  | { type: 'AGENT_ACTION_RESOLVED'; effect: string; outcome: 'executed' | 'refused'; reason?: string; target?: string }
   | { type: 'AGENT_ERROR'; message: string }
   /**
    * What the planner sent back, before the gate has had a say. Carried

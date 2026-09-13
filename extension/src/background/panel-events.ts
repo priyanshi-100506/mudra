@@ -72,7 +72,8 @@ export const emitActionResolved = (
   effect: string,
   outcome: 'executed' | 'refused',
   reason?: string,
-) => emit({ type: 'AGENT_ACTION_RESOLVED', effect, outcome, reason });
+  target?: string,
+) => emit({ type: 'AGENT_ACTION_RESOLVED', effect, outcome, reason, target });
 
 /** The planner's reply, verbatim, before the gate runs. */
 export const emitPlan = (

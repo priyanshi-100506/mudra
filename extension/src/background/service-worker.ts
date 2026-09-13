@@ -390,7 +390,7 @@ async function processPageIR(pageIR: PageIR){
       // Refuse, log, and continue with the remaining steps. A refusal is a
       // bounded outcome for one action, not a failure of the whole task —
       // the agent carries on with what it is still authorised to do.
-      emitActionResolved(verdict.effect, 'refused', verdict.reason);
+      emitActionResolved(verdict.effect, 'refused', verdict.reason, targetOf(action));
       recordAction(verdict.effect, 'refused', verdict.reason);
       emitManifest(readManifest());
       notifyStatus('running', `Refused: ${verdict.reason}`);
@@ -438,7 +438,7 @@ async function processPageIR(pageIR: PageIR){
         typeof execResult?.error === 'string' && execResult.error.startsWith('Refused (');
 
       if (refusedByExecutor) {
-        emitActionResolved(effectOf(action), 'refused', execResult.error);
+        emitActionResolved(effectOf(action), 'refused', execResult.error, targetOf(action));
         recordAction(effectOf(action), 'refused', execResult.error);
         emitManifest(readManifest());
         notifyStatus('running', execResult.error);
@@ -450,12 +450,12 @@ async function processPageIR(pageIR: PageIR){
           return;
         }
       } else if (!execResult?.success) {
-        emitActionResolved(effectOf(action), 'refused', execResult?.error ?? 'Execution failed.');
+        emitActionResolved(effectOf(action), 'refused', execResult?.error ?? 'Execution failed.', targetOf(action));
         recordAction(effectOf(action), 'refused', execResult?.error ?? 'Execution failed.');
         emitManifest(readManifest());
         notifyStatus('running', `Execution failed: ${execResult?.error}. Re-observing…`);
       } else {
-        emitActionResolved(effectOf(action), 'executed');
+        emitActionResolved(effectOf(action), 'executed', undefined, targetOf(action));
         recordAction(effectOf(action), 'executed');
         emitManifest(readManifest());
       }
@@ -502,6 +502,12 @@ function waitForTabLoad(tabId: number): Promise<void> {
     };
     chrome.tabs.onUpdated.addListener(listener);
   });
+}
+
+/** The handle an action named, for the record. Never a value. */
+function targetOf(action: AgentAction): string | undefined {
+  const a = action as { element_id?: string; url?: string };
+  return a.element_id ?? a.url;
 }
 
 function sleep(ms: number): Promise<void> {

@@ -37,6 +37,7 @@ export function toAgentEvent(msg: AgentEventMessage): AgentEvent | null {
           effect: msg.effect,
           outcome: msg.outcome,
           reason: msg.reason,
+          target: msg.target,
         },
       };
     case 'AGENT_PLAN':

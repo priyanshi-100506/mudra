@@ -11,6 +11,8 @@ export interface AuditEntry {
   effect: string;
   outcome: 'executed' | 'refused';
   reason?: string;
+  /** The handle the action named. A ref for a sealed field. */
+  target?: string;
 }
 
 import type {
