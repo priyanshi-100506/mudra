@@ -112,9 +112,13 @@ export const AnswerView: React.FC<{ state: AgentState; onBack: () => void }> = (
 
       <div className="lp-thread" ref={thread}>
         {/* Two soft lights behind the glass. A blurred surface with nothing
-            behind it just reads as flat grey. */}
-        <span className="lp-glow lp-glow-a" aria-hidden="true" />
-        <span className="lp-glow lp-glow-b" aria-hidden="true" />
+            behind it just reads as flat grey. They bleed past the edges on
+            purpose, so they live in a layer that clips them — otherwise they
+            widen the thread's scroll area. */}
+        <span className="lp-glows" aria-hidden="true">
+          <span className="lp-glow lp-glow-a" />
+          <span className="lp-glow lp-glow-b" />
+        </span>
 
         {turns.map((t, i) => (
           <div key={i} className={`lp-turn is-${t.role}`}>

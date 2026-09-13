@@ -13,6 +13,7 @@
    the corners. */
 .lp {
   width: 100%;
+  max-width: 100%;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -158,14 +159,23 @@
 }
 
 .lp-thread {
-  position: relative; flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  position: relative; flex: 1 1 auto; min-height: 0;
+  overflow-y: auto;
+  /* The glows are positioned deliberately outside this box. Without this they
+     widen the scroll area and the thread grows a horizontal bar. */
+  overflow-x: hidden;
   padding: 18px 14px 8px; overscroll-behavior: contain; scroll-behavior: smooth;
 }
 .lp-thread::-webkit-scrollbar { width: 7px; }
 .lp-thread::-webkit-scrollbar-thumb { background: var(--p-line); border-radius: 4px; }
 
-/* Something for the glass to refract. A blurred surface with nothing behind
-   it just reads as flat grey. */
+/* A clipping layer of its own, pinned to the thread's box. The glows may
+   bleed outside it without ever contributing to the scrollable width. */
+.lp-glows {
+  position: absolute; inset: 0; overflow: hidden;
+  pointer-events: none; z-index: 0; border-radius: inherit;
+}
+
 .lp-glow {
   position: absolute; border-radius: 50%; pointer-events: none;
   filter: blur(46px); opacity: .5; z-index: 0;
@@ -302,7 +312,8 @@
 
 /* ── Zone 5 · feed — the only scroller ──────────────────────────────── */
 .lp-feed {
-  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
   padding: 0 11px 11px;
   overscroll-behavior: contain; scroll-behavior: smooth;
 }
@@ -427,7 +438,7 @@
   background: rgba(3, 20, 32, .62);
   backdrop-filter: blur(3px);
   display: flex; align-items: safe center; justify-content: center;
-  padding: 14px; overflow-y: auto; overscroll-behavior: contain;
+  padding: 14px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
 }
 .cg-card {
   width: 100%; max-width: 100%;
@@ -492,7 +503,10 @@
 }
 
 /* ── entry screen ───────────────────────────────────────────────────── */
-.lp-entry-body { padding: 26px 22px 22px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.lp-entry-body {
+  padding: 26px 22px 22px; flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+}
 .lp-hi {
   font-size: 25px; font-weight: 400; letter-spacing: -.028em;
   line-height: 1.18; color: var(--p-ink); margin: 0;
