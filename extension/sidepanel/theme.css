@@ -1,11 +1,11 @@
 :root {
-  --bg:#F4F9FE; --card:#FFFFFF; --inner:#EFF6FD;
-  --inner-2:#E0EAF5;
-  --accent:#0284C7; --accent-press:#0369A1; --accent-soft:#E0F2FE;
-  --text:#08263B; --text-2:#3D5B7A; --text-3:#7C9AB6; --dark:#08263B;
+  --bg:#082F49; --card:rgba(255,255,255,.07); --inner:rgba(255,255,255,.06);
+  --inner-2:rgba(255,255,255,.12);
+  --accent:#38BDF8; --accent-press:#0EA5E9; --accent-soft:rgba(56,189,248,.16);
+  --text:#FFFFFF; --text-2:#C9E9FA; --text-3:#7FC0DE; --dark:#082F49;
   --navy:#160B69;
-  --ground:#F4F9FE;
-  --grad:linear-gradient(135deg,#0369A1 0%,#0284C7 100%);
+  --ground:linear-gradient(158deg,#082F49 0%,#0C4A6E 46%,#0369A1 100%);
+  --grad:linear-gradient(135deg,#0284C7 0%,#38BDF8 100%);
   --ok:#3F7D5B; --ok-bg:#E6F0EA;
   --warn:#A9741F; --warn-bg:#F7EFDC;
   --stop:#A8443C; --stop-bg:#F7E5E3;
@@ -17,39 +17,40 @@
   --mono:ui-monospace,'SF Mono',Menlo,monospace;
 
   /* ── Live panel roles ──────────────────────────────────────────────────
-     The spec names nine roles. Structure, spacing, type and motion follow it
-     exactly; the hues are this project's blue family rather than the
-     reference's own palette.
+     The spec names nine roles. Each binds to this theme's sky-blue glass
+     palette rather than the reference's light palette; structure, spacing,
+     type and motion follow the spec exactly, colour does not.
 
-     The three that carry meaning must read apart from across a room: ok
-     (zero / executed), sky (active / sealed), no (refused). On a light ground
-     they need enough depth to hold against white, which is why ok and no are
-     darker here than the versions the popup uses on its dark glass. */
-  --p-bg:#F4F9FE;                          /* panel ground              */
-  --p-card:#FFFFFF;                        /* cards, fixed zones        */
-  --p-line:rgba(3,105,161,.14);            /* hairlines, borders        */
+     The three that carry meaning must stay readable apart from across a
+     room: ok (zero / executed), sky (active / sealed), no (refused). On a
+     dark ground that means lifting all three well above the background
+     rather than reusing the muted --ok/--stop, which were mixed for light
+     chips and go muddy here. */
+  --p-bg:var(--bg);                        /* panel ground              */
+  --p-card:rgba(255,255,255,.07);          /* cards, fixed zones        */
+  --p-line:rgba(255,255,255,.13);          /* hairlines, borders        */
 
-  --p-ink:#08263B;                         /* titles                    */
-  --p-ink2:#3D5B7A;                        /* body text                 */
-  --p-ink3:#7C9AB6;                        /* labels, timestamps        */
+  --p-ink:#FFFFFF;                         /* titles                    */
+  --p-ink2:var(--text-2);                  /* body text                 */
+  --p-ink3:var(--text-3);                  /* labels, timestamps        */
 
-  --p-sky:#0284C7;                         /* active state              */
-  --p-sky-d:#0C4A6E;                       /* code text                 */
-  --p-sky-l:#E0F2FE;                       /* seal chips, code bg       */
+  --p-sky:var(--accent);                   /* active state              */
+  --p-sky-d:#BAE6FD;                       /* code text on dark         */
+  --p-sky-l:rgba(56,189,248,.16);          /* seal chips, code bg       */
 
-  --p-ok:#0F7A55;                          /* zero counter, executed    */
-  --p-ok-l:#E2F4EC;
+  --p-ok:#5DE0A6;                          /* zero counter, executed    */
+  --p-ok-l:rgba(93,224,166,.15);
 
-  --p-no:#B42318;                          /* refused                   */
-  --p-no-l:#FDECEA;
-  --p-no-line:rgba(180,35,24,.30);
-  --p-no-ink:#8D2621;                      /* refuse detail text        */
+  --p-no:#FF8A8A;                          /* refused                   */
+  --p-no-l:rgba(255,138,138,.14);
+  --p-no-line:rgba(255,138,138,.42);
+  --p-no-ink:#FFC2C2;                      /* refuse detail text        */
 
-  --p-idle:#D5E3F1;                        /* idle stage dot, connector */
-  --p-neutral:#EEF3F9;                     /* send chip                 */
+  --p-idle:rgba(255,255,255,.22);          /* idle stage dot, connector */
+  --p-neutral:rgba(255,255,255,.08);       /* send chip                 */
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--ground);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--ground);background-attachment:fixed;color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
 button{font-family:inherit;cursor:pointer}
 button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 

@@ -23,7 +23,8 @@
       "32": "src/icons/icon-32.png",
       "48": "src/icons/icon-48.png",
       "128": "src/icons/icon-128.png"
-    }
+    },
+    "default_popup": "index.html"
   },
   "web_accessible_resources": [
     {

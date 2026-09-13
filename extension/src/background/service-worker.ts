@@ -482,9 +482,10 @@ function notifyStatus(status: 'idle' | 'running' | 'completed' | 'error', messag
 }
 
 
-// The action opens the side panel. The live panel is full height by design,
-// which a popup cannot be.
-chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: true }).catch(() => {});
+// The action opens the popup, which renders the same panel. The side panel
+// stays registered for the full-height view; opening it on action click would
+// be ignored anyway while a default_popup is set.
+chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: false }).catch(() => {});
 
 chrome.tabs.onActivated.addListener(() => { void emitActivePage(); });
 chrome.tabs.onUpdated.addListener((_id, info) => { if (info.status === 'complete') void emitActivePage(); });

@@ -3,8 +3,8 @@
  *
  * Structure, spacing, type scale and motion follow the design spec exactly.
  * Colour does not: every hue resolves to a --p-* role token defined in
- * theme.css and bound to this project's blue family. There is no hex in
- * this file, so the whole panel re-themes from those nine declarations.
+ * theme.css and bound to this project's sky-blue glass palette. There is no
+ * hex in this file.
  */
 
 .lp {
@@ -223,7 +223,7 @@
 /* ── authorisation dialog ───────────────────────────────────────────── */
 .cg-scrim {
   position: fixed; inset: 0; z-index: 30;
-  background: rgba(8, 38, 59, .46);
+  background: rgba(3, 20, 32, .62);
   backdrop-filter: blur(3px);
   display: flex; align-items: safe center; justify-content: center;
   padding: 14px; overflow-y: auto; overscroll-behavior: contain;
@@ -234,7 +234,7 @@
   backdrop-filter: blur(20px) saturate(140%);
   border: 1px solid var(--p-line);
   border-radius: 14px; padding: 18px;
-  box-shadow: 0 24px 60px rgba(8, 38, 59, .22);
+  box-shadow: 0 28px 70px rgba(2, 16, 26, .55);
   outline: none;
 }
 .cg-eyebrow {
