@@ -73,6 +73,12 @@ describe('refusals', () => {
     expect(row.detail).toBe('"navigate_cross_origin" is not among the effects authorised for this task.');
   });
 
+  it('names the effect exactly as the grant spells it', () => {
+    const row = run([refusal]).feed.at(-1)!;
+    expect(row.verb).toBe('navigate_cross_origin');
+    expect(row.title).toBe('REFUSED');
+  });
+
   it('increments the refused counter', () => {
     expect(run([refusal]).refused).toBe(1);
   });
@@ -90,7 +96,8 @@ describe('the credential moment is reported explicitly', () => {
       meta: { seq: 20, at: AT },
     }]);
     const row = s.feed.at(-1)!;
-    expect(row.title).toBe('Credential resolved at the moment of use');
+    expect(row.verb).toBe('set_secret');
+    expect(row.title).toBe('executed');
     expect(row.detail).toMatch(/never held a value/);
   });
 });
@@ -136,7 +143,7 @@ describe('the feed is bounded', () => {
       });
     }
     expect(s.feed).toHaveLength(FEED_CAP);
-    expect(s.feed.at(-1)!.title).toContain(`click ${FEED_CAP + 39}`);
+    expect(s.feed.at(-1)!.verb).toBe(`click_${FEED_CAP + 39}`);
   });
 });
 

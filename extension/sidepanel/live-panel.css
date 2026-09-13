@@ -152,10 +152,21 @@
 .lp-card.is-refuse .lp-chip { background: var(--p-card); color: var(--p-no); }
 
 .lp-body { min-width: 0; flex: 1 1 auto; }
+/* Title and timestamp share a baseline; the detail sits under both. */
+.lp-titlerow {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+}
 .lp-title {
   font-size: 12px; font-weight: 600; color: var(--p-ink);
-  line-height: 1.3; margin: 0;
+  line-height: 1.3; margin: 0; min-width: 0;
 }
+/* The effect name exactly as the grant and the manifest spell it. */
+.lp-verb {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 500;
+  color: var(--p-sky-d); background: var(--p-sky-l);
+  padding: 1px 5px; border-radius: 3px;
+}
+.lp-card.is-refuse .lp-verb { color: var(--p-no); background: var(--p-no-l); }
 .lp-detail {
   font-size: 10.5px; color: var(--p-ink2);
   line-height: 1.45; margin: 2px 0 0; overflow-wrap: anywhere;
@@ -167,7 +178,7 @@
 }
 .lp-time {
   font-family: var(--mono); font-size: 9.5px; color: var(--p-ink3);
-  margin: 2px 0 0; text-align: right;
+  flex: none;
 }
 
 /* A refusal overrides the whole card. It is deliberately louder than

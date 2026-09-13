@@ -74,14 +74,19 @@ const Row: React.FC<{ item: FeedItem }> = ({ item }) => (
   <article className={`lp-card is-${item.kind}${item.replay ? ' is-replay' : ''}`}>
     <span className="lp-chip"><Icon name={item.icon} /></span>
     <div className="lp-body">
-      <h3 className="lp-title">{item.title}</h3>
+      <div className="lp-titlerow">
+        <h3 className="lp-title">
+          {item.verb && <code className="lp-verb">{item.verb}</code>}
+          {item.verb ? ' ' : ''}{item.title}
+        </h3>
+        <time className="lp-time">{clock(item.at)}</time>
+      </div>
       {(item.detail || item.code) && (
         <p className="lp-detail">
           {item.code && <><code>{item.code}</code>{item.detail ? ' ' : ''}</>}
           {item.detail}
         </p>
       )}
-      <p className="lp-time">{clock(item.at)}</p>
     </div>
   </article>
 );
@@ -123,7 +128,7 @@ export const LivePanel: React.FC<{ state: AgentState; onReset: () => void }> = (
       <Rail state={state} />
 
       <div className="lp-feedhead">
-        <span className="lp-feedlabel">Activity</span>
+        <span className="lp-feedlabel">Live activity</span>
         <span className="lp-clock">{now}</span>
       </div>
 

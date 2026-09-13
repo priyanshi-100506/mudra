@@ -59,11 +59,6 @@ function mark(state: AgentState, meta?: EventMeta): number[] {
   return meta?.seq === undefined ? state.seen : [...state.seen, meta.seq];
 }
 
-/** A verb the user would recognise, from the grant's effect name. */
-function verb(effect: string): string {
-  return effect.replace(/_/g, ' ');
-}
-
 // ── stage rail ─────────────────────────────────────────────────────────────
 
 export const STAGES: StageName[] = ['see', 'seal', 'send', 'gate', 'log'];
@@ -175,7 +170,7 @@ export function reducer(state: AgentState, e: AgentEvent): AgentState {
         kind: 'send',
         icon: 'up',
         title: 'Payload asserted and sent',
-        detail: `${s.fieldsDescribed} fields described · ${s.piiValuesSent} values · ${s.rawPixelsSent} raw pixels`,
+        detail: 'Scanned for every protected value before egress. None survived.',
       }] : [];
       return {
         ...state, outbound: e.outbound,
@@ -197,16 +192,19 @@ export function reducer(state: AgentState, e: AgentEvent): AgentState {
       const row: Omit<FeedItem, 'id' | 'at' | 'replay'> = refusedNow
         ? {
             kind: 'refuse', icon: 'stop',
-            title: `${verb(e.entry.effect)} REFUSED`,
+            verb: e.entry.effect,
+            title: 'REFUSED',
             // Verbatim from the gate. Its precision is the argument; softening
             // it into friendlier copy would throw that away.
             detail: e.entry.reason,
           }
         : {
             kind: 'exec', icon: 'check',
-            title: isSecret ? 'Credential resolved at the moment of use' : `${verb(e.entry.effect)} executed`,
+            verb: e.entry.effect,
+            title: 'executed',
+            // The headline mechanism, stated at the moment it happens.
             detail: isSecret
-              ? 'The planner named two references and never held a value.'
+              ? 'Credential resolved at the moment of use — the planner named two references and never held a value.'
               : undefined,
           };
 
@@ -227,7 +225,7 @@ export function reducer(state: AgentState, e: AgentEvent): AgentState {
         feed: append(state, [{
           kind: 'send', icon: 'log',
           title: 'Written to egress manifest',
-          detail: `${e.entries.length} ${e.entries.length === 1 ? 'entry' : 'entries'} recorded this run`,
+          detail: `${e.entries.length} ${e.entries.length === 1 ? 'entry' : 'entries'} · digest, fields sent, redactions, outcome`,
         }], e.meta),
         seen: mark(state, e.meta),
       };

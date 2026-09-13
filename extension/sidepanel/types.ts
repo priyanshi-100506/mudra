@@ -26,6 +26,12 @@ export interface FeedItem {
   id: string;
   kind: FeedKind;
   icon: IconName;
+  /**
+   * The effect name, rendered as a mono chip ahead of the title. Kept raw —
+   * `set_public_text`, not "set public text" — because that is the string the
+   * grant and the manifest use, and the panel should name it identically.
+   */
+  verb?: string;
   title: string;
   detail?: string;
   /** Rendered in an inline <code> chip inside the detail line. */
