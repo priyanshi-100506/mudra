@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { AgentState, FeedItem, StageName, StageState } from '../types';
 import { STAGES, stageStates } from '../state';
-import { Icon, MarkIcon } from './icons';
+import { Icon } from './icons';
+import { Lockup } from './Lockup';
 
 const clock = (iso: string) => {
   const d = new Date(iso);
@@ -11,8 +12,8 @@ const clock = (iso: string) => {
 // ── Zone 1 · header ────────────────────────────────────────────────────────
 const Header: React.FC = () => (
   <header className="lp-head">
-    <span className="lp-mark"><MarkIcon /></span>
-    <span className="lp-word">Mudra</span>
+    {/* The lockup carries the wordmark, so there is no separate name label. */}
+    <Lockup variant="dark" height={26} className="lp-lockup" />
     <span className="lp-live">
       <span className="lp-live-dot" aria-hidden="true" />
       LIVE

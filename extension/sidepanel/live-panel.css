@@ -7,18 +7,23 @@
  * hex in this file.
  */
 
+/* The panel is the entire surface — a popup or a side panel, not a card
+   floating on a page. So it fills its viewport: no fixed width to overflow
+   the popup, and no radius or border to leave the host background showing in
+   the corners. */
 .lp {
-  width: 400px;
+  width: 100%;
   height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 13px;
-  border: 1px solid var(--p-line);
   background: var(--p-bg);
   color: var(--p-ink2);
   font-size: 12px;
 }
+/* The shell wraps the panel; its padding was insetting it on every edge. */
+.panel-host { padding: 0; margin: 0; min-width: 0; display: block; }
+.lp-lockup { margin-right: auto; }
 
 /* ── Zone 1 · header ────────────────────────────────────────────────── */
 .lp-head {
@@ -34,10 +39,6 @@
   width: 26px; height: 26px; border-radius: 8px;
   background: linear-gradient(145deg, var(--p-sky), var(--accent-press));
   display: flex; align-items: center; justify-content: center; flex: none;
-}
-.lp-word {
-  font-size: 13.5px; font-weight: 600; letter-spacing: .2px;
-  color: var(--p-ink); margin-right: auto;
 }
 .lp-live {
   display: inline-flex; align-items: center; gap: 5px;

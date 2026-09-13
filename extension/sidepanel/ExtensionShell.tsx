@@ -42,14 +42,14 @@ export const ExtensionShell: React.FC = () => {
   // the page is read — and the shell cannot render it at any other point.
   if (state.phase === 'IDLE' && !state.pending) {
     return (
-      <main className="shell">
+      <main className="panel-host">
         <EntryScreen origin={state.page?.origin ?? null} onStart={start} />
       </main>
     );
   }
 
   return (
-    <main className="shell">
+    <main className="panel-host">
       <LivePanel state={state} onReset={reset} />
       {state.pending && (
         <ConfirmationDialog

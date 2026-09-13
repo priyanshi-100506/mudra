@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MarkIcon } from './icons';
+import { Lockup } from './Lockup';
 
 const MAX = 300;
 
@@ -23,8 +23,7 @@ export const EntryScreen: React.FC<{
   return (
     <div className="lp lp-entry">
       <header className="lp-head">
-        <span className="lp-mark"><MarkIcon /></span>
-        <span className="lp-word">Mudra</span>
+        <Lockup variant="dark" height={26} className="lp-lockup" />
       </header>
 
       <div className="lp-entry-body">
