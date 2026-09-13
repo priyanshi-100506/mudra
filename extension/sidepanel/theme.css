@@ -46,6 +46,10 @@
   --p-no-line:rgba(255,138,138,.42);
   --p-no-ink:#FFC2C2;                      /* refuse detail text        */
 
+  --p-hi:#FFFFFF;                          /* inner highlight on glass  */
+  --p-shade:#000000;                       /* cast shadow               */
+  --p-on-accent:#FFFFFF;                   /* text on a filled accent   */
+
   --p-idle:rgba(255,255,255,.22);          /* idle stage dot, connector */
   --p-neutral:rgba(255,255,255,.08);       /* send chip                 */
 }

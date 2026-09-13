@@ -141,8 +141,11 @@ export const LivePanel: React.FC<{
   return (
     <div className="lp">
       <Header />
-      <Counters state={state} />
-      <Rail state={state} />
+      {/* Counters and rail read as one instrument, not two stacked bands. */}
+      <div className="lp-dash">
+        <Counters state={state} />
+        <Rail state={state} />
+      </div>
 
       <div className="lp-feedhead">
         <span className="lp-feedlabel">Live activity</span>
