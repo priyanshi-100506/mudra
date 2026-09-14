@@ -7,7 +7,7 @@ import { ErrorState } from './components/ErrorState';
 import { EntryScreen } from './components/EntryScreen';
 import { AnswerView } from './components/AnswerView';
 
-export const ExtensionShell: React.FC = () => {
+export const ExtensionShell: React.FC<{ floating?: boolean }> = ({ floating }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [answer, setAnswer] = useState(false);
 
@@ -46,7 +46,7 @@ export const ExtensionShell: React.FC = () => {
   if (state.phase === 'IDLE' && !state.pending) {
     return (
       <main className="panel-host">
-        <EntryScreen origin={state.page?.origin ?? null} onStart={start} />
+        <EntryScreen origin={state.page?.origin ?? null} onStart={start} floating={floating} />
       </main>
     );
   }

@@ -1,0 +1,50 @@
+/**
+ * The floating panel's own frame.
+ *
+ * Only the frame lives here — everything inside is the panel as it appears in
+ * the popup, so the two surfaces cannot drift apart.
+ */
+.mf {
+  position: fixed;
+  z-index: 2147483645;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid var(--p-line);
+  background: var(--p-bg);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--p-hi) 14%, transparent),
+    0 24px 70px color-mix(in srgb, var(--p-shade) 55%, transparent);
+  font-family: var(--font);
+}
+
+/* A bar of its own to drag by. Dragging the panel header would be
+   indistinguishable from pressing something inside it. */
+.mf-grip {
+  flex: none; height: 22px; cursor: grab;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--p-hi) 10%, transparent), transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--p-line) 70%, transparent);
+}
+.mf-grip:active { cursor: grabbing; }
+.mf-grip-dots {
+  width: 34px; height: 3px; border-radius: 2px;
+  background: color-mix(in srgb, var(--p-hi) 26%, transparent);
+}
+.mf-close {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent; cursor: pointer;
+  color: var(--p-ink3); font-size: 14px; line-height: 1;
+}
+.mf-close:hover { background: var(--p-neutral); color: var(--p-ink); }
+
+.mf-body { flex: 1 1 auto; min-height: 0; display: flex; }
+
+/* Inside the frame the panel is bounded by the box, not the viewport. */
+.mf .panel-host { flex: 1 1 auto; min-height: 0; display: flex; }
+.mf .lp { height: 100%; width: 100%; }

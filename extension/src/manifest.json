@@ -47,5 +47,14 @@
   ],
   "side_panel": {
     "default_path": "sidepanel/index.html"
+  },
+  "commands": {
+    "toggle-panel": {
+      "suggested_key": {
+        "default": "Alt+Shift+M",
+        "mac": "Alt+Shift+M"
+      },
+      "description": "Show or hide the Mudra panel over the page"
+    }
   }
 }

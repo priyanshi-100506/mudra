@@ -156,6 +156,11 @@ async function handleMessage(message: ExtensionMessage | PanelCommand) {
       break;
     }
 
+    case 'TOGGLE_PANEL': {
+      await togglePanelOnActiveTab();
+      break;
+    }
+
     case 'STOP_TASK': {
       // A full teardown, not just a flag. This used to leave the worker's
       // snapshot, grant, ref map and manifest in place, so the panel cleared
@@ -527,6 +532,31 @@ function notifyStatus(status: 'idle' | 'running' | 'completed' | 'error', messag
 // stays registered for the full-height view; opening it on action click would
 // be ignored anyway while a default_popup is set.
 chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: false }).catch(() => {});
+
+/**
+ * Shows or hides the floating panel on the active tab.
+ *
+ * The content script is injected here rather than declared in the manifest —
+ * nothing runs on a page until the user asks for it. Injecting twice is
+ * harmless; the module is idempotent and the toggle is what decides.
+ */
+async function togglePanelOnActiveTab() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) return;
+  const url = tab.url ?? '';
+  if (url.startsWith('chrome://') || url.startsWith('chrome-extension://')) {
+    notifyStatus('error', 'Mudra cannot open on this page.');
+    return;
+  }
+  await chrome.scripting
+    .executeScript({ target: { tabId: tab.id }, files: ['src/content/index.js'] })
+    .catch(() => {});
+  await chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_MUDRA' }).catch(() => {});
+}
+
+chrome.commands?.onCommand.addListener((command) => {
+  if (command === 'toggle-panel') void togglePanelOnActiveTab();
+});
 
 chrome.tabs.onActivated.addListener(() => { void emitActivePage(); });
 chrome.tabs.onUpdated.addListener((_id, info) => { if (info.status === 'complete') void emitActivePage(); });

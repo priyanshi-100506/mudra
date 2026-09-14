@@ -502,6 +502,16 @@
   color: var(--p-ink3); margin: 14px 0 0; text-align: center;
 }
 
+.lp-float {
+  margin-left: auto; flex: none;
+  border: 1px solid var(--p-line); border-radius: 8px;
+  background: var(--p-neutral); color: var(--p-ink2);
+  padding: 5px 10px; cursor: pointer;
+  font: 600 9.5px var(--mono); letter-spacing: .16em; text-transform: uppercase;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.lp-float:hover { background: var(--p-sky-l); color: var(--p-ink); border-color: var(--p-sky); }
+
 /* ── entry screen ───────────────────────────────────────────────────── */
 .lp-entry-body {
   padding: 26px 22px 22px; flex: 1 1 auto; min-height: 0;

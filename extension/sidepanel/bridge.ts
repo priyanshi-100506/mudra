@@ -89,6 +89,11 @@ export async function sendChat(message: string, context?: string): Promise<strin
   return r.reply ?? '';
 }
 
+/** Shows or hides the floating panel over the current page. */
+export function togglePanel(): Promise<unknown> {
+  return chrome.runtime.sendMessage({ type: 'TOGGLE_PANEL' });
+}
+
 /** Tears the run down in the worker, not just in this view. */
 export function stopTask(): Promise<unknown> {
   return chrome.runtime.sendMessage({ type: 'STOP_TASK' });

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lockup } from './Lockup';
+import { togglePanel } from '../bridge';
 
 const MAX = 300;
 
@@ -14,7 +15,8 @@ const MAX = 300;
 export const EntryScreen: React.FC<{
   origin: string | null;
   onStart: (task: string) => void;
-}> = ({ origin, onStart }) => {
+  floating?: boolean;
+}> = ({ origin, onStart, floating }) => {
   const [draft, setDraft] = useState('');
   const ready = draft.trim().length > 0;
 
@@ -24,6 +26,13 @@ export const EntryScreen: React.FC<{
     <div className="lp lp-entry">
       <header className="lp-head">
         <Lockup variant="dark" height={26} className="lp-lockup" />
+        {/* Only offered here: inside the floating panel it would be a button
+            that closes the thing you pressed it in. */}
+        {!floating && (
+          <button className="lp-float" onClick={() => void togglePanel().catch(() => {})}>
+            Float
+          </button>
+        )}
       </header>
 
       <div className="lp-entry-body">

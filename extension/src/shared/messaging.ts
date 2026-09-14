@@ -4,6 +4,7 @@ export type ExtensionMessage =
   | { type: 'START_TASK'; goal: string }
   | { type: 'STOP_TASK' }
   | { type: 'PANEL_CHAT'; message: string; context?: string }
+  | { type: 'TOGGLE_PANEL' }
   | { type: 'CAPTURE_PAGE_IR' }
   | { type: 'PAGE_IR_CAPTURED'; pageIR: PageIR }
   | { type: 'EXECUTE_ACTION'; action: AgentAction }
