@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test:watch": "vitest",
     "verify:model": "node scripts/verify-model.mjs",
-    "eval": "vitest run --config vitest.eval.config.ts"
+    "eval": "vitest run --config vitest.eval.config.ts",
+    "demo": "node ../scripts/demo.mjs"
   },
   "dependencies": {
     "onnxruntime-web": "^1.30.0",
