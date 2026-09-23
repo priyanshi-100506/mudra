@@ -52,13 +52,38 @@ class AgentLoop:
                 self.retry_count = 0
                 self.last_result = "success"
 
-        # Plan next action via Gemini
-        action = await self.gemini_client.plan_next_action(
+        # Plan next action.
+        planned = await self.gemini_client.plan_next_action(
             goal=goal,
             page_ir=current_ir,
             history=self.history,
             last_result=self.last_result,
         )
+
+        # Normalise whatever the planner returned into a validated action.
+        #
+        # The hosted client returns a parsed model; the local and stub
+        # planners return a plain dict, because that is what a JSON-emitting
+        # model actually produces. The loop used to assume the first and
+        # called .model_dump() straight away, so every non-Gemini planner
+        # died with "'dict' object has no attribute 'model_dump'" — a 500 on
+        # the offline path that no unit test caught, because the tests
+        # exercised the planners directly rather than through the loop.
+        #
+        # Validating here also means a local model cannot smuggle in a
+        # malformed action: it is checked against the same schema the hosted
+        # one is held to, before anything else reads it.
+        if isinstance(planned, dict):
+            try:
+                action = AgentAction.model_validate(planned)
+            except Exception as exc:
+                return LoopStepResponse(
+                    action={"action": "done", "summary": "Planner returned an invalid action."},
+                    status="error",
+                    message=f"Planner returned an action that failed validation: {exc}",
+                )
+        else:
+            action = planned
 
         # Validate element_id exists in current IR (for element-targeting actions).
         if hasattr(action, "element_id"):

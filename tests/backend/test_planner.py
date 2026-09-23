@@ -252,3 +252,73 @@ class TestHealthEndpoint:
         # naming the backend at all.
         assert body["status"] == "degraded"
         assert body["planner"] == "ollama"
+
+
+class TestLoopAcceptsEveryPlannersOutput:
+    """The loop is where a planner's output is actually consumed.
+
+    Every test above exercises the planners directly, which is why none of
+    them caught this: the loop called `.model_dump()` on whatever came back,
+    the hosted client returns a parsed model, and the stub and Ollama clients
+    return a plain dict — because that is what a JSON-emitting model actually
+    produces. The offline path 500'd on every single step, and it took
+    running the app to find out.
+    """
+
+    @pytest.mark.asyncio
+    async def test_a_dict_returning_planner_drives_the_loop(self):
+        from app.agent.loop import AgentLoop
+
+        loop = AgentLoop(gemini_client=StubPlannerClient())
+        page = ir([
+            textbox("e1", "Full name"),
+            PageElement(id="e9", role="button", name="Verify", visible=True, enabled=True),
+        ])
+        response = await loop.step(goal="fill the form", current_ir=page, session_id="t")
+        assert response.status == "continue"
+        assert response.action["action"] == "type"
+
+    @pytest.mark.asyncio
+    async def test_a_model_returning_planner_still_works(self):
+        from unittest.mock import AsyncMock, MagicMock
+        from app.agent.loop import AgentLoop
+
+        client = MagicMock()
+        client.plan_next_action = AsyncMock(
+            return_value=AgentAction.model_validate({"action": "click", "element_id": "e1"}),
+        )
+        loop = AgentLoop(gemini_client=client)
+        response = await loop.step(goal="x", current_ir=ir([textbox("e1", "Name")]), session_id="t")
+        assert response.action["action"] == "click"
+
+    @pytest.mark.asyncio
+    async def test_a_malformed_action_is_rejected_rather_than_crashing(self):
+        # A local model can emit anything. It is held to the same schema the
+        # hosted one is, before anything else reads it.
+        from unittest.mock import AsyncMock, MagicMock
+        from app.agent.loop import AgentLoop
+
+        client = MagicMock()
+        client.plan_next_action = AsyncMock(return_value={"action": "teleport", "to": "mars"})
+        loop = AgentLoop(gemini_client=client)
+        response = await loop.step(goal="x", current_ir=ir([]), session_id="t")
+        assert response.status == "error"
+        assert "failed validation" in response.message
+
+    @pytest.mark.asyncio
+    async def test_the_stub_runs_a_whole_task_through_the_loop(self):
+        from app.agent.loop import AgentLoop
+
+        loop = AgentLoop(gemini_client=StubPlannerClient())
+        page = ir([
+            textbox("e1", "Full name"),
+            textbox("e2", "Email"),
+            PageElement(id="e9", role="button", name="Verify", visible=True, enabled=True),
+        ])
+        seen = []
+        for _ in range(6):
+            response = await loop.step(goal="apply", current_ir=page, session_id="t")
+            seen.append(response.action["action"])
+            if response.status == "done":
+                break
+        assert seen == ["type", "type", "submit", "done"]
