@@ -51,12 +51,21 @@ function copyRuntimeAssets(): Plugin {
       // public/tessdata/README.md.
       const tessDist = resolve(__dirname, 'node_modules/tesseract.js/dist');
       const tessCore = resolve(__dirname, 'node_modules/tesseract.js-core');
+      // Every core variant, not a chosen subset.
+      //
+      // Tesseract picks its core at runtime from what the browser supports,
+      // and Chrome selects the relaxed-SIMD build. Copying only the plain and
+      // simd variants left that one missing, so the worker started and then
+      // failed to importScripts its own core — reported as a bare
+      // NetworkError, which under the fail-closed rule masks every image
+      // region whole. The agent keeps running and quietly stops reading
+      // images, which is the hardest kind of failure to notice.
+      const coreFiles = fs.existsSync(tessCore)
+        ? fs.readdirSync(tessCore).filter((f) => f.endsWith('.wasm') || f.endsWith('.wasm.js'))
+        : [];
       copyInto(resolve(out, 'wasm/tesseract'), [
         [resolve(tessDist, 'worker.min.js'), 'worker.min.js'],
-        [resolve(tessCore, 'tesseract-core-lstm.wasm.js'), 'tesseract-core-lstm.wasm.js'],
-        [resolve(tessCore, 'tesseract-core-lstm.wasm'), 'tesseract-core-lstm.wasm'],
-        [resolve(tessCore, 'tesseract-core-simd-lstm.wasm.js'), 'tesseract-core-simd-lstm.wasm.js'],
-        [resolve(tessCore, 'tesseract-core-simd-lstm.wasm'), 'tesseract-core-simd-lstm.wasm'],
+        ...coreFiles.map((f) => [resolve(tessCore, f), f] as [string, string]),
       ]);
 
       // Committed weights and anything else under public/.

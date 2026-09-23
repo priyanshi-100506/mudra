@@ -45,6 +45,16 @@ export async function initOcr(): Promise<{ ready: boolean; reason?: string }> {
       // image region whole — a silent, confusing demo failure.
       cacheMethod: 'none',
       gzip: false,
+      // Load the worker script directly rather than through a blob URL.
+      //
+      // By default tesseract.js wraps its worker in a Blob and has that blob
+      // importScripts the real worker. A blob worker has an opaque origin,
+      // which cannot load a chrome-extension:// script, so the import fails
+      // with a bare NetworkError and OCR silently never starts — which,
+      // under the fail-closed rule, masks every image region whole. The
+      // agent keeps working and simply stops reading images, which is the
+      // hardest kind of failure to notice.
+      workerBlobURL: false,
     });
     return { ready: true };
   } catch (err) {

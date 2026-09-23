@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "verify:model": "node scripts/verify-model.mjs",
     "eval": "vitest run --config vitest.eval.config.ts",
-    "demo": "node ../scripts/demo.mjs"
+    "demo": "node ../scripts/demo.mjs",
+    "drive": "node scripts/drive-extension.mjs"
   },
   "dependencies": {
     "onnxruntime-web": "^1.30.0",
@@ -29,6 +30,7 @@
     "@vitest/ui": "^1.6.1",
     "canvas": "^3.2.3",
     "jsdom": "^29.1.1",
+    "playwright": "^1.63.0",
     "typescript": "^5.9.3",
     "vite": "^5.1.4",
     "vitest": "^1.6.1"

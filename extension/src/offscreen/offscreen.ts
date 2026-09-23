@@ -16,6 +16,7 @@
  */
 import { initVision, visionStatus } from './vision';
 import { initOcr, tesseractEngine } from './tesseract-engine';
+import { ocrRegions } from './ocr';
 import { analyseCapture, type VisualEvidence, type DomSensitiveBox } from './pipeline';
 import { redactCanvas } from '../content/redaction';
 import { EVIDENCE_PORT, stageTimer, dataUrlByteLength, type VisualEvidencePacket }
@@ -34,6 +35,16 @@ import type { ImageRect } from '../shared/geometry';
  */
 let warmupMs: number | null = null;
 let warming: Promise<void> | null = null;
+/**
+ * Why OCR is unavailable, when it is.
+ *
+ * `ensureWarm` used to discard this, which meant a Tesseract that failed to
+ * start produced only "no OCR engine" at the point of use — true, and
+ * useless for working out why. The reason is what tells you whether the
+ * language data is missing, the worker script did not load, or the CSP
+ * refused to compile the WASM.
+ */
+let ocrReason: string | null = null;
 
 async function ensureWarm(): Promise<void> {
   if (warmupMs !== null) return;
@@ -43,7 +54,8 @@ async function ensureWarm(): Promise<void> {
     // Both are fail-closed on their own terms: vision returns ready:false,
     // OCR returns a null engine, and each of those already means "mask more,
     // send less" rather than "carry on regardless".
-    await Promise.all([initVision(), initOcr()]);
+    const [, ocr] = await Promise.all([initVision(), initOcr()]);
+    ocrReason = ocr.ready ? null : (ocr.reason ?? 'unknown');
     warmupMs = Math.round(performance.now() - t0);
     warming = null;
   })();
@@ -204,6 +216,37 @@ chrome.runtime.onMessage.addListener((msg: { type?: string; target?: string; req
 
   if (msg.type === 'OBSERVE') {
     observe(msg.request as ObserveRequest).then(sendResponse);
+    return true;
+  }
+  if (msg.type === 'OCR_PROBE') {
+    // Reads one image and reports what it found. Exists so the OCR half can
+    // be checked on its own: it is independent of the face detector, and
+    // with the detector absent the full pipeline correctly stops before OCR
+    // ever runs, which would otherwise leave it unexercised in a browser.
+    (async () => {
+      const { dataUrl } = msg as unknown as { dataUrl: string };
+      try {
+        await ensureWarm();
+        const bitmap = await bitmapFrom(dataUrl);
+        const engine = tesseractEngine(bitmap);
+        if (!engine) {
+          sendResponse({ ok: false, reason: `no OCR engine: ${ocrReason ?? 'unknown'}` });
+          return;
+        }
+        const outcome = await ocrRegions(engine, [
+          { x: 0, y: 0, width: bitmap.width, height: bitmap.height },
+        ]);
+        bitmap.close?.();
+        sendResponse({
+          ok: true,
+          found: outcome.regions.map((r) => ({ text: r.text, isPII: r.isPII, kind: r.kind })),
+          truncated: outcome.ocrTruncated,
+          unread: outcome.unreadRegions.length,
+        });
+      } catch (err) {
+        sendResponse({ ok: false, reason: err instanceof Error ? err.message : String(err) });
+      }
+    })();
     return true;
   }
   if (msg.type === 'VISION_STATUS') {
