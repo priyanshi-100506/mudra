@@ -4,7 +4,7 @@ import { AgentAction, PageIR } from '../shared/types';
 import { redactPageIR, buildOutbound, type OutboundPageIR } from '../shared/redact';
 import { emitPhase, emitError, emitDetection, emitRedaction, emitOutbound, emitActivePage, emitObserved,
          emitConfirmRequired, emitActionResolved, emitManifest, emitPlan, emitBlocked,
-         replaySnapshot, clearSnapshot } from './panel-events';
+         emitPlanner, replaySnapshot, clearSnapshot } from './panel-events';
 import { deriveGrant, checkAction, taskSentence, grantSummary, effectOf, type Grant } from '../shared/grant';
 import { stubPlan, STUB_ENABLED_KEY } from './planner-stub';
 import { recordEgress, recordAction, readManifest, clearManifest, recordCanaries } from './manifest';
@@ -44,6 +44,36 @@ chrome.storage.onChanged.addListener((changes) => {
     backendUrl = changes.backendUrl.newValue;
   }
 });
+
+/**
+ * Asks the backend which planner is answering, and tells the panel.
+ *
+ * Read fresh each run rather than cached: the whole point is to notice when
+ * the backend changed under us, and a cached answer would report the one we
+ * expected instead of the one that is live.
+ */
+async function reportPlanner(): Promise<void> {
+  try {
+    const res = await fetch(`${backendUrl}/health`);
+    const h = await res.json() as {
+      status?: string; planner?: string; offline?: boolean;
+      model?: string | null; detail?: string | null;
+    };
+    emitPlanner({
+      planner: h.planner ?? 'unknown',
+      offline: Boolean(h.offline),
+      model: h.model ?? null,
+      healthy: h.status === 'ok',
+      detail: h.detail ?? null,
+    });
+  } catch (err) {
+    // A backend we cannot reach is itself worth saying out loud.
+    emitPlanner({
+      planner: 'unreachable', offline: false, model: null, healthy: false,
+      detail: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
 
 /** Relays a question to the backend and hands the prose answer back. */
 async function handleChat(message: { message: string; context?: string }) {
@@ -312,6 +342,8 @@ async function fetchPlan(
 
 async function processPageIR(pageIR: PageIR){
   notifyStatus('running', 'Planning next action...');
+
+  void reportPlanner();
 
   const t0 = performance.now();
   emitPhase('DETECTING');

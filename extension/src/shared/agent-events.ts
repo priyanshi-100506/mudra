@@ -107,6 +107,14 @@ export type AgentEventBody =
   | { type: 'AGENT_ACTION_RESOLVED'; effect: string; outcome: 'executed' | 'refused'; reason?: string; target?: string }
   | { type: 'AGENT_ERROR'; message: string }
   /**
+   * Which backend is answering.
+   *
+   * Surfaced because "the plans got worse" and "the backend silently
+   * changed" are different problems — one is the model, one is the
+   * configuration — and they must not look alike from the panel.
+   */
+  | { type: 'AGENT_PLANNER'; planner: string; offline: boolean; model?: string | null; healthy: boolean; detail?: string | null }
+  /**
    * A canary reached the serialised outbound body. The request was aborted
    * and the session is stopped: no retry, no degraded continue.
    *

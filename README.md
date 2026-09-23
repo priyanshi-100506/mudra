@@ -94,13 +94,71 @@ npm test
 
 ---
 
-## 6. Development Setup
+## 6. Choosing a planner
+
+`PLANNER` selects which brain answers. Set it in `backend/.env`.
+
+| Value | What answers | Needs |
+|---|---|---|
+| `gemini` | hosted planner (default) | `GEMINI_API_KEY`, a network |
+| `ollama` | a local vision-language model on this machine | Ollama running locally |
+| `stub` | deterministic plans, no model at all | nothing |
+
+`GET /health` reports which one is live, and the side panel shows it too.
+That is deliberate: *"the plans got worse"* and *"the backend silently
+changed"* are different problems — one is the model, one is the configuration
+— and they must not look alike when you have two minutes to work it out.
+
+`stub` is never the default and has to be asked for by name. A stub running by
+default would serve canned plans that look like a working agent, and nobody
+would notice until someone asked it to do something the canned plan did not
+cover.
+
+### Running fully offline
+
+```bash
+ollama pull qwen2.5vl:3b
+OLLAMA_ORIGINS='chrome-extension://*' ollama serve
+```
+
+> ### ⚠️ `OLLAMA_ORIGINS` is not optional
+>
+> Ollama's CORS allowlist contains no extension origin by default, so **every
+> request from the extension comes back 403**.
+>
+> The failure is quiet in the worst possible way: the backend is up, the model
+> is loaded, `ollama list` looks right — and local inference never runs once.
+> If you start Ollama any other way, the offline demo will appear to work and
+> will not be doing anything.
+>
+> ```bash
+> OLLAMA_ORIGINS='chrome-extension://*' ollama serve
+> ```
+
+Then set `PLANNER=ollama` in `backend/.env`. The redacted screenshot is sent
+to the local model as an image, so it can reason about layout the DOM does not
+describe — without ever seeing a face or an identity number.
+
+---
+
+## 7. Development Setup
 
 ### Backend Setup
+
+**macOS / Linux**
 ```bash
 cd backend
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+python3 -m venv ../.venv
+source ../.venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+**Windows (PowerShell)**
+```powershell
+cd backend
+python -m venv ..\.venv
+..\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
@@ -111,4 +169,14 @@ cd extension
 npm install
 npm run build
 ```
+
+### Evaluation
+
+```bash
+cd extension && npm run eval
+```
+
+Writes `eval/results.json`. Ground truth and results are both committed — see
+[`eval/README.md`](eval/README.md) for the measured numbers and their
+conditions.
 Load the unpacked extension directory (`extension/dist`) into Chrome via `chrome://extensions`.

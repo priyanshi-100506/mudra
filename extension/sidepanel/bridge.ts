@@ -54,6 +54,15 @@ export function toAgentEvent(msg: AgentEventMessage): AgentEvent | null {
       };
     case 'AGENT_MANIFEST':
       return { type: 'MANIFEST', entries: msg.entries, meta };
+    case 'AGENT_PLANNER':
+      return {
+        type: 'PLANNER',
+        planner: {
+          planner: msg.planner, offline: msg.offline, model: msg.model,
+          healthy: msg.healthy, detail: msg.detail,
+        },
+        meta,
+      };
     case 'AGENT_BLOCKED':
       return {
         type: 'BLOCKED',

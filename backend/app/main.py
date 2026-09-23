@@ -15,6 +15,7 @@ import hashlib
 
 from app.schemas.page_ir import PageIR
 from app.agent.verifier import reject_if_pii
+from app.agent.planner import build_planner, describe
 
 app = FastAPI(title="CLIO v0.1 Backend Agent API", version="0.1.0")
 
@@ -36,6 +37,16 @@ app.add_middleware(
 # Per-session agent loop registry
 _sessions: dict[str, AgentLoop] = {}
 
+# The configured planner, built once. An unknown PLANNER value fails here
+# rather than falling back, so a misconfigured backend is loud.
+try:
+    planner_client = build_planner()
+    planner_error: str | None = None
+except Exception as exc:
+    planner_client = None
+    planner_error = str(exc)
+
+# Kept for the chat endpoint, which is Gemini-specific.
 try:
     gemini_client = GeminiAgentClient(api_key=settings.GEMINI_API_KEY)
 except Exception:
@@ -44,12 +55,15 @@ except Exception:
 
 def get_session(session_id: str) -> AgentLoop:
     if session_id not in _sessions:
-        if not gemini_client:
+        if not planner_client:
             raise HTTPException(
                 status_code=500,
-                detail="Gemini client not initialized. Check GEMINI_API_KEY in .env file.",
+                detail=(
+                    planner_error
+                    or f"Planner '{settings.PLANNER}' could not be initialised."
+                ),
             )
-        _sessions[session_id] = AgentLoop(gemini_client=gemini_client)
+        _sessions[session_id] = AgentLoop(gemini_client=planner_client)
     return _sessions[session_id]
 
 
@@ -83,8 +97,28 @@ _chats: dict[str, list[dict[str, str]]] = {}
 
 
 @app.get("/health")
-def health_check():
-    return {"status": "ok", "gemini_configured": bool(settings.GEMINI_API_KEY)}
+async def health_check():
+    """Says which backend is answering.
+
+    "The plans got worse" and "the backend silently changed" are different
+    problems — one is the model, one is the configuration — and mistaking one
+    for the other burns time nobody has during a demo. So the live planner is
+    named here, and a stub that is running says it is running.
+    """
+    if not planner_client:
+        return {
+            "status": "error",
+            "planner": settings.PLANNER,
+            "reachable": False,
+            "detail": planner_error,
+        }
+    info = await describe(planner_client)
+    healthy = bool(info.get("reachable")) and bool(info.get("model_present"))
+    return {
+        "status": "ok" if healthy else "degraded",
+        **info,
+        "gemini_configured": bool(settings.GEMINI_API_KEY),
+    }
 
 
 @app.get("/test", response_class=HTMLResponse)

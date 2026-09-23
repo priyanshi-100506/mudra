@@ -59,6 +59,11 @@ export interface AgentState {
   pending: GrantRequest | null;
   audit: AuditEntry[];
   error: string | null;
+  /** Which backend answered last. Null until /health has been read. */
+  planner: {
+    planner: string; offline: boolean; model?: string | null;
+    healthy: boolean; detail?: string | null;
+  } | null;
   /**
    * Set when the redactor failed a canary check and the session stopped.
    *

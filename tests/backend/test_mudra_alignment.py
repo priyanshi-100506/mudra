@@ -292,7 +292,7 @@ class TestAgentStepEndpoint:
         mock_gemini.plan_next_action = AsyncMock(return_value=planned_action)
         client = TestClient(app)
         # Patch the session registry so our mock is used
-        with patch("app.main.gemini_client", mock_gemini):
+        with patch("app.main.planner_client", mock_gemini):
             with patch("app.main._sessions", {}):
                 yield client, mock_gemini
 
@@ -301,7 +301,7 @@ class TestAgentStepEndpoint:
         mock_gemini = MagicMock()
         mock_gemini.plan_next_action = AsyncMock(return_value=planned)
 
-        with patch("app.main.gemini_client", mock_gemini), \
+        with patch("app.main.planner_client", mock_gemini), \
              patch("app.main._sessions", {}):
             client = TestClient(app)
             resp = client.post("/agent/step", json=VALID_STEP_PAYLOAD)
@@ -317,7 +317,7 @@ class TestAgentStepEndpoint:
         mock_gemini = MagicMock()
         mock_gemini.plan_next_action = AsyncMock(return_value=planned)
 
-        with patch("app.main.gemini_client", mock_gemini), \
+        with patch("app.main.planner_client", mock_gemini), \
              patch("app.main._sessions", {}):
             client = TestClient(app)
             resp = client.post("/agent/step", json=VALID_STEP_PAYLOAD)
@@ -333,7 +333,7 @@ class TestAgentStepEndpoint:
         mock_gemini = MagicMock()
         mock_gemini.plan_next_action = AsyncMock(return_value=planned)
 
-        with patch("app.main.gemini_client", mock_gemini), \
+        with patch("app.main.planner_client", mock_gemini), \
              patch("app.main._sessions", {}):
             client = TestClient(app)
             resp = client.post("/agent/step", json=VALID_STEP_PAYLOAD)

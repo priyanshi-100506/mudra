@@ -5,7 +5,11 @@ import type { DetectionCounts, RedactionCounts } from '../types';
 export const DetectionSummary: React.FC<{
   detection: DetectionCounts | null;
   redaction: RedactionCounts | null;
-}> = ({ detection, redaction }) => {
+  planner?: {
+    planner: string; offline: boolean; model?: string | null;
+    healthy: boolean; detail?: string | null;
+  } | null;
+}> = ({ detection, redaction, planner }) => {
   if (!detection) return null;
   return (
     <Card>
@@ -18,6 +22,29 @@ export const DetectionSummary: React.FC<{
           <Row label="Text found in images">{detection.ocrRegions}</Row>
         </dl>
       </Section>
+      {/*
+        Named, not assumed. A stub that is running says it is running, so
+        "the plans got worse" cannot be mistaken for "the backend changed".
+      */}
+      {planner && (
+        <Section>
+          <dl style={{ margin: 0 }}>
+            <Row label="Planner">
+              <span style={{ color: planner.healthy ? undefined : 'var(--danger, #c0392b)' }}>
+                {planner.planner}
+                {planner.model ? ` · ${planner.model}` : ''}
+                {planner.offline ? ' · on this device' : ''}
+                {planner.healthy ? '' : ' · unavailable'}
+              </span>
+            </Row>
+            {planner.detail && (
+              <Row label="">
+                <span className="sub" style={{ fontSize: 11 }}>{planner.detail}</span>
+              </Row>
+            )}
+          </dl>
+        </Section>
+      )}
       {redaction && (
         <div style={{ marginTop: 10 }}>
           <Section>

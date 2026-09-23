@@ -20,7 +20,7 @@ let seq = 0;
 
 /** Events that supersede an earlier one of the same type. */
 const REPLACES = new Set([
-  'AGENT_PHASE', 'AGENT_PAGE', 'AGENT_DETECTION',
+  'AGENT_PHASE', 'AGENT_PAGE', 'AGENT_PLANNER', 'AGENT_DETECTION',
   'AGENT_REDACTION', 'AGENT_OUTBOUND', 'AGENT_CONFIRM_REQUIRED', 'AGENT_MANIFEST',
 ]);
 
@@ -61,6 +61,11 @@ export const emitPhase = (phase: AgentPhase) => emit({ type: 'AGENT_PHASE', phas
 /** One observation pass: how much was described, and how much was sealed. */
 export const emitObserved = (elements: number, sensitive: number) =>
   emit({ type: 'AGENT_OBSERVED', elements, sensitive });
+export const emitPlanner = (info: {
+  planner: string; offline: boolean; model?: string | null;
+  healthy: boolean; detail?: string | null;
+}) => emit({ type: 'AGENT_PLANNER', ...info });
+
 export const emitError = (message: string) => emit({ type: 'AGENT_ERROR', message });
 
 /**

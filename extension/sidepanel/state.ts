@@ -9,7 +9,7 @@ export const FEED_CAP = 200;
 export const initialState: AgentState = {
   phase: 'IDLE', page: null, task: null, detection: null,
   redaction: null, fields: [], outbound: null, pending: null, audit: [], error: null,
-  blocked: null,
+  blocked: null, planner: null,
   feed: [], observed: null, seen: [], refused: 0, plan: null,
 };
 
@@ -28,6 +28,7 @@ export type AgentEvent =
   | { type: 'COMPLETE'; meta?: EventMeta }
   | { type: 'ERROR'; message: string; meta?: EventMeta }
   | { type: 'BLOCKED'; blocked: NonNullable<AgentState['blocked']>; meta?: EventMeta }
+  | { type: 'PLANNER'; planner: NonNullable<AgentState['planner']>; meta?: EventMeta }
   | { type: 'RESET' };
 
 type AuditLike = AgentState['audit'][number];
@@ -246,6 +247,7 @@ export function reducer(state: AgentState, e: AgentEvent): AgentState {
 
     case 'COMPLETE': return { ...state, phase: 'COMPLETE', pending: null };
     case 'ERROR': return { ...state, phase: 'ERROR', pending: null, error: e.message };
+    case 'PLANNER': return { ...state, planner: e.planner };
     case 'BLOCKED':
       return { ...state, phase: 'BLOCKED', pending: null, blocked: e.blocked };
     case 'RESET': return { ...initialState, page: state.page };
