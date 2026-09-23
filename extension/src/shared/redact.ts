@@ -84,6 +84,8 @@ export interface VisualCounts {
   ocrRegions: number;
   maskedRegions: number;
   reOcrVerified: boolean;
+  canariesPlanted?: number;
+  canariesEscaped?: number;
 }
 
 export interface Redacted {
@@ -152,6 +154,8 @@ export function redactPageIR(ir: PageIR, visual?: VisualCounts): Redacted {
       // False unless an image was redacted, read back, and found clean. No
       // capture at all is not verification.
       reOcrVerified: visual?.reOcrVerified ?? false,
+      canariesPlanted: visual?.canariesPlanted ?? 0,
+      canariesEscaped: visual?.canariesEscaped ?? 0,
     },
   };
 }

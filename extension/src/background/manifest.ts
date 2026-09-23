@@ -12,7 +12,7 @@
 
 export interface ManifestEntry {
   at: string;
-  kind: 'egress' | 'action';
+  kind: 'egress' | 'action' | 'canary';
   /** SHA-256 of the exact bytes sent. Egress entries only. */
   digest?: string;
   destination?: string;
@@ -24,6 +24,10 @@ export interface ManifestEntry {
   effect?: string;
   outcome?: 'executed' | 'refused';
   reason?: string;
+  /** Canary entries only. Counts and kinds — never the tracer values. */
+  canariesPlanted?: number;
+  canariesEscaped?: number;
+  escapedKinds?: string[];
 }
 
 const entries: ManifestEntry[] = [];
@@ -104,4 +108,30 @@ export function exportManifest(): string {
   }
   lines.push('No sensitive value appears in this log, by construction.');
   return lines.join('\n');
+}
+
+/**
+ * Records a canary result for the observation.
+ *
+ * The values are not written here, only counts and kinds. A manifest that
+ * stored the tracers would be a file of valid-looking Aadhaar and card
+ * numbers sitting in extension storage, which is a worse problem than the one
+ * the canaries were watching for.
+ */
+export function recordCanaries(report: {
+  planted: number;
+  escaped: number;
+  escapedKinds: string[];
+}): void {
+  push({
+    at: new Date().toISOString(),
+    kind: 'canary',
+    canariesPlanted: report.planted,
+    canariesEscaped: report.escaped,
+    escapedKinds: report.escapedKinds,
+    outcome: report.escaped === 0 ? 'executed' : 'refused',
+    reason: report.escaped === 0
+      ? undefined
+      : 'A tracer value reached the outbound body; the request was aborted.',
+  });
 }

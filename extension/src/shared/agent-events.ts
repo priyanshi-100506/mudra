@@ -46,6 +46,9 @@ export interface RedactionCounts {
   textReferences: number;
   maskedRegions: number;
   reOcrVerified: boolean;
+  /** "3 planted, 0 escaped". Counts only — never the tracer values. */
+  canariesPlanted?: number;
+  canariesEscaped?: number;
 }
 
 export interface OutboundSummary {
@@ -122,7 +125,7 @@ export type AgentEventMessage = AgentEventBody & {
 /** One readable line of the egress manifest. Never carries a value. */
 export interface ManifestLine {
   at: string;
-  kind: 'egress' | 'action';
+  kind: 'egress' | 'action' | 'canary';
   digest?: string;
   destination?: string;
   fieldsSent?: number;
@@ -131,6 +134,10 @@ export interface ManifestLine {
   effect?: string;
   outcome?: 'executed' | 'refused';
   reason?: string;
+  /** Canary lines only. Counts and kinds — never the tracer values. */
+  canariesPlanted?: number;
+  canariesEscaped?: number;
+  escapedKinds?: string[];
 }
 
 /** Sent by the side panel to the service worker. */

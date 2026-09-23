@@ -1,4 +1,5 @@
 import { AgentAction, PageIR } from './types';
+import type { Canary } from './canary';
 
 export type ExtensionMessage =
   | { type: 'START_TASK'; goal: string }
@@ -7,7 +8,7 @@ export type ExtensionMessage =
   | { type: 'TOGGLE_PANEL' }
   | { type: 'CAPTURE_PAGE_IR' }
   | { type: 'GET_VIEWPORT_INFO' }
-  | { type: 'PAGE_IR_CAPTURED'; pageIR: PageIR }
+  | { type: 'PAGE_IR_CAPTURED'; pageIR: PageIR; canaries?: Canary[] }
   | { type: 'EXECUTE_ACTION'; action: AgentAction }
   | { type: 'ACTION_EXECUTED'; success: boolean; error?: string; extracted_data?: string }
   | { type: 'TASK_STATUS'; status: 'idle' | 'running' | 'completed' | 'error'; message: string };

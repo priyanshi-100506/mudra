@@ -1,16 +1,31 @@
 import { capturePageIR } from './perception';
 import { collectImageRegions } from './image-regions';
+import { plantCanaries } from './canary-node';
+import { generateCanaries } from '../shared/canary';
 import { redactPageIR } from './redaction';
 import { executeAction } from './executor';
 import { ExtensionMessage } from '../shared/messaging';
 
 chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendResponse) => {
   if (message.type === 'CAPTURE_PAGE_IR') {
-    const rawIR = capturePageIR();
-    const { sanitizedIR } = redactPageIR(rawIR);
+    // Plant before capture, remove after, whatever happens. The canaries
+    // must be in the DOM at the moment perception walks it, or they travel a
+    // path real PII does not and prove nothing.
+    const canaries = generateCanaries();
+    const unplant = plantCanaries(canaries);
+    let sanitizedIR;
+    try {
+      sanitizedIR = redactPageIR(capturePageIR()).sanitizedIR;
+    } finally {
+      unplant();
+    }
     chrome.runtime.sendMessage({
       type: 'PAGE_IR_CAPTURED',
       pageIR: sanitizedIR,
+      // The values travel to the worker so it can scan its own outbound body
+      // for them. They are never put in a payload; that is what is being
+      // tested.
+      canaries,
     });
     sendResponse({ success: true });
   } else if (message.type === 'EXECUTE_ACTION') {

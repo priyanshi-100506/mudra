@@ -125,28 +125,41 @@ export type Clock = () => number;
 export async function ocrRegions(
   engine: OcrEngine | null,
   regions: ImageRect[],
-  opts: { now?: Clock; maxRegions?: number; budgetMs?: number } = {},
+  opts: {
+    now?: Clock;
+    maxRegions?: number;
+    budgetMs?: number;
+    /**
+     * Canary text, fed in as though OCR had read it off an image.
+     *
+     * It goes through the same tokenising and classification as every other
+     * block below — not a parallel branch — so a canary that fails to be
+     * recognised as PII here is telling us the OCR path would have failed to
+     * recognise a real Aadhaar number too.
+     */
+    canaryText?: string;
+  } = {},
 ): Promise<OcrOutcome> {
   const now = opts.now ?? (() => Date.now());
   const maxRegions = opts.maxRegions ?? MAX_OCR_REGIONS;
   const budgetMs = opts.budgetMs ?? OCR_BUDGET_MS;
-
-  if (!engine) {
-    // No reader means no knowledge of what is in any of these pixels.
-    return {
-      regions: [],
-      ocrTruncated: regions.length > 0,
-      unreadRegions: [...regions],
-      unavailable: 'OCR engine unavailable; every image region masked whole.',
-    };
-  }
 
   const started = now();
   const out: OcrRegion[] = [];
   const unread: ImageRect[] = [];
   let truncated = false;
 
-  for (let i = 0; i < regions.length; i++) {
+  // No reader means no knowledge of what is in any of these pixels, so every
+  // region is masked whole. The canary stream is still classified below: it
+  // is synthetic text, not something that had to be read off the screen, and
+  // skipping it here would silently disable the tracer on exactly the
+  // degraded path where a redaction bug is most likely.
+  if (!engine) {
+    truncated = regions.length > 0;
+    unread.push(...regions);
+  }
+
+  for (let i = 0; engine && i < regions.length; i++) {
     const rect = regions[i];
     if (i >= maxRegions || now() - started >= budgetMs) {
       truncated = true;
@@ -171,7 +184,26 @@ export async function ocrRegions(
     }
   }
 
-  return { regions: out, ocrTruncated: truncated, unreadRegions: unread };
+  // The canary block joins the same stream, after the real regions, and is
+  // classified by the same code. Its rect is zero-area: it is not on screen,
+  // so there is nothing to paint over — what is being tested is whether the
+  // classifier catches it, not whether the canvas can.
+  if (opts.canaryText) {
+    const rect = { x: 0, y: 0, width: 0, height: 0 };
+    for (const token of candidateTokens(opts.canaryText)) {
+      const { isPII: pii, kind } = classifyOcrText(token);
+      if (pii) out.push({ rect, text: token, isPII: true, kind });
+    }
+  }
+
+  return {
+    regions: out,
+    ocrTruncated: truncated,
+    unreadRegions: unread,
+    ...(engine ? {} : {
+      unavailable: 'OCR engine unavailable; every image region masked whole.',
+    }),
+  };
 }
 
 /**

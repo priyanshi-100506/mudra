@@ -6,7 +6,9 @@ import { emitPhase, emitError, emitDetection, emitRedaction, emitOutbound, emitA
          emitConfirmRequired, emitActionResolved, emitManifest, emitPlan, replaySnapshot, clearSnapshot } from './panel-events';
 import { deriveGrant, checkAction, taskSentence, grantSummary, effectOf, type Grant } from '../shared/grant';
 import { stubPlan, STUB_ENABLED_KEY } from './planner-stub';
-import { recordEgress, recordAction, readManifest, clearManifest } from './manifest';
+import { recordEgress, recordAction, readManifest, clearManifest, recordCanaries } from './manifest';
+import { registerCanaries, assertNoCanaries, scanPlannerResponse, canaryReport,
+         CanaryEscape, currentCanaries } from '../shared/canary';
 
 let currentGoal = '';
 let isAgentRunning = false;
@@ -202,6 +204,9 @@ async function handleMessage(message: ExtensionMessage | PanelCommand) {
     }
 
     case 'PAGE_IR_CAPTURED': {
+      // Minted and planted by the content script, which is where the DOM is.
+      // The worker adopts them because it is where the network is.
+      registerCanaries(message.canaries ?? []);
       if (!isAgentRunning) return;
       await processPageIR(message.pageIR);
       break;
@@ -256,14 +261,21 @@ async function fetchPlan(
     bbox: e.bbox,
   }));
 
+  // Serialise first, then scan, then send. The scan runs on this exact
+  // string and not on the object it came from: the leak worth catching is a
+  // value riding out inside some nested field nobody thought to walk, and
+  // JSON.stringify is the only thing that sees all of them.
+  const body = JSON.stringify({
+    goal: currentGoal,
+    page_ir: { ...payload, elements: outboundElements },
+    session_id: sessionId,
+  });
+  assertNoCanaries(body);
+
   const response = await fetch(`${backendUrl}/agent/step`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      goal: currentGoal,
-      page_ir: { ...payload, elements: outboundElements },
-      session_id: sessionId,
-    }),
+    body,
   });
 
   if (!response.ok) {
@@ -279,7 +291,19 @@ async function fetchPlan(
     throw new Error(`Backend HTTP ${response.status}: ${detail}`);
   }
 
-  return response.json();
+  // A canary coming back means the boundary was crossed somewhere upstream —
+  // possibly not by us, since a value can reach a provider by paths outside
+  // this extension. Either way the value is out and the session stops.
+  const text = await response.text();
+  const echoed = scanPlannerResponse(text);
+  if (echoed.length > 0) {
+    throw new CanaryEscape(
+      'Canary echoed by the planner: a tracer value crossed the boundary upstream. ' +
+        'The session was stopped.',
+      canaryReport(echoed),
+    );
+  }
+  return JSON.parse(text);
 }
 
 async function processPageIR(pageIR: PageIR){
@@ -287,7 +311,14 @@ async function processPageIR(pageIR: PageIR){
 
   const t0 = performance.now();
   emitPhase('DETECTING');
-  const redacted = redactPageIR(pageIR);
+  const redacted = redactPageIR(pageIR, {
+    faces: 0,
+    ocrRegions: 0,
+    maskedRegions: 0,
+    reOcrVerified: false,
+    canariesPlanted: currentCanaries().length,
+    canariesEscaped: 0,
+  });
   // The panel needs the totals at observation time: how much of the page was
   // described, and how much of it was sealed. Everything else that carries a
   // count arrives later, once the payload has been built.
@@ -328,6 +359,25 @@ async function processPageIR(pageIR: PageIR){
   console.log('[mudra:perf] local pipeline', Math.round(localMs), 'ms',
     '| fields', scene.summary.fieldsDescribed,
     '| refs', redacted.redaction.textReferences);
+
+  // The last gate before anything leaves. Scanning the serialised body — not
+  // the object — is the point: the leak worth catching is a value nested
+  // somewhere nobody thought to walk.
+  try {
+    assertNoCanaries(JSON.stringify(scene.payload));
+    recordCanaries(canaryReport([]));
+  } catch (err) {
+    const report = err instanceof CanaryEscape
+      ? err.report
+      : canaryReport(currentCanaries());
+    recordCanaries(report);
+    emitManifest(readManifest());
+    isAgentRunning = false;
+    const message = err instanceof Error ? err.message : String(err);
+    emitError(message);
+    notifyStatus('error', message);
+    return;
+  }
 
   emitOutbound(scene.summary);
   // The ref → element mapping never leaves this worker. It is the point at

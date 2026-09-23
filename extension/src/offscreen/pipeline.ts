@@ -72,7 +72,12 @@ export function assembleMasks(
     masks.push({ x: f.x, y: f.y, width: f.width, height: f.height, kind: 'FACE' });
   }
   for (const r of ocr.regions) {
-    if (r.isPII) masks.push({ ...r.rect, kind: 'OCR_PII' });
+    // Zero-area rects come from the canary stream, which has no pixels on
+    // screen. Painting them would be a no-op that inflates the masked-region
+    // count we show the user, and that number has to stay true.
+    if (r.isPII && r.rect.width > 0 && r.rect.height > 0) {
+      masks.push({ ...r.rect, kind: 'OCR_PII' });
+    }
   }
   for (const r of ocr.unreadRegions) {
     masks.push({ ...r, kind: 'UNREAD_REGION' });
@@ -101,6 +106,8 @@ export interface AnalyseInput {
   makeCanvas: (bitmap: ImageBitmap) => HTMLCanvasElement;
   /** Serialises the redacted canvas. Injected for the same reason. */
   encode: (canvas: HTMLCanvasElement) => Promise<string>;
+  /** Canary tracer text, injected into the OCR stream. Never sent. */
+  canaryText?: string;
 }
 
 /**
@@ -126,7 +133,9 @@ export async function analyseCapture(input: AnalyseInput): Promise<VisualEvidenc
     });
   }
 
-  const ocr = await ocrRegions(input.ocrEngine, input.imageRegions);
+  const ocr = await ocrRegions(input.ocrEngine, input.imageRegions, {
+    canaryText: input.canaryText,
+  });
   const masks = assembleMasks(faces, ocr, input.domSensitiveBoxes, input.dpr);
   const base = {
     faces,
