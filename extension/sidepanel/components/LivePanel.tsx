@@ -3,6 +3,7 @@ import type { AgentState, FeedItem, StageName, StageState } from '../types';
 import { STAGES, stageStates } from '../state';
 import { Icon } from './icons';
 import { Lockup } from './Lockup';
+import { WhatTheAISees } from './WhatTheAISees';
 
 const clock = (iso: string) => {
   const d = new Date(iso);
@@ -146,6 +147,10 @@ export const LivePanel: React.FC<{
         <Counters state={state} />
         <Rail state={state} />
       </div>
+
+      {/* The demo moment: the real capture beside what was actually sent.
+          Renders nothing until an observation has produced a packet. */}
+      <WhatTheAISees />
 
       <div className="lp-feedhead">
         <span className="lp-feedlabel">Live activity</span>

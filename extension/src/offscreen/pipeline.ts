@@ -18,7 +18,41 @@ import { verifyRedactedText, type VerificationResult } from './verify';
 
 /** A rectangle the pipeline decided to paint over, and why. */
 export interface MaskedRegion extends ImageRect {
+  /** The source that asked for the mask. */
   kind: 'FACE' | 'OCR_PII' | 'UNREAD_REGION' | 'DOM_SENSITIVE';
+  /**
+   * What to print on the box in the split view: FACE, AADHAAR, PASSWORD,
+   * HINDI-OCR.
+   *
+   * Separate from `kind` because the two answer different questions. `kind`
+   * is which detector fired, which is what the pipeline reasons about.
+   * `label` is what a person reading a projected screenshot from the back of
+   * a room needs to see, and "OCR_PII" tells them nothing.
+   */
+  label: string;
+}
+
+/** True when the text carries Devanagari, i.e. the Hindi reader earned it. */
+function isDevanagari(text: string): boolean {
+  return /[\u0900-\u097F]/.test(text);
+}
+
+/**
+ * The label for a sensitive DOM field.
+ *
+ * Falls back to SENSITIVE rather than to the field's own name: a name is page
+ * content, and page content on a slide is how a real value ends up projected
+ * while demonstrating that real values are never projected.
+ */
+export function domFieldLabel(inputType?: string | null, name?: string | null): string {
+  if (inputType === 'password') return 'PASSWORD';
+  if (inputType === 'tel') return 'PHONE';
+  const n = (name ?? '').toLowerCase();
+  if (/aadhaar|aadhar|\buid\b/.test(n)) return 'AADHAAR';
+  if (/\bpan\b|permanent account/.test(n)) return 'PAN';
+  if (/card|cvv|cvc/.test(n)) return 'CARD';
+  if (/otp|passcode|\bpin\b/.test(n)) return 'OTP';
+  return 'SENSITIVE';
 }
 
 export interface VisualEvidence {
@@ -64,29 +98,47 @@ export function withhold(reason: string, partial: Partial<VisualEvidence> = {}):
 export function assembleMasks(
   faces: FaceRect[],
   ocr: OcrOutcome,
-  domSensitiveBoxes: BoundingBox[],
+  domSensitiveBoxes: DomSensitiveBox[],
   dpr: number,
 ): MaskedRegion[] {
   const masks: MaskedRegion[] = [];
   for (const f of faces) {
-    masks.push({ x: f.x, y: f.y, width: f.width, height: f.height, kind: 'FACE' });
+    masks.push({ x: f.x, y: f.y, width: f.width, height: f.height, kind: 'FACE', label: 'FACE' });
   }
   for (const r of ocr.regions) {
     // Zero-area rects come from the canary stream, which has no pixels on
     // screen. Painting them would be a no-op that inflates the masked-region
     // count we show the user, and that number has to stay true.
     if (r.isPII && r.rect.width > 0 && r.rect.height > 0) {
-      masks.push({ ...r.rect, kind: 'OCR_PII' });
+      masks.push({
+        ...r.rect,
+        kind: 'OCR_PII',
+        // Devanagari gets its own label because reading it is the thing no
+        // competing team does, and a box marked AADHAAR does not show that
+        // the Hindi reader is what found it.
+        label: isDevanagari(r.text) ? 'HINDI-OCR' : r.kind.toUpperCase(),
+      });
     }
   }
   for (const r of ocr.unreadRegions) {
-    masks.push({ ...r, kind: 'UNREAD_REGION' });
+    masks.push({ ...r, kind: 'UNREAD_REGION', label: 'NOT READ' });
   }
   // The only place DOM coordinates cross into image space.
   for (const b of domSensitiveBoxes) {
-    masks.push({ ...cssRectToImageRect(b, dpr), kind: 'DOM_SENSITIVE' });
+    masks.push({
+      ...cssRectToImageRect(b.bbox, dpr),
+      kind: 'DOM_SENSITIVE',
+      label: domFieldLabel(b.inputType, b.name),
+    });
   }
   return masks;
+}
+
+/** A sensitive field the DOM already told us about, in CSS pixels. */
+export interface DomSensitiveBox {
+  bbox: BoundingBox;
+  inputType?: string | null;
+  name?: string | null;
 }
 
 export interface AnalyseInput {
@@ -95,7 +147,7 @@ export interface AnalyseInput {
   /** Image regions to OCR, already in image pixels. */
   imageRegions: ImageRect[];
   /** Sensitive element boxes from the PageIR, in CSS pixels. */
-  domSensitiveBoxes: BoundingBox[];
+  domSensitiveBoxes: DomSensitiveBox[];
   /** Raw values this observation saw. Local only; never sent. */
   knownPiiValues: string[];
   /** Reads a region of the original capture. */

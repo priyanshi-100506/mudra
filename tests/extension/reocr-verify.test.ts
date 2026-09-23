@@ -71,7 +71,7 @@ describe('assembleMasks', () => {
     const masks = assembleMasks(
       [{ x: 0, y: 0, width: 40, height: 40, score: 0.9 }],
       ocr,
-      [{ x: 5, y: 5, width: 20, height: 10 }],
+      [{ bbox: { x: 5, y: 5, width: 20, height: 10 }, inputType: 'password' }],
       2,
     );
     expect(masks.map((m) => m.kind).sort()).toEqual(
@@ -82,7 +82,8 @@ describe('assembleMasks', () => {
   });
 
   it('converts DOM boxes through the dpr, so masks land on the right pixels', () => {
-    const masks = assembleMasks([], emptyOcr, [{ x: 100, y: 50, width: 200, height: 20 }], 2);
+    const masks = assembleMasks([], emptyOcr,
+      [{ bbox: { x: 100, y: 50, width: 200, height: 20 }, inputType: 'password' }], 2);
     expect(masks[0]).toMatchObject({ x: 200, y: 100, width: 400, height: 40, kind: 'DOM_SENSITIVE' });
   });
 
