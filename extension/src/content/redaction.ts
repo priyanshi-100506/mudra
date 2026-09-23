@@ -235,6 +235,29 @@ export function isPII(value: string): boolean {
 }
 
 /**
+ * The kind of PII a value is, or null when it is not PII.
+ *
+ * Shares the one pattern table above with `isPII` rather than restating it.
+ * There is exactly one PII detector in MUDRA, and the Verhoeff and Luhn
+ * validators it carries are the reason a 12-digit order number is not
+ * reported as an Aadhaar number — a second, looser detector written for the
+ * vision path would give that guarantee away.
+ */
+export function piiKind(value: string): PiiLabel | null {
+  const trimmed = value.trim();
+  for (const p of PII_PATTERNS) {
+    if (p.fullPattern.test(trimmed)) {
+      if (p.validator && !p.validator(trimmed)) continue;
+      return p.label as PiiLabel;
+    }
+  }
+  return null;
+}
+
+export type PiiLabel =
+  | 'AADHAAR' | 'CARD' | 'PAN' | 'IFSC' | 'UPI_VPA' | 'EMAIL' | 'PASSPORT_IN';
+
+/**
  * Scans `text` for embedded PII sub-strings and replaces each occurrence
  * with its assigned opaque reference.  The referenceMap is populated
  * in-place.  Returns the sanitised string.

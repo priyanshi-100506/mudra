@@ -1,4 +1,5 @@
 import { capturePageIR } from './perception';
+import { collectImageRegions } from './image-regions';
 import { redactPageIR } from './redaction';
 import { executeAction } from './executor';
 import { ExtensionMessage } from '../shared/messaging';
@@ -59,6 +60,9 @@ chrome.runtime.onMessage.addListener((msg: { type?: string }, _sender, sendRespo
       width: window.innerWidth,
       height: window.innerHeight,
       dpr: window.devicePixelRatio || 1,
+      // The regions the DOM cannot account for, so OCR can be narrowed to
+      // them instead of sweeping the whole capture.
+      imageRegions: collectImageRegions(),
     });
   }
 });

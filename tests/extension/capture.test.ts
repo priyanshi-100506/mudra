@@ -79,8 +79,22 @@ describe('captureViewport', () => {
     await expect(captureViewport(7)).rejects.toThrow(/returned nothing/);
   });
 
+  it('carries the page\u2019s image regions through for the OCR pass', async () => {
+    const region = { kind: 'img', bbox: { x: 0, y: 0, width: 200, height: 200 } };
+    mockChrome({ width: 800, height: 600, dpr: 1, imageRegions: [region] });
+    const cap = await captureViewport(7);
+    expect(cap.imageRegions).toEqual([region]);
+  });
+
+  it('defaults to no image regions rather than undefined', async () => {
+    mockChrome({ width: 800, height: 600, dpr: 1 });
+    expect((await captureViewport(7)).imageRegions).toEqual([]);
+  });
+
   it('reads the viewport straight from the page', async () => {
     mockChrome({ width: 640, height: 480, dpr: 1.5 });
-    await expect(readViewportInfo(7)).resolves.toEqual({ width: 640, height: 480, dpr: 1.5 });
+    await expect(readViewportInfo(7)).resolves.toEqual({
+      width: 640, height: 480, dpr: 1.5, imageRegions: [],
+    });
   });
 });

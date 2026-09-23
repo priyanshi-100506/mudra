@@ -8,6 +8,8 @@
  * `chrome.storage`, never logged, and never placed in a network payload.
  */
 
+import type { ImageRegion } from '../content/image-regions';
+
 /** What the content script reports about the page's own coordinate space. */
 export interface ViewportInfo {
   /** CSS pixels. */
@@ -15,6 +17,8 @@ export interface ViewportInfo {
   height: number;
   /** Multiply CSS px by this to reach screenshot px. */
   dpr: number;
+  /** Image-like regions, in CSS pixels, for the OCR pass to narrow to. */
+  imageRegions: ImageRegion[];
 }
 
 export interface Capture extends ViewportInfo {
@@ -30,7 +34,12 @@ export async function readViewportInfo(tabId: number): Promise<ViewportInfo> {
   if (!info || typeof info.dpr !== 'number') {
     throw new Error('captureViewport: the page did not report a viewport.');
   }
-  return { width: info.width ?? 0, height: info.height ?? 0, dpr: info.dpr };
+  return {
+    width: info.width ?? 0,
+    height: info.height ?? 0,
+    dpr: info.dpr,
+    imageRegions: info.imageRegions ?? [],
+  };
 }
 
 /**
@@ -42,7 +51,7 @@ export async function readViewportInfo(tabId: number): Promise<ViewportInfo> {
  * guessed, which keeps the mask coordinates and the bitmap in one space.
  */
 export async function captureViewport(tabId: number): Promise<Capture> {
-  const { width, height, dpr } = await readViewportInfo(tabId);
+  const { width, height, dpr, imageRegions } = await readViewportInfo(tabId);
   const tab = await chrome.tabs.get(tabId);
   if (tab.windowId === undefined) {
     throw new Error('captureViewport: the tab has no window.');
@@ -56,5 +65,6 @@ export async function captureViewport(tabId: number): Promise<Capture> {
     width: Math.round(width * dpr),
     height: Math.round(height * dpr),
     dpr,
+    imageRegions,
   };
 }

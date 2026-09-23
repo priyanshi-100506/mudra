@@ -45,6 +45,20 @@ function copyRuntimeAssets(): Plugin {
       ];
       copyInto(resolve(out, 'wasm'), ortFiles.map((f) => [resolve(ortDist, f), f]));
 
+      // Tesseract: the worker script and the WASM core. Like ORT, these ship
+      // in the npm package and are pinned by package-lock.json, so they are
+      // copied rather than committed. The language data is not here — see
+      // public/tessdata/README.md.
+      const tessDist = resolve(__dirname, 'node_modules/tesseract.js/dist');
+      const tessCore = resolve(__dirname, 'node_modules/tesseract.js-core');
+      copyInto(resolve(out, 'wasm/tesseract'), [
+        [resolve(tessDist, 'worker.min.js'), 'worker.min.js'],
+        [resolve(tessCore, 'tesseract-core-lstm.wasm.js'), 'tesseract-core-lstm.wasm.js'],
+        [resolve(tessCore, 'tesseract-core-lstm.wasm'), 'tesseract-core-lstm.wasm'],
+        [resolve(tessCore, 'tesseract-core-simd-lstm.wasm.js'), 'tesseract-core-simd-lstm.wasm.js'],
+        [resolve(tessCore, 'tesseract-core-simd-lstm.wasm'), 'tesseract-core-simd-lstm.wasm'],
+      ]);
+
       // Committed weights and anything else under public/.
       const pub = resolve(__dirname, 'public');
       if (fs.existsSync(pub)) {
