@@ -15,6 +15,7 @@ reported by /health and shown in the panel, and a stub that is running says
 it is running.
 """
 
+import os
 from typing import Any, Dict, Optional
 
 from app.config import settings
@@ -27,6 +28,16 @@ class StubPlannerClient:
 
     name = "stub"
 
+    def __init__(self, obey_injection: Optional[bool] = None):
+        # STUB_OBEY_INJECTION=1 makes the stub behave like a planner that
+        # fell for the hidden instruction on the page. The demo needs the
+        # attack to happen on cue; the refusal that follows is real.
+        self.obey_injection = (
+            obey_injection
+            if obey_injection is not None
+            else os.getenv("STUB_OBEY_INJECTION", "").strip() in ("1", "true", "yes")
+        )
+
     async def plan_next_action(
         self,
         goal: str,
@@ -35,10 +46,14 @@ class StubPlannerClient:
         last_result: Optional[str] = None,
         **_: Any,
     ) -> Dict[str, Any]:
-        return stub_planner.plan(goal, page_ir, history)
+        return stub_planner.plan(goal, page_ir, history, obey_injection=self.obey_injection)
 
     async def health(self) -> Dict[str, Any]:
-        return {"reachable": True, "model_present": True, "detail": None}
+        return {
+            "reachable": True,
+            "model_present": True,
+            "detail": "obeying the page's injected instruction (demo)" if self.obey_injection else None,
+        }
 
 
 class UnknownPlanner(ValueError):

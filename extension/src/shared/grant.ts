@@ -21,10 +21,49 @@ const HIGH_IMPACT = new Set([
   'delete', 'upload', 'set_secret',
 ]);
 
-/** Maps a planner action onto the effect name a grant talks about. */
-export function effectOf(action: AgentAction): string {
+/**
+ * Controls whose label says they move money or destroy something.
+ *
+ * A click is not inherently high-impact, which is why `click` sits in every
+ * grant's base effects — an agent that needs confirmation to click a tab is
+ * useless. But a click on a button reading "Transfer Rs 50,000" is a
+ * transfer, and calling it `click` is how a prompt-injection walks straight
+ * through the gate: the injected instruction does not ask for a new
+ * permission, it asks for one the task already has.
+ *
+ * So the effect is read from what the click lands on, not from the verb
+ * alone. The label is page content and therefore attacker-controlled, but
+ * only in the direction of *more* restriction: a page can talk MUDRA into
+ * asking for confirmation it did not need, never out of asking for one it
+ * did.
+ */
+const CONTROL_EFFECT: Array<[RegExp, string]> = [
+  [/\b(transfer|remit|send\s*money|pay\s*now|make\s*payment|wire)\b/i, 'transfer'],
+  [/\b(buy|purchase|place\s*order|checkout|subscribe)\b/i, 'purchase'],
+  [/\b(delete|remove|close\s*account|deactivate|erase)\b/i, 'delete'],
+  [/\b(upload|attach\s*document)\b/i, 'upload'],
+];
+
+/** What a control's label says it does, or null if it says nothing alarming. */
+export function effectOfControl(label: string | null | undefined): string | null {
+  const text = label ?? '';
+  for (const [pattern, effect] of CONTROL_EFFECT) {
+    if (pattern.test(text)) return effect;
+  }
+  return null;
+}
+
+/**
+ * Maps a planner action onto the effect name a grant talks about.
+ *
+ * `targetLabel` is the name of the element the action points at, when the
+ * caller knows it. Without it a click is just a click, so callers that can
+ * resolve the target should pass it — that is the difference between
+ * refusing an injected transfer and executing one.
+ */
+export function effectOf(action: AgentAction, targetLabel?: string | null): string {
   switch (action.action) {
-    case 'click':    return 'click';
+    case 'click':    return effectOfControl(targetLabel) ?? 'click';
     case 'type':     return 'set_public_text';
     case 'select':   return 'select';
     case 'scroll':   return 'scroll';
@@ -68,8 +107,10 @@ export function checkAction(
   action: AgentAction,
   grant: Grant | null,
   currentOrigin: string,
+  /** Label of the element the action targets, when the caller can resolve it. */
+  targetLabel?: string | null,
 ): Verdict {
-  const effect = effectOf(action);
+  const effect = effectOf(action, targetLabel);
 
   if (!grant) {
     return { kind: 'refuse', effect, reason: 'No grant is active for this task.' };

@@ -30,6 +30,21 @@ function log(tag, message) {
   process.stdout.write(`  ${tag.padEnd(9)} ${message}\n`);
 }
 
+/** The task the presenter runs. Printed so it can be pasted, not retyped. */
+const DEMO_TASK = 'Fill this KYC form with my details and submit it.';
+
+/** Opens a URL in the user's default browser. */
+function openInBrowser(url) {
+  const cmd = process.platform === 'darwin' ? 'open'
+            : process.platform === 'win32' ? 'start'
+            : 'xdg-open';
+  try {
+    spawn(cmd, [url], { stdio: 'ignore', detached: true, shell: isWindows }).unref();
+  } catch {
+    // Not fatal — the URL is printed above.
+  }
+}
+
 function die(message, hint) {
   process.stderr.write(`\n  ✗ ${message}\n`);
   if (hint) process.stderr.write(`    ${hint}\n`);
@@ -140,14 +155,17 @@ async function main() {
         ['-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', BACKEND_PORT],
         join(root, 'backend'));
 
-  // 3. Fixture server, for the eval pages.
-  log('fixtures', `serving eval/fixtures on http://127.0.0.1:${FIXTURE_PORT}`);
+  // 3. One server rooted at the repo, so both the demo page and the eval
+  //    fixtures are reachable from the same origin. The extension holds a
+  //    host permission for this origin; adding a second port would mean a
+  //    second permission for no benefit.
+  log('fixtures', `serving the repo on http://127.0.0.1:${FIXTURE_PORT}`);
   start('fixtures', python, ['-m', 'http.server', FIXTURE_PORT, '--bind', '127.0.0.1'],
-        join(root, 'eval', 'fixtures'));
+        root);
 
   const [backendUp, fixturesUp] = await Promise.all([
     waitForPort(BACKEND_PORT, '/health'),
-    waitForPort(FIXTURE_PORT, '/'),
+    waitForPort(FIXTURE_PORT, '/demo/kyc.html'),
   ]);
 
   if (!backendUp) die('Backend did not come up.', 'Check the backend log above.');
@@ -169,12 +187,23 @@ async function main() {
         if (parsed.detail) log('planner', parsed.detail);
       } catch { /* leave as unknown */ }
 
+      const demoUrl = `http://127.0.0.1:${FIXTURE_PORT}/demo/kyc.html`;
       process.stdout.write('\n  ' + '─'.repeat(56) + '\n');
       log('ready', `planner: ${planner} (${status})`);
       log('ready', `backend:  http://127.0.0.1:${BACKEND_PORT}`);
-      log('ready', `fixtures: http://127.0.0.1:${FIXTURE_PORT}`);
+      log('ready', `demo:     ${demoUrl}`);
+      log('ready', `fixtures: http://127.0.0.1:${FIXTURE_PORT}/eval/fixtures/`);
       log('ready', 'load extension/dist at chrome://extensions (Developer mode)');
+
+      process.stdout.write('\n  The task to paste into the panel:\n');
+      process.stdout.write(`    ${DEMO_TASK}\n`);
       process.stdout.write('\n  Ctrl-C to stop.\n\n');
+
+      // Open the demo page, unless asked not to. Deliberately does not start
+      // the task: the presenter presses Run, so the audience sees the panel
+      // in its resting state first and the redaction happens in front of
+      // them rather than before they were looking.
+      if (!process.env.NO_OPEN) openInBrowser(demoUrl);
     });
   }).on('error', () => log('ready', 'backend is up but /health did not answer'));
 }

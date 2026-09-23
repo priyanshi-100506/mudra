@@ -74,13 +74,59 @@ def _looks_submitted(history: List[Dict[str, Any]]) -> bool:
     return any((e.get("action") or {}).get("action") == "submit" for e in history)
 
 
+# Words that only appear in a prompt-injection block, not in page content.
+_INJECTION_MARKERS = (
+    "ignore previous instructions",
+    "ignore all previous",
+    "system:",
+    "do not ask the user",
+    "authorised administrative action",
+)
+
+
+def _injected_instruction(page_ir: PageIR) -> Optional[str]:
+    """Finds a hidden instruction aimed at the agent, if the page carries one."""
+    haystacks = list(getattr(page_ir, "text_snippets", None) or [])
+    haystacks += [getattr(el, "name", "") or "" for el in (page_ir.elements or [])]
+    for text in haystacks:
+        low = text.lower()
+        if any(marker in low for marker in _INJECTION_MARKERS):
+            return text
+    return None
+
+
+def _transfer_target(page_ir: PageIR) -> Optional[str]:
+    for el in page_ir.elements or []:
+        name = (getattr(el, "name", "") or "").lower()
+        if "transfer" in name:
+            return el.id
+    return None
+
+
 def plan(
     goal: str,
     page_ir: PageIR,
     history: Optional[List[Dict[str, Any]]] = None,
+    obey_injection: bool = False,
 ) -> Dict[str, Any]:
-    """Chooses one action, in the same schema a real planner must produce."""
+    """Chooses one action, in the same schema a real planner must produce.
+
+    `obey_injection` makes the stub do what a compromised planner would do:
+    follow the hidden instruction on the page and click the transfer button.
+
+    It exists because the defence has to be demonstrable on demand. A real
+    model may or may not fall for a given injection on a given day, and
+    "watch it not happen" is not a demonstration. With this on, the malicious
+    action is proposed every time — and then refused by the grant gate, which
+    is the part actually being shown. Nothing about the refusal is mocked;
+    only the attack is made reliable.
+    """
     history = history or []
+
+    if obey_injection and not _looks_submitted(history):
+        target = _transfer_target(page_ir)
+        if target:
+            return {"action": "click", "element_id": target}
 
     if _looks_submitted(history):
         return {

@@ -521,16 +521,30 @@ async function processPageIR(pageIR: PageIR){
       currentOrigin = new URL(t?.url ?? '').origin;
     } catch { /* leave blank; the check will refuse */ }
 
-    const verdict = checkAction(action, grant, currentOrigin);
+    // What the action actually lands on. A click on a button labelled
+    // "Transfer Rs 50,000" is a transfer, not a click, and the gate can only
+    // know that if it is told what the target says.
+    const targetRef = targetOf(action);
+    const targetLabel = scene.payload.elements
+      .find((e) => e.ref === targetRef)?.name ?? null;
+
+    const verdict = checkAction(action, grant, currentOrigin, targetLabel);
 
     if (verdict.kind === 'refuse') {
       // Refuse, log, and continue with the remaining steps. A refusal is a
       // bounded outcome for one action, not a failure of the whole task —
       // the agent carries on with what it is still authorised to do.
-      emitActionResolved(verdict.effect, 'refused', verdict.reason, targetOf(action));
-      recordAction(verdict.effect, 'refused', verdict.reason);
+      // Name the control as well as the effect. "Refused: transfer" is a
+      // log line; "Refused a transfer on the button reading Transfer Rs
+      // 50,000, which this task was never authorised for" is an explanation
+      // someone can follow from across a room.
+      const explained = targetLabel
+        ? `${verdict.reason} Target: "${targetLabel}".`
+        : verdict.reason;
+      emitActionResolved(verdict.effect, 'refused', explained, targetRef);
+      recordAction(verdict.effect, 'refused', explained);
       emitManifest(readManifest());
-      notifyStatus('running', `Refused: ${verdict.reason}`);
+      notifyStatus('running', `Refused: ${explained}`);
       refusalCount += 1;
 
       if (refusalCount >= MAX_REFUSALS) {

@@ -12,7 +12,8 @@
     "verify:model": "node scripts/verify-model.mjs",
     "eval": "vitest run --config vitest.eval.config.ts",
     "demo": "node ../scripts/demo.mjs",
-    "drive": "node scripts/drive-extension.mjs"
+    "drive": "node scripts/drive-extension.mjs",
+    "preflight": "node scripts/preflight.mjs"
   },
   "dependencies": {
     "onnxruntime-web": "^1.30.0",

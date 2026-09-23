@@ -4,7 +4,7 @@
 # than shell so that Windows is not stranded — Node is already required for
 # the extension build.
 
-.PHONY: demo build test eval drive clean
+.PHONY: demo build test eval drive preflight clean
 
 ## Bring up backend, fixtures and a fresh extension build.
 demo:
@@ -18,6 +18,10 @@ build:
 test:
 	cd extension && npm test
 	cd backend && python -m pytest ../tests -q
+
+## Check everything before going on stage. Green or red, per line.
+preflight:
+	cd extension && npm run preflight
 
 ## Load the built extension into a real Chrome and drive it.
 drive:
