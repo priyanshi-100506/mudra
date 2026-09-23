@@ -8,11 +8,14 @@
     "build": "tsc --noEmit && vite build && vite build --mode content && node copy-manifest.js",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify:model": "node scripts/verify-model.mjs"
   },
   "dependencies": {
+    "onnxruntime-web": "^1.30.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",

@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Mudra offscreen perception</title>
+  </head>
+  <body>
+    <!--
+      Never visible. MV3 service workers have no DOM, so ONNX inference,
+      canvas redaction and OCR happen here. The raw screenshot exists only
+      inside this document and is discarded once redaction has been verified.
+    -->
+    <script type="module" src="./offscreen.ts"></script>
+  </body>
+</html>
