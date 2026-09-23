@@ -382,7 +382,10 @@ export function redactPageIR(ir: PageIR): {
  */
 export function redactCanvas(
   canvas: HTMLCanvasElement,
-  elementsToMask: DOMRect[],
+  // Any rect in the canvas's own pixel space. Widened from DOMRect so the
+  // vision pipeline can pass the ImageRects it computes without constructing
+  // throwaway DOMRects; only these four fields were ever read.
+  elementsToMask: ReadonlyArray<{ x: number; y: number; width: number; height: number }>,
 ): HTMLCanvasElement {
   const PADDING = 4; // px — added around each masked region
 

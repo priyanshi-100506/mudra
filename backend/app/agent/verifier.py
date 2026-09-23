@@ -1,6 +1,17 @@
 from typing import Tuple
 from app.schemas.actions import AgentAction
 from app.schemas.page_ir import PageIR
+from app.agent.pii_guard import assert_no_pii, find_pii  # noqa: F401  (re-exported)
+
+
+def reject_if_pii(page_ir: PageIR) -> None:
+    """Server-side tripwire on an inbound observation.
+
+    Raises if any text field carries a value matching the PII patterns. The
+    client redacts before sending, so this should never fire; that is the
+    point of having it.
+    """
+    assert_no_pii(page_ir)
 
 
 class ActionVerifier:

@@ -28,3 +28,11 @@ class PageIR(BaseModel):
     elements: List[PageElement] = Field(default_factory=list, description="Flat list of interactive elements")
     text_snippets: List[str] = Field(default_factory=list, description="Top-level static context headings/snippets")
     observed_at: str = Field(description="ISO timestamp of observation")
+    screenshot_b64: Optional[str] = Field(
+        default=None,
+        description=(
+            "Redacted screenshot, base64 PNG. The client sends this only after "
+            "re-OCR verification confirmed no PII is readable in it. An absent "
+            "field is the normal case and means no image was verified clean."
+        ),
+    )

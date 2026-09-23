@@ -73,6 +73,19 @@ function newRef(elementId: string): string {
   return ref;
 }
 
+/**
+ * What the vision pass found. Absent when no capture was taken, which is a
+ * different thing from a capture that found nothing: the counts below stay at
+ * zero either way, but `reOcrVerified` is only ever true when an image was
+ * actually verified clean and sent.
+ */
+export interface VisualCounts {
+  faces: number;
+  ocrRegions: number;
+  maskedRegions: number;
+  reOcrVerified: boolean;
+}
+
 export interface Redacted {
   /** Safe to send. Contains no resolved values. */
   elements: SceneElement[];
@@ -83,7 +96,7 @@ export interface Redacted {
   fields: RedactedField[];
 }
 
-export function redactPageIR(ir: PageIR): Redacted {
+export function redactPageIR(ir: PageIR, visual?: VisualCounts): Redacted {
   const refMap = new Map<string, { elementId: string; value: string }>();
   let structuredPii = 0;
 
@@ -123,8 +136,23 @@ export function redactPageIR(ir: PageIR): Redacted {
     elements,
     refMap,
     fields,
-    detection: { structuredPii, faces: 0, namedEntities: 0, ocrRegions: 0 },
-    redaction: { textReferences: refMap.size, maskedRegions: 0, reOcrVerified: false },
+    detection: {
+      structuredPii,
+      // Named-entity recognition is not implemented, so this stays at zero
+      // rather than being filled with a plausible-looking number. A count we
+      // did not measure is worse than an honest zero: it is the sort of thing
+      // that survives into a slide and then into a question we cannot answer.
+      namedEntities: 0,
+      faces: visual?.faces ?? 0,
+      ocrRegions: visual?.ocrRegions ?? 0,
+    },
+    redaction: {
+      textReferences: refMap.size,
+      maskedRegions: visual?.maskedRegions ?? 0,
+      // False unless an image was redacted, read back, and found clean. No
+      // capture at all is not verification.
+      reOcrVerified: visual?.reOcrVerified ?? false,
+    },
   };
 }
 
@@ -138,6 +166,13 @@ export interface OutboundPageIR {
   elements: SceneElement[];
   text_snippets: string[];
   observed_at: string;
+  /**
+   * The redacted screenshot, present only when re-OCR verification passed.
+   *
+   * Optional rather than nullable on purpose: an absent key is the default,
+   * and every path that would have set it must first hold a verified image.
+   */
+  screenshot_b64?: string;
 }
 
 /**
@@ -167,6 +202,7 @@ function sanitiseUrl(raw: string): string {
 export function buildOutbound(
   r: Redacted,
   ir: PageIR,
+  visual?: { screenshotB64: string | null; reOcrVerified: boolean },
 ): { payload: OutboundPageIR; summary: OutboundSummary } {
   const payload: OutboundPageIR = {
     url: sanitiseUrl(ir.url),
@@ -175,6 +211,14 @@ export function buildOutbound(
     text_snippets: redactSnippets(ir.text_snippets ?? []),
     observed_at: ir.observed_at,
   };
+
+  // The single gate on pixels leaving the device. Both conditions, not
+  // either: an image with no verification and a verification with no image
+  // are each a bug, and neither may send anything.
+  if (visual?.reOcrVerified && visual.screenshotB64) {
+    payload.screenshot_b64 = visual.screenshotB64;
+  }
+
   const serialised = JSON.stringify(payload);
   for (const { value } of r.refMap.values()) {
     if (value && serialised.includes(value)) {
@@ -184,6 +228,8 @@ export function buildOutbound(
   return {
     payload,
     summary: {
+      // Raw pixels, specifically. A verified-clean redacted image is not raw,
+      // and this counter has only ever meant "unredacted".
       rawPixelsSent: 0,
       piiValuesSent: 0,
       fieldsDescribed: r.elements.length,

@@ -10,7 +10,11 @@ from pydantic import BaseModel, Field
 from app.agent.gemini_client import GeminiAgentClient
 from app.agent.loop import AgentLoop, LoopStepResponse
 from app.config import settings
+import base64
+import hashlib
+
 from app.schemas.page_ir import PageIR
+from app.agent.verifier import reject_if_pii
 
 app = FastAPI(title="CLIO v0.1 Backend Agent API", version="0.1.0")
 
@@ -228,6 +232,34 @@ def manifest_viewer_html():
 @app.post("/agent/step", response_model=LoopStepResponse)
 async def run_agent_step(payload: AgentStepRequest):
     loop = get_session(payload.session_id)
+
+    # Defence in depth. The client is where redaction actually happens; this
+    # only makes a client bug loud instead of silent. A 422 here means the
+    # extension needs fixing, so it is deliberately not a quiet scrub.
+    try:
+        reject_if_pii(payload.page_ir)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    # The audit trail has to cover the pixels too, not only the JSON. Hash and
+    # size, never the image: recording the bytes would make the manifest the
+    # very store of screenshots the design exists to avoid.
+    if payload.page_ir.screenshot_b64:
+        raw = base64.b64decode(payload.page_ir.screenshot_b64, validate=False)
+        manifest_store.record(
+            EgressManifestEntry(
+                session_id=payload.session_id,
+                target_url=payload.page_ir.url,
+                action_type="screenshot",
+                status="allowed",
+                details={
+                    "image_sha256": hashlib.sha256(raw).hexdigest(),
+                    "image_bytes": len(raw),
+                    "re_ocr_verified": True,
+                },
+            )
+        )
+
     try:
         response = await loop.step(
             goal=payload.goal,
