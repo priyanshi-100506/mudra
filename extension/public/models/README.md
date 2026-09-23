@@ -22,15 +22,21 @@ about: a light-weight browser agent, not a datacentre.
 
 | | |
 |---|---|
-| **Source** | https://github.com/onnx/models — `validated/vision/body_analysis/ultraface/models/version-RFB-320.onnx` |
+| **Source** | https://github.com/onnx/models — `validated/vision/body_analysis/ultraface/models/version-RFB-320.onnx`, branch `main` |
 | **Upstream project** | [Linzaer/Ultra-Light-Fast-Generic-Face-Detector-1MB](https://github.com/Linzaer/Ultra-Light-Fast-Generic-Face-Detector-1MB) |
 | **Licence** | MIT |
-| **SHA-256** | _not yet recorded — run `npm run verify:model`_ |
-| **Size** | _recorded with the hash_ |
+| **SHA-256** | `34cd7e60aeff28744c657de7a3dc64e872d506741de66987f3426f2b79f88017` |
+| **Size** | 1,270,727 bytes |
+| **Retrieved** | 2026-09-23 |
+
+Re-check at any time with `npm run verify:model`. The pre-flight check
+compares the file on disk against the hash in this table and fails if they
+differ, so a substituted or truncated download is caught before a demo rather
+than during one.
 
 ### Tensors
 
-Input:
+Input — tensor name confirmed against the committed file, not assumed:
 
 | Name | Type | Shape | Layout |
 |---|---|---|---|
@@ -45,6 +51,11 @@ Outputs:
 |---|---|---|---|
 | `scores` | float32 | `[1, 4420, 2]` | per anchor, `(background, face)` |
 | `boxes` | float32 | `[1, 4420, 4]` | per anchor, `(x1, y1, x2, y2)`, normalised to 0..1 |
+
+`vision.ts` selects these by name rather than by position, falling back to
+order if a re-export renamed them. A test asserts the names the loaded
+session actually reports, so a model swap that changed them would fail loudly
+instead of decoding the wrong tensor as boxes.
 
 Box coordinates are normalised against the **original** image, not the
 320x240 the model saw, so they scale by the capture's own dimensions. Post-
