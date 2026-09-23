@@ -84,6 +84,37 @@ field beyond what the scene graph states separately (`role`, `name`,
 service worker and is consulted only after the grant gate has approved an
 action.
 
+### Names
+
+A person's name has no checksum and no format, so it is handled by where it
+appears rather than by what it looks like.
+
+**Sealed:** a field whose label names a person — `Full name`, `Name as on
+Aadhaar`, `Father's name`, `Surname`, `Nominee name`, or an autocomplete token
+of `name` / `given-name` / `family-name`.
+
+**Not sealed:** a field that merely contains the word — `Bank name`, `Scheme
+name`, `Product name`, `Username`, `File name`. The matching is deliberately
+narrow, because an over-sealed form is one the agent cannot fill.
+
+**Scrubbed elsewhere:** once a value has been sealed from a labelled field, it
+is replaced by that same reference everywhere else in the payload — the page
+title and the text snippets. Pages repeat themselves: a KYC form puts the
+applicant's name in a field and again in the heading. `redactSnippets` catches
+structured identifiers by pattern, but a name has no pattern to catch; the
+only reason we know it is sensitive is that a labelled field held it.
+
+#### The limit, stated plainly
+
+**A name that appears only in prose, never in a labelled field, is not
+detected.** There is no named-entity recognition in MUDRA. `namedEntities` in
+the detection counts is reported as `0` because it is zero, not because
+nothing was found.
+
+So on a news article, `Interview with Asha Verma` goes out intact. On a KYC
+form where the same name is in a `Full name` field, it does not. The eval
+carries a test for each case, including the one that fails.
+
 ### What makes a field sensitive
 
 Decided by `isSensitive()` in `extension/src/shared/redact.ts`. Identity

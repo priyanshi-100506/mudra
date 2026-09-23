@@ -82,6 +82,24 @@
       "devanagari": false
     },
     {
+      "id": "dom-names",
+      "group": "dom-pii",
+      "title": "Scholarship Portal — Applicant Details",
+      "file": "fixtures/dom-names.html",
+      "pii": [
+        "Asha Verma",
+        "Ramesh Verma",
+        "arjun.nair@example.test"
+      ],
+      "decoys": [
+        "State Bank of India",
+        "National Merit Scholarship"
+      ],
+      "faces": 0,
+      "imageOnly": false,
+      "devanagari": false
+    },
+    {
       "id": "dom-bank-transfer",
       "group": "dom-pii",
       "title": "Bank — Add a Payee",

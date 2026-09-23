@@ -1,6 +1,6 @@
 # Evaluation
 
-18 fixture pages carrying 27 synthetic identifiers and 14 decoys, plus a
+19 fixture pages carrying 30 synthetic identifiers and 16 decoys, plus a
 harness that measures MUDRA's real detection modules against them.
 
 ```sh
@@ -48,6 +48,7 @@ Fourteen look-alike values that match the shape of an identifier:
 | 16-digit batch number | payment card | fails Luhn | ✅ ignored |
 | GSTIN | contains a PAN | a business tax number, not personal data | ✅ ignored |
 | Vehicle registration ×2 | an official ID | identifies a vehicle, not a person | ✅ ignored |
+| "Bank name", "Scheme name" | a person's name | contains the word, names no person | ✅ ignored |
 | PAN-shaped warehouse SKU | PAN | *PAN has no checksum* | ❌ **sealed** |
 | IFSC-shaped branch code ×2 | IFSC | *IFSC has no checksum* | ❌ **sealed** |
 
@@ -118,10 +119,10 @@ Node v24.2.0, Chrome 153. Text pipeline measured in JSDOM.
 
 | Metric | Value |
 |---|---|
-| Recall (text pipeline) | **100%** (22/22) |
-| Precision | **88.0%** |
-| F1 | **93.6%** |
-| Decoy false positives | **3 / 13 (23.1%)** |
+| Recall (text pipeline) | **100%** (25/25) |
+| Precision | **89.3%** |
+| F1 | **94.3%** |
+| Decoy false positives | **3 / 15 (20.0%)** |
 | Leaks after redaction | **0** |
 | Canaries escaped | **0** of 3 per observation |
 | Local pipeline p50 / p95 | **7.4 ms / 61.5 ms** |
@@ -174,7 +175,7 @@ the single validated detector, and the decoy false-positive rate fell from
 | File | |
 |---|---|
 | `build-fixtures.mjs` | generates the fixtures and ground truth together |
-| `fixtures/` | 18 pages: 7 DOM PII, 5 image-only PII, 6 decoys |
+| `fixtures/` | 19 pages: 8 DOM PII, 5 image-only PII, 6 decoys |
 | `ground-truth.json` | expected PII and decoys per fixture |
 | `run-eval.ts` | the harness |
 | `harness.spec.ts` | entry point for `npm run eval` |

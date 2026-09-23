@@ -257,6 +257,21 @@ ${field('alt_mobile', 'Alternate mobile', V.phone3, 'type="tel"')}
   <button>Track</button>`,
   { pii: [V.passport, V.passport2, V.passport3, V.email], decoys: [] });
 
+add('dom-names', 'dom-pii', 'Scholarship Portal — Applicant Details',
+  `<h2>Applicant details</h2>
+${field('full_name', 'Full name', 'Asha Verma')}
+${field('fathers_name', "Father's name", 'Ramesh Verma')}
+${field('name_as_on_aadhaar', 'Name as on Aadhaar', 'Asha Verma')}
+${field('bank_name', 'Bank name', 'State Bank of India')}
+${field('scheme_name', 'Scheme name', 'National Merit Scholarship')}
+${field('applicant_email', 'Email', V.email2)}
+  <button>Save</button>`,
+  // Bank name and scheme name are decoys of a different kind: they contain
+  // the word "name" and must stay readable, because an over-sealed form is
+  // one the agent cannot fill.
+  { pii: ['Asha Verma', 'Ramesh Verma', V.email2],
+    decoys: ['State Bank of India', 'National Merit Scholarship'] });
+
 add('dom-bank-transfer', 'dom-pii', 'Bank — Add a Payee',
   `<h2>Add a new payee</h2>
 ${field('payee_name', 'Payee name', 'Sunita Rao')}

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-23T16:51:24.878Z",
+  "generated": "2026-09-23T18:07:04.150Z",
   "groundTruthGenerated": "2026-09-23",
   "environment": {
     "machine": "Darwin 25.5.0 arm64",
@@ -12,11 +12,11 @@
     "weightsPresent": false
   },
   "decoys": {
-    "shownToDetector": 13,
-    "inFixtures": 14,
-    "correctlyIgnored": 10,
+    "shownToDetector": 15,
+    "inFixtures": 16,
+    "correctlyIgnored": 12,
     "falsePositives": 3,
-    "falsePositiveRate": 0.2308,
+    "falsePositiveRate": 0.2,
     "kinds": [
       "12-digit order and invoice numbers that fail Verhoeff",
       "16-digit ticket and batch numbers that fail Luhn",
@@ -25,12 +25,12 @@
     ]
   },
   "detection": {
-    "truePositives": 22,
+    "truePositives": 25,
     "falseNegatives": 0,
     "falsePositives": 3,
     "recall": 1,
-    "precision": 0.88,
-    "f1": 0.9362,
+    "precision": 0.8929,
+    "f1": 0.9434,
     "notObserved": 6,
     "notObservedNote": "Values present in a fixture but never captured into the PageIR. Not scored either way: the detector was never asked.",
     "scope": "Text pipeline only. 6 image-only fixtures not run."
@@ -43,8 +43,8 @@
   "latency": {
     "firstLoadMs": "not-run",
     "steadyStateTextPipelineMs": {
-      "p50": 7.35,
-      "p95": 61.54
+      "p50": 11.14,
+      "p95": 100.59
     },
     "visualPassMs": "not-run",
     "note": "Text-pipeline timings are measured in this harness. Visual-pass and first-load timings are browser-only and are reported by the panel waterfall, not here."
@@ -58,7 +58,7 @@
     "ratio": "not-run",
     "note": "The payload-vs-screenshot ratio requires a real capture and is reported by the panel. It is not estimated here."
   },
-  "peakHeapMb": 98.1,
+  "peakHeapMb": 132.6,
   "notRun": [
     {
       "id": "img-aadhaar-scan",
@@ -99,7 +99,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 1126,
-      "localMs": 61.54,
+      "localMs": 100.59,
       "visual": "run"
     },
     {
@@ -115,7 +115,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 1088,
-      "localMs": 21.7,
+      "localMs": 21.88,
       "visual": "run"
     },
     {
@@ -131,7 +131,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 1190,
-      "localMs": 17.34,
+      "localMs": 22.13,
       "visual": "run"
     },
     {
@@ -147,7 +147,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 1179,
-      "localMs": 17.55,
+      "localMs": 24.97,
       "visual": "run"
     },
     {
@@ -163,7 +163,23 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 1257,
-      "localMs": 13.92,
+      "localMs": 20.23,
+      "visual": "run"
+    },
+    {
+      "id": "dom-names",
+      "group": "dom-pii",
+      "truePositives": 3,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 2,
+      "notObserved": 0,
+      "expectedPii": 3,
+      "expectedDecoys": 2,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 1216,
+      "localMs": 16.07,
       "visual": "run"
     },
     {
@@ -179,7 +195,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 1210,
-      "localMs": 14.09,
+      "localMs": 15.77,
       "visual": "run"
     },
     {
@@ -195,7 +211,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 1106,
-      "localMs": 13.23,
+      "localMs": 17.85,
       "visual": "run"
     },
     {
@@ -211,7 +227,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 213,
-      "localMs": 0.36,
+      "localMs": 0.48,
       "visual": "not-run",
       "notes": "Visual pass not run: version-RFB-320.onnx is not present."
     },
@@ -228,7 +244,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 211,
-      "localMs": 0.38,
+      "localMs": 0.51,
       "visual": "not-run",
       "notes": "Visual pass not run: version-RFB-320.onnx is not present."
     },
@@ -245,7 +261,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 235,
-      "localMs": 0.36,
+      "localMs": 0.43,
       "visual": "not-run",
       "notes": "Visual pass not run: version-RFB-320.onnx is not present."
     },
@@ -262,7 +278,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 222,
-      "localMs": 0.31,
+      "localMs": 0.38,
       "visual": "not-run",
       "notes": "Visual pass not run: version-RFB-320.onnx is not present."
     },
@@ -279,7 +295,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 206,
-      "localMs": 0.29,
+      "localMs": 0.42,
       "visual": "not-run",
       "notes": "Visual pass not run: version-RFB-320.onnx is not present."
     },
@@ -296,7 +312,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 485,
-      "localMs": 5.6,
+      "localMs": 7.88,
       "visual": "run"
     },
     {
@@ -312,7 +328,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 474,
-      "localMs": 5.39,
+      "localMs": 5.85,
       "visual": "run"
     },
     {
@@ -328,7 +344,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 602,
-      "localMs": 7.35,
+      "localMs": 12.64,
       "visual": "run"
     },
     {
@@ -344,7 +360,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 179,
-      "localMs": 0.36,
+      "localMs": 0.71,
       "visual": "run"
     },
     {
@@ -360,7 +376,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 788,
-      "localMs": 12.25,
+      "localMs": 11.14,
       "visual": "run"
     },
     {
@@ -376,7 +392,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 197,
-      "localMs": 0.35,
+      "localMs": 0.48,
       "visual": "not-run",
       "notes": "Visual pass not run: version-RFB-320.onnx is not present."
     }

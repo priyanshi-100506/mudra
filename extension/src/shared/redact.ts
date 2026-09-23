@@ -5,18 +5,37 @@ import { redactSnippets, isPII } from '../content/redaction';
 const SENSITIVE_NAME =
   /(pass\s?word|pwd|passcode|otp|mfa|2fa|cvv|cvc|\bpin\b|security\s?code|aadhaar|aadhar|\buid\b|\bpan\b|permanent\s?account|card\s?(number|no|verification)|credit\s?card|debit\s?card|expir|account\s?(number|no)|ifsc|swift|routing|\biban\b|upi|social\s?security|\bssn\b|\bsin\b|tax\s?id|\btin\b|driver'?s?\s?licen[cs]e|licen[cs]e\s?(number|no)|\bdl\s?no|passport|visa\s?number|voter\s?id|\bepic\b|token|secret|api\s?key|private\s?key|\bdob\b|date\s?of\s?birth|birth\s?date|mother'?s?\s?maiden|maiden\s?name|salary|income|net\s?worth|balance|medical|diagnos|prescription|health\s?(id|record))/i;
 
+/**
+ * Fields that hold a person's name.
+ *
+ * Kept apart from SENSITIVE_NAME because the matching has to be narrow. A
+ * bare /name/ would seal "Product name", "File name", "Username" and "Bank
+ * name", and every one of those is a field the planner needs to read — an
+ * over-sealed form is one the agent cannot fill.
+ *
+ * So this matches the shapes a person's name actually takes on an Indian
+ * form, and nothing else. It is pattern matching, not named-entity
+ * recognition: a name appearing in free prose is still not detected, and
+ * that limit is documented rather than papered over.
+ */
+const PERSON_NAME =
+  /((full|first|last|middle|given|legal|applicant|holder|nominee|candidate|student|patient|beneficiary|customer|spouse|father'?s?|mother'?s?|guardian'?s?)\s*name|name\s*(as\s*(on|per|in)|of\s*(applicant|holder|nominee))|\bsurname\b|\bforename\b)/i;
+
 /** Input types that are sensitive by their nature, whatever they contain. */
 const SENSITIVE_TYPE = new Set(['password', 'tel']);
 
 /** autocomplete tokens the spec reserves for sensitive data. */
 const SENSITIVE_AUTOCOMPLETE =
-  /(cc-|current-password|new-password|one-time-code|bday|tel-national)/i;
+  /(cc-|current-password|new-password|one-time-code|bday|tel-national|^name$|given-name|family-name|additional-name)/i;
 
 export function isSensitive(el: PageElement): boolean {
   // Identity first: a field is sensitive because of what it is, not only
   // what it currently holds. An empty card-number input still counts.
   if (el.input_type && SENSITIVE_TYPE.has(el.input_type)) return true;
   if (SENSITIVE_NAME.test(el.name ?? '')) return true;
+  // A person's name is identifying on its own, and it is the field a judge
+  // will look for on the payload panel.
+  if (PERSON_NAME.test(el.name ?? '')) return true;
   if (SENSITIVE_AUTOCOMPLETE.test(el.autocomplete ?? '')) return true;
   const v = el.value ?? '';
   if (!v) return false;
@@ -187,6 +206,36 @@ function sanitiseUrl(raw: string): string {
 }
 
 /**
+ * Replaces any value we sealed in a field with its reference, wherever else
+ * that value also appears.
+ *
+ * Pages repeat themselves: a KYC form puts the applicant's name in a field
+ * and again in the page title, and a bank puts the account holder's name in
+ * a heading. `redactSnippets` catches structured identifiers by pattern, but
+ * a name has no pattern to catch — the only reason we know it is sensitive
+ * is that a labelled field held it. So whatever we sealed there is scrubbed
+ * everywhere else too.
+ *
+ * This does not amount to name detection. A name that appears *only* in
+ * prose, never in a labelled field, is still not found. See the limits note
+ * in docs/page_ir_spec.md.
+ */
+function scrubSealedValues(
+  text: string,
+  refMap: Map<string, { elementId: string; value: string }>,
+): string {
+  let out = text;
+  for (const [ref, { value }] of refMap) {
+    // Two characters would match half the page; a sealed value that short is
+    // not identifying on its own anyway.
+    if (!value || value.length < 3) continue;
+    const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out.replace(new RegExp(escaped, 'gi'), ref);
+  }
+  return out;
+}
+
+/**
  * Builds the outbound payload and asserts no sensitive value survives.
  *
  * The assertion covers the whole serialised body rather than the elements
@@ -201,9 +250,10 @@ export function buildOutbound(
 ): { payload: OutboundPageIR; summary: OutboundSummary } {
   const payload: OutboundPageIR = {
     url: sanitiseUrl(ir.url),
-    title: redactSnippets([ir.title])[0] ?? '',
+    title: scrubSealedValues(redactSnippets([ir.title])[0] ?? '', r.refMap),
     elements: r.elements,
-    text_snippets: redactSnippets(ir.text_snippets ?? []),
+    text_snippets: redactSnippets(ir.text_snippets ?? [])
+      .map((snippet) => scrubSealedValues(snippet, r.refMap)),
     observed_at: ir.observed_at,
   };
 

@@ -110,14 +110,14 @@ From [`eval/results.json`](eval/results.json), committed and reproducible with
 `cd extension && npm run eval`.
 
 **Conditions:** Apple M3, 8 cores, 8 GB RAM, macOS (Darwin 25.5.0 arm64),
-Node v24.2.0, Chrome 153. 18 fixtures, 27 synthetic identifiers, 14 decoys.
+Node v24.2.0, Chrome 153. 19 fixtures, 30 synthetic identifiers, 16 decoys.
 
 | Metric | Result |
 |---|---|
-| Recall (text pipeline) | **100%** (22/22) |
-| Precision | **88.0%** |
-| F1 | **93.6%** |
-| **Decoy false positives** | **3 / 13 (23.1%)** |
+| Recall (text pipeline) | **100%** (25/25) |
+| Precision | **89.3%** |
+| F1 | **94.3%** |
+| **Decoy false positives** | **3 / 15 (20.0%)** |
 | Leaks after redaction | **0** |
 | Canaries escaped | **0** of 3 per observation |
 | Local pipeline p50 / p95 | **7.4 ms / 61.5 ms** |
@@ -138,9 +138,11 @@ Node v24.2.0, Chrome 153. 18 fixtures, 27 synthetic identifiers, 14 decoys.
   substring. Where none exists, MUDRA over-seals on purpose: a sealed SKU
   costs the planner one unreadable field, an unsealed PAN is the failure this
   project exists to prevent.
-- **No named-entity recognition.** A person's name in a page title goes out
-  unchanged. `namedEntities` is reported as an honest `0` rather than a
-  plausible number.
+- **Names are sealed by field label, not by recognition.** A `Full name` or
+  `Name as on Aadhaar` field is sealed, and that value is then scrubbed from
+  the page title and text too. But a name appearing *only* in prose, never in
+  a labelled field, is not detected — there is no NER, and `namedEntities` is
+  reported as an honest `0` rather than a plausible number.
 - **Five identifiers sit in prose the perception layer does not collect.**
   Reported as `notObserved` rather than counted as successes.
 - The end-to-end visual path has not yet been exercised against the real
