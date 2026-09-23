@@ -102,12 +102,42 @@ const V = {
   passport: 'M8241706',
   phone: '9876543210',
   email: 'meera.iyer@example.test',
-  // Decoys — look right, fail their checksum.
+  // A second cohort, so the same kind of identifier is exercised in more
+  // than one page context. Seven of one kind on one page measures the page;
+  // the same kind across five pages measures the detector.
+  aadhaar3: aadhaar('63518240971'),
+  aadhaar4: aadhaar('90247163582'),
+  pan3: 'DKLPM8812Q',
+  pan4: 'HRTPB3097J',
+  card3: card('378282246310000'),
+  upi2: 'arjun.nair@ybl',
+  upi3: 'sunita.rao@paytm',
+  ifsc2: 'ICIC0004521',
+  ifsc3: 'SBIN0009876',
+  passport2: 'K3928415',
+  passport3: 'Z7104852',
+  email2: 'arjun.nair@example.test',
+  email3: 'billing@vendor.example.test',
+  phone2: '+91 98200 11223',
+  phone3: '7012345678',
+
+  // Decoys — look right, fail their checksum or have none to fail.
   orderNo: aadhaarDecoy('42917583620'),
   ticketNo: cardDecoy('452012345678901'),
   skuPan: 'ZZQRS1234X',        // PAN-shaped, but a warehouse SKU
   invoiceNo: aadhaarDecoy('78341209654'),
-  batchNo: cardDecoy('601100099988877'),
+  batchNo: cardDecoy('601100099888776'.slice(0, 15)),
+  // GSTIN: 15 chars, carries an embedded PAN. Not something we claim to
+  // detect, so it should pass through untouched.
+  gstin: '29ABCDE1234F1Z5',
+  // Indian vehicle registration. Alphanumeric and official-looking, and a
+  // shape-only detector has no principled reason to leave it alone.
+  vehicleReg: 'KA01AB1234',
+  vehicleReg2: 'MH12CD5678',
+  // IFSC-shaped internal branch code. IFSC has no checksum, so this is the
+  // same class of problem as the PAN-shaped SKU and is expected to be a
+  // false positive. It is in the set precisely because it is uncomfortable.
+  branchCode: 'ZZZZ0BRANCH',
 };
 
 const page = (title, body, extraHead = '') => `<!doctype html>
@@ -175,44 +205,84 @@ const add = (id, group, title, html, expect) =>
 add('dom-aadhaar', 'dom-pii', 'UIDAI — Update Aadhaar Details',
   `<h2>Verify your identity</h2>
 ${field('aadhaar_number', 'Aadhaar number', V.aadhaar1)}
+${field('linked_aadhaar', 'Aadhaar linked to this mobile', V.aadhaar3)}
 ${field('full_name', 'Name as on Aadhaar', 'Meera Iyer')}
+${field('registered_mobile', 'Registered mobile', V.phone2, 'type="tel"')}
 ${field('otp', 'OTP sent to your mobile', '', 'type="tel" autocomplete="one-time-code"')}
   <button>Verify</button>`,
-  { pii: [V.aadhaar1], decoys: [] });
+  { pii: [V.aadhaar1, V.aadhaar3], decoys: [] });
 
 add('dom-pan', 'dom-pii', 'Income Tax — e-Filing Portal',
   `<h2>File your return</h2>
 ${field('pan', 'PAN', V.pan1)}
+${field('spouse_pan', 'Spouse PAN (if filing jointly)', V.pan3)}
 ${field('assessment_year', 'Assessment year', '2025-26')}
+${field('contact_email', 'Contact email', V.email2, `title="We will write to ${V.email2}"`)}
 ${field('password', 'e-Filing password', '', 'type="password"')}
   <button>Continue</button>`,
-  { pii: [V.pan1], decoys: [] });
+  { pii: [V.pan1, V.pan3, V.email2], decoys: [] });
 
 add('dom-card', 'dom-pii', 'Checkout — Payment Details',
   `<h2>Card payment</h2>
 ${field('card_number', 'Card number', V.card1)}
+${field('backup_card', 'Backup card on file', V.card3)}
 ${field('card_cvv', 'CVV', '', 'type="password"')}
 ${field('expiry', 'Expiry', '08/29')}
 ${field('order_reference', 'Order reference', V.orderNo)}
+${field('seller_gstin', 'Seller GSTIN', V.gstin)}
   <button>Pay</button>`,
-  // The order reference on the same page is a decoy: it must not be flagged.
-  { pii: [V.card1], decoys: [V.orderNo] });
+  // The order reference and the seller's GSTIN are both decoys: a business
+  // tax number on an invoice is not the customer's personal data.
+  { pii: [V.card1, V.card3], decoys: [V.orderNo, V.gstin] });
 
 add('dom-upi', 'dom-pii', 'UPI — Send Money',
   `<h2>Send to a UPI ID</h2>
 ${field('vpa', 'UPI ID', V.upi)}
+${field('payee_vpa', 'Payee UPI ID', V.upi2)}
+${field('alt_vpa', 'Alternate UPI ID', V.upi3)}
 ${field('ifsc', 'Bank IFSC', V.ifsc)}
+${field('payee_ifsc', 'Payee bank IFSC', V.ifsc2)}
 ${field('amount', 'Amount', '2500')}
   <button>Send</button>`,
-  { pii: [V.upi, V.ifsc], decoys: [] });
+  { pii: [V.upi, V.upi2, V.upi3, V.ifsc, V.ifsc2], decoys: [] });
 
 add('dom-passport', 'dom-pii', 'Passport Seva — Application Status',
   `<h2>Track your application</h2>
 ${field('passport_number', 'Passport number', V.passport)}
+${field('spouse_passport', 'Spouse passport number', V.passport2)}
+${field('minor_passport', 'Minor passport number', V.passport3)}
 ${field('applicant_email', 'Email', V.email)}
 ${field('applicant_mobile', 'Mobile', V.phone, 'type="tel"')}
+${field('alt_mobile', 'Alternate mobile', V.phone3, 'type="tel"')}
   <button>Track</button>`,
-  { pii: [V.passport, V.email], decoys: [] });
+  { pii: [V.passport, V.passport2, V.passport3, V.email], decoys: [] });
+
+add('dom-bank-transfer', 'dom-pii', 'Bank — Add a Payee',
+  `<h2>Add a new payee</h2>
+${field('payee_name', 'Payee name', 'Sunita Rao')}
+${field('payee_account', 'Account number', V.card2)}
+${field('payee_ifsc', 'IFSC code', V.ifsc3)}
+${field('payee_upi', 'Or UPI ID', V.upi3)}
+${field('notify_email', 'Notify by email', V.email3)}
+${field('branch_code', 'Internal branch code', V.branchCode)}
+  <button>Add payee</button>`,
+  // branchCode is IFSC-shaped with no checksum to fail — an expected false
+  // positive, in the set precisely because it is uncomfortable.
+  { pii: [V.card2, V.ifsc3, V.upi3, V.email3], decoys: [V.branchCode] });
+
+add('dom-kyc-mixed', 'dom-pii', 'Insurance — KYC Declaration',
+  `<h2>Declare your identity documents</h2>
+${field('kyc_aadhaar', 'Aadhaar number', V.aadhaar4)}
+${field('kyc_pan', 'PAN', V.pan4)}
+${field('kyc_mobile', 'Mobile number', V.phone, 'type="tel"')}
+${field('vehicle_reg', 'Insured vehicle registration', V.vehicleReg)}
+${field('policy_ref', 'Existing policy reference', V.invoiceNo)}
+  <p>Queries to ${V.email3}.</p>
+  <button>Submit declaration</button>`,
+  // One page carrying two different valid identifier kinds alongside two
+  // different decoy kinds. This is the realistic case, and the one where a
+  // shape-only detector does worst.
+  { pii: [V.aadhaar4, V.pan4, V.email3], decoys: [V.vehicleReg, V.invoiceNo] });
 
 // Group 2 — image-only PII (5)
 add('img-aadhaar-scan', 'image-pii', 'KYC Upload — Aadhaar Scan',
@@ -297,6 +367,17 @@ add('decoy-invoice', 'decoy', 'Billing — Invoice',
   </table>
   <p>Payable within 30 days.</p>`,
   { pii: [], decoys: [V.invoiceNo] });
+
+add('decoy-business-ids', 'decoy', 'Vendor Portal — Business Details',
+  `<h2>Registered vendor</h2>
+${field('gstin', 'GSTIN', V.gstin)}
+${field('fleet_one', 'Fleet vehicle 1', V.vehicleReg)}
+${field('fleet_two', 'Fleet vehicle 2', V.vehicleReg2)}
+${field('depot_code', 'Depot branch code', V.branchCode)}
+  <p>None of these identify a person.</p>`,
+  // Business identifiers are not personal data, and sealing them costs the
+  // agent fields it needs to do ordinary vendor admin.
+  { pii: [], decoys: [V.gstin, V.vehicleReg, V.vehicleReg2, V.branchCode] });
 
 add('decoy-statue-photo', 'decoy', 'Gallery — Stone Statue',
   `<h2>Exhibit 14</h2>

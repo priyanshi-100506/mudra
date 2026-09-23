@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-23T16:35:13.116Z",
+  "generated": "2026-09-23T16:51:24.878Z",
   "groundTruthGenerated": "2026-09-23",
   "environment": {
     "machine": "Darwin 25.5.0 arm64",
@@ -12,11 +12,11 @@
     "weightsPresent": false
   },
   "decoys": {
-    "shownToDetector": 5,
-    "inFixtures": 6,
-    "correctlyIgnored": 4,
-    "falsePositives": 1,
-    "falsePositiveRate": 0.2,
+    "shownToDetector": 13,
+    "inFixtures": 14,
+    "correctlyIgnored": 10,
+    "falsePositives": 3,
+    "falsePositiveRate": 0.2308,
     "kinds": [
       "12-digit order and invoice numbers that fail Verhoeff",
       "16-digit ticket and batch numbers that fail Luhn",
@@ -25,13 +25,13 @@
     ]
   },
   "detection": {
-    "truePositives": 7,
+    "truePositives": 22,
     "falseNegatives": 0,
-    "falsePositives": 1,
+    "falsePositives": 3,
     "recall": 1,
-    "precision": 0.875,
-    "f1": 0.9333,
-    "notObserved": 5,
+    "precision": 0.88,
+    "f1": 0.9362,
+    "notObserved": 6,
     "notObservedNote": "Values present in a fixture but never captured into the PageIR. Not scored either way: the detector was never asked.",
     "scope": "Text pipeline only. 6 image-only fixtures not run."
   },
@@ -43,22 +43,22 @@
   "latency": {
     "firstLoadMs": "not-run",
     "steadyStateTextPipelineMs": {
-      "p50": 7.91,
-      "p95": 59.03
+      "p50": 7.35,
+      "p95": 61.54
     },
     "visualPassMs": "not-run",
     "note": "Text-pipeline timings are measured in this harness. Visual-pass and first-load timings are browser-only and are reported by the panel waterfall, not here."
   },
   "payload": {
     "sentBytesPerObservation": {
-      "p50": 474,
-      "p95": 896
+      "p50": 602,
+      "p95": 1257
     },
     "rawScreenshotBytes": "not-run",
     "ratio": "not-run",
     "note": "The payload-vs-screenshot ratio requires a real capture and is reported by the panel. It is not estimated here."
   },
-  "peakHeapMb": 123.6,
+  "peakHeapMb": 98.1,
   "notRun": [
     {
       "id": "img-aadhaar-scan",
@@ -89,81 +89,113 @@
     {
       "id": "dom-aadhaar",
       "group": "dom-pii",
-      "truePositives": 1,
+      "truePositives": 2,
       "falseNegatives": 0,
       "falsePositives": 0,
       "trueNegatives": 0,
       "notObserved": 0,
-      "expectedPii": 1,
+      "expectedPii": 2,
       "expectedDecoys": 0,
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
-      "sentBytes": 807,
-      "localMs": 59.03,
+      "sentBytes": 1126,
+      "localMs": 61.54,
       "visual": "run"
     },
     {
       "id": "dom-pan",
       "group": "dom-pii",
-      "truePositives": 1,
+      "truePositives": 3,
       "falseNegatives": 0,
       "falsePositives": 0,
       "trueNegatives": 0,
       "notObserved": 0,
-      "expectedPii": 1,
+      "expectedPii": 3,
       "expectedDecoys": 0,
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
-      "sentBytes": 771,
-      "localMs": 20.17,
+      "sentBytes": 1088,
+      "localMs": 21.7,
       "visual": "run"
     },
     {
       "id": "dom-card",
       "group": "dom-pii",
-      "truePositives": 1,
+      "truePositives": 2,
       "falseNegatives": 0,
       "falsePositives": 0,
-      "trueNegatives": 1,
+      "trueNegatives": 2,
       "notObserved": 0,
-      "expectedPii": 1,
-      "expectedDecoys": 1,
+      "expectedPii": 2,
+      "expectedDecoys": 2,
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
-      "sentBytes": 896,
-      "localMs": 32.2,
+      "sentBytes": 1190,
+      "localMs": 17.34,
       "visual": "run"
     },
     {
       "id": "dom-upi",
       "group": "dom-pii",
-      "truePositives": 2,
+      "truePositives": 5,
       "falseNegatives": 0,
       "falsePositives": 0,
       "trueNegatives": 0,
       "notObserved": 0,
-      "expectedPii": 2,
+      "expectedPii": 5,
       "expectedDecoys": 0,
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
-      "sentBytes": 725,
-      "localMs": 15.38,
+      "sentBytes": 1179,
+      "localMs": 17.55,
       "visual": "run"
     },
     {
       "id": "dom-passport",
       "group": "dom-pii",
-      "truePositives": 2,
+      "truePositives": 4,
       "falseNegatives": 0,
       "falsePositives": 0,
       "trueNegatives": 0,
       "notObserved": 0,
-      "expectedPii": 2,
+      "expectedPii": 4,
       "expectedDecoys": 0,
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
-      "sentBytes": 788,
-      "localMs": 19.3,
+      "sentBytes": 1257,
+      "localMs": 13.92,
+      "visual": "run"
+    },
+    {
+      "id": "dom-bank-transfer",
+      "group": "dom-pii",
+      "truePositives": 4,
+      "falseNegatives": 0,
+      "falsePositives": 1,
+      "trueNegatives": 0,
+      "notObserved": 0,
+      "expectedPii": 4,
+      "expectedDecoys": 1,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 1210,
+      "localMs": 14.09,
+      "visual": "run"
+    },
+    {
+      "id": "dom-kyc-mixed",
+      "group": "dom-pii",
+      "truePositives": 2,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 2,
+      "notObserved": 1,
+      "expectedPii": 3,
+      "expectedDecoys": 2,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 1106,
+      "localMs": 13.23,
       "visual": "run"
     },
     {
@@ -179,7 +211,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 213,
-      "localMs": 0.43,
+      "localMs": 0.36,
       "visual": "not-run",
       "notes": "Visual pass not run: version-RFB-320.onnx is not present."
     },
@@ -196,7 +228,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 211,
-      "localMs": 1.02,
+      "localMs": 0.38,
       "visual": "not-run",
       "notes": "Visual pass not run: version-RFB-320.onnx is not present."
     },
@@ -213,7 +245,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 235,
-      "localMs": 0.91,
+      "localMs": 0.36,
       "visual": "not-run",
       "notes": "Visual pass not run: version-RFB-320.onnx is not present."
     },
@@ -230,7 +262,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 222,
-      "localMs": 1.08,
+      "localMs": 0.31,
       "visual": "not-run",
       "notes": "Visual pass not run: version-RFB-320.onnx is not present."
     },
@@ -247,7 +279,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 206,
-      "localMs": 0.6,
+      "localMs": 0.29,
       "visual": "not-run",
       "notes": "Visual pass not run: version-RFB-320.onnx is not present."
     },
@@ -264,7 +296,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 485,
-      "localMs": 7.91,
+      "localMs": 5.6,
       "visual": "run"
     },
     {
@@ -280,7 +312,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 474,
-      "localMs": 14.02,
+      "localMs": 5.39,
       "visual": "run"
     },
     {
@@ -296,7 +328,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 602,
-      "localMs": 19.47,
+      "localMs": 7.35,
       "visual": "run"
     },
     {
@@ -312,7 +344,23 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 179,
-      "localMs": 0.8,
+      "localMs": 0.36,
+      "visual": "run"
+    },
+    {
+      "id": "decoy-business-ids",
+      "group": "decoy",
+      "truePositives": 0,
+      "falseNegatives": 0,
+      "falsePositives": 1,
+      "trueNegatives": 3,
+      "notObserved": 0,
+      "expectedPii": 0,
+      "expectedDecoys": 4,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 788,
+      "localMs": 12.25,
       "visual": "run"
     },
     {
@@ -328,7 +376,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 197,
-      "localMs": 0.45,
+      "localMs": 0.35,
       "visual": "not-run",
       "notes": "Visual pass not run: version-RFB-320.onnx is not present."
     }

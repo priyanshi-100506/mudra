@@ -1,7 +1,7 @@
 # Evaluation
 
-15 fixture pages, ground truth, and a harness that measures MUDRA's real
-detection modules against them.
+18 fixture pages carrying 27 synthetic identifiers and 14 decoys, plus a
+harness that measures MUDRA's real detection modules against them.
 
 ```sh
 cd extension && npm run eval
@@ -37,31 +37,47 @@ measures nothing.
 This is the column worth reading first, and it is the one a regex-based
 detector cannot produce.
 
-Five look-alike values that match the shape of an identifier and fail its
-checksum:
+Fourteen look-alike values that match the shape of an identifier:
 
-| Decoy | Looks like | Why it is not |
-|---|---|---|
-| 12-digit order number | Aadhaar | fails Verhoeff |
-| 12-digit invoice number | Aadhaar | fails Verhoeff |
-| 16-digit ticket number | payment card | fails Luhn |
-| 16-digit batch number | payment card | fails Luhn |
-| PAN-shaped warehouse SKU | PAN | *nothing — see below* |
+| Decoy | Looks like | Why it is not | Result |
+|---|---|---|---|
+| 12-digit order number | Aadhaar | fails Verhoeff | ✅ ignored |
+| 12-digit invoice number | Aadhaar | fails Verhoeff | ✅ ignored |
+| 12-digit policy reference | Aadhaar | fails Verhoeff | ✅ ignored |
+| 16-digit ticket number | payment card | fails Luhn | ✅ ignored |
+| 16-digit batch number | payment card | fails Luhn | ✅ ignored |
+| GSTIN | contains a PAN | a business tax number, not personal data | ✅ ignored |
+| Vehicle registration ×2 | an official ID | identifies a vehicle, not a person | ✅ ignored |
+| PAN-shaped warehouse SKU | PAN | *PAN has no checksum* | ❌ **sealed** |
+| IFSC-shaped branch code ×2 | IFSC | *IFSC has no checksum* | ❌ **sealed** |
+
+The GSTIN case is worth pausing on: a GSTIN *contains* a valid PAN as
+characters 3–12, so a substring matcher flags it. It is correctly left alone
+because the detector matches whole tokens rather than scanning for anything
+PAN-shaped inside a longer string.
 
 A false positive here is not a harmless over-reach. A sealed order number is a
 field the planner can no longer read, so the agent cannot complete a task that
 depends on it. Over-redaction has a cost, and pretending otherwise is how a
 privacy layer ends up switched off.
 
-**Measured: 1 false positive in 5.** The one is the PAN-shaped SKU.
+**Measured: 3 false positives in 13 shown to the detector (23.1%).**
 
-PAN carries no checksum, so shape alone cannot separate a real PAN from any
-other ten-character alphanumeric code. Constraining the fourth character to
-the holder-type letters was tried and reverted: the letter set is not
-something we can be certain of, and getting it wrong means failing to seal a
-real PAN. A sealed SKU costs one unreadable field; an unsealed PAN is the
-failure this project exists to prevent. The asymmetry decides it, and the
-false positive stays on the record.
+All three come from the same cause, and it is a real limitation rather than a
+tuning miss: **PAN and IFSC carry no checksum.** Shape alone cannot separate a
+real PAN from any other ten-character alphanumeric code, or a real IFSC from
+any four-letters-zero-six-characters branch code. Every decoy that *does* have
+a checksum to fail — Aadhaar, card — is correctly ignored, as are GSTIN and
+vehicle registrations.
+
+Constraining the PAN fourth character to the holder-type letters was tried and
+reverted. The letter set is not something we can be certain of, and getting it
+wrong means failing to seal a real PAN. A sealed SKU costs the planner one
+unreadable field; an unsealed PAN is the failure this project exists to
+prevent. The asymmetry decides it, and the false positives stay on the record.
+
+The honest one-line version: **where a checksum exists, we use it and the
+decoys pass through. Where none exists, we over-seal on purpose.**
 
 ---
 
@@ -102,19 +118,23 @@ Node v24.2.0, Chrome 153. Text pipeline measured in JSDOM.
 
 | Metric | Value |
 |---|---|
-| Recall (text pipeline) | **100%** (7/7) |
-| Precision | **87.5%** |
-| F1 | **93.3%** |
-| Decoy false positives | **1 / 5 (20%)** |
+| Recall (text pipeline) | **100%** (22/22) |
+| Precision | **88.0%** |
+| F1 | **93.6%** |
+| Decoy false positives | **3 / 13 (23.1%)** |
 | Leaks after redaction | **0** |
 | Canaries escaped | **0** of 3 per observation |
-| Local pipeline p50 / p95 | **7.9 ms / 59.0 ms** |
-| Payload per observation p50 / p95 | **474 B / 896 B** |
-| Peak heap | **123.6 MB** |
+| Local pipeline p50 / p95 | **7.4 ms / 61.5 ms** |
+| Payload per observation p50 / p95 | **602 B / 1257 B** |
+| Peak heap | **98.1 MB** |
+
+Twenty-two identifiers were captured and scored; five more sit in prose the
+perception layer does not collect, and are reported as `notObserved` rather
+than counted as either successes or misses.
 
 ### Not yet run
 
-Six fixtures — five image-only and the statue decoy — require
+Six of the eighteen fixtures — five image-only and the statue decoy — require
 `version-RFB-320.onnx`, which is not yet in `extension/public/models/`. Their
 rows read `not-run`. They are **not** reported as zeros, and the recall figure
 above is explicitly scoped to the text pipeline rather than presented as a
@@ -154,7 +174,7 @@ the single validated detector, and the decoy false-positive rate fell from
 | File | |
 |---|---|
 | `build-fixtures.mjs` | generates the fixtures and ground truth together |
-| `fixtures/` | 15 pages: 5 DOM PII, 5 image-only PII, 5 decoys |
+| `fixtures/` | 18 pages: 7 DOM PII, 5 image-only PII, 6 decoys |
 | `ground-truth.json` | expected PII and decoys per fixture |
 | `run-eval.ts` | the harness |
 | `harness.spec.ts` | entry point for `npm run eval` |

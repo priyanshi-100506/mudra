@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Passport Seva — Application Status</title>
+<title>Bank — Add a Payee</title>
 <style>
   body { font-family: system-ui, sans-serif; margin: 0; background: #f4f5f7; color: #16181d; }
   header { background: #0b3d91; color: #fff; padding: 18px 32px; }
@@ -22,34 +22,34 @@
 
 </head>
 <body>
-<header><h1>Passport Seva — Application Status</h1></header>
+<header><h1>Bank — Add a Payee</h1></header>
 <main>
-<h2>Track your application</h2>
+<h2>Add a new payee</h2>
   <div class="row">
-    <label for="passport_number">Passport number</label>
-    <input id="passport_number" name="passport_number" value="M8241706" >
+    <label for="payee_name">Payee name</label>
+    <input id="payee_name" name="payee_name" value="Sunita Rao" >
   </div>
   <div class="row">
-    <label for="spouse_passport">Spouse passport number</label>
-    <input id="spouse_passport" name="spouse_passport" value="K3928415" >
+    <label for="payee_account">Account number</label>
+    <input id="payee_account" name="payee_account" value="6011000999888773" >
   </div>
   <div class="row">
-    <label for="minor_passport">Minor passport number</label>
-    <input id="minor_passport" name="minor_passport" value="Z7104852" >
+    <label for="payee_ifsc">IFSC code</label>
+    <input id="payee_ifsc" name="payee_ifsc" value="SBIN0009876" >
   </div>
   <div class="row">
-    <label for="applicant_email">Email</label>
-    <input id="applicant_email" name="applicant_email" value="meera.iyer@example.test" >
+    <label for="payee_upi">Or UPI ID</label>
+    <input id="payee_upi" name="payee_upi" value="sunita.rao@paytm" >
   </div>
   <div class="row">
-    <label for="applicant_mobile">Mobile</label>
-    <input id="applicant_mobile" name="applicant_mobile" value="9876543210" type="tel">
+    <label for="notify_email">Notify by email</label>
+    <input id="notify_email" name="notify_email" value="billing@vendor.example.test" >
   </div>
   <div class="row">
-    <label for="alt_mobile">Alternate mobile</label>
-    <input id="alt_mobile" name="alt_mobile" value="7012345678" type="tel">
+    <label for="branch_code">Internal branch code</label>
+    <input id="branch_code" name="branch_code" value="ZZZZ0BRANCH" >
   </div>
-  <button>Track</button>
+  <button>Add payee</button>
 </main>
 <p class="note" style="text-align:center">Synthetic fixture. Every identifier on this page is fake.</p>
 </body>

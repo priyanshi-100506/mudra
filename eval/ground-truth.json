@@ -8,7 +8,8 @@
       "title": "UIDAI — Update Aadhaar Details",
       "file": "fixtures/dom-aadhaar.html",
       "pii": [
-        "429175836201"
+        "429175836201",
+        "635182409718"
       ],
       "decoys": [],
       "faces": 0,
@@ -21,7 +22,9 @@
       "title": "Income Tax — e-Filing Portal",
       "file": "fixtures/dom-pan.html",
       "pii": [
-        "BKPPS4321N"
+        "BKPPS4321N",
+        "DKLPM8812Q",
+        "arjun.nair@example.test"
       ],
       "decoys": [],
       "faces": 0,
@@ -34,10 +37,12 @@
       "title": "Checkout — Payment Details",
       "file": "fixtures/dom-card.html",
       "pii": [
-        "4520123456789018"
+        "4520123456789018",
+        "3782822463100003"
       ],
       "decoys": [
-        "429175836206"
+        "429175836206",
+        "29ABCDE1234F1Z5"
       ],
       "faces": 0,
       "imageOnly": false,
@@ -50,7 +55,10 @@
       "file": "fixtures/dom-upi.html",
       "pii": [
         "meera.iyer@okhdfcbank",
-        "HDFC0001234"
+        "arjun.nair@ybl",
+        "sunita.rao@paytm",
+        "HDFC0001234",
+        "ICIC0004521"
       ],
       "decoys": [],
       "faces": 0,
@@ -64,9 +72,47 @@
       "file": "fixtures/dom-passport.html",
       "pii": [
         "M8241706",
+        "K3928415",
+        "Z7104852",
         "meera.iyer@example.test"
       ],
       "decoys": [],
+      "faces": 0,
+      "imageOnly": false,
+      "devanagari": false
+    },
+    {
+      "id": "dom-bank-transfer",
+      "group": "dom-pii",
+      "title": "Bank — Add a Payee",
+      "file": "fixtures/dom-bank-transfer.html",
+      "pii": [
+        "6011000999888773",
+        "SBIN0009876",
+        "sunita.rao@paytm",
+        "billing@vendor.example.test"
+      ],
+      "decoys": [
+        "ZZZZ0BRANCH"
+      ],
+      "faces": 0,
+      "imageOnly": false,
+      "devanagari": false
+    },
+    {
+      "id": "dom-kyc-mixed",
+      "group": "dom-pii",
+      "title": "Insurance — KYC Declaration",
+      "file": "fixtures/dom-kyc-mixed.html",
+      "pii": [
+        "902471635826",
+        "HRTPB3097J",
+        "billing@vendor.example.test"
+      ],
+      "decoys": [
+        "KA01AB1234",
+        "783412096549"
+      ],
       "faces": 0,
       "imageOnly": false,
       "devanagari": false
@@ -168,7 +214,7 @@
       "pii": [],
       "decoys": [
         "ZZQRS1234X",
-        "6011000999888776"
+        "6011000998887761"
       ],
       "faces": 0,
       "imageOnly": false,
@@ -182,6 +228,22 @@
       "pii": [],
       "decoys": [
         "783412096549"
+      ],
+      "faces": 0,
+      "imageOnly": false,
+      "devanagari": false
+    },
+    {
+      "id": "decoy-business-ids",
+      "group": "decoy",
+      "title": "Vendor Portal — Business Details",
+      "file": "fixtures/decoy-business-ids.html",
+      "pii": [],
+      "decoys": [
+        "29ABCDE1234F1Z5",
+        "KA01AB1234",
+        "MH12CD5678",
+        "ZZZZ0BRANCH"
       ],
       "faces": 0,
       "imageOnly": false,
