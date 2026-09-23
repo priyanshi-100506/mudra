@@ -39,9 +39,12 @@ export async function initOcr(): Promise<{ ready: boolean; reason?: string }> {
       workerPath: runtimeUrl('wasm/tesseract/worker.min.js'),
       corePath: runtimeUrl('wasm/tesseract/'),
       langPath: runtimeUrl('tessdata/'),
-      // Language data is on disk; never reach for the network.
+      // Language data is on disk; never reach for the network. `gzip: false`
+      // matters: with it on, tesseract.js appends `.gz` to the filename and
+      // the load fails, which under the fail-closed rule would mask every
+      // image region whole — a silent, confusing demo failure.
       cacheMethod: 'none',
-      gzip: true,
+      gzip: false,
     });
     return { ready: true };
   } catch (err) {

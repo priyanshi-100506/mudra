@@ -1,6 +1,2 @@
 src/**/*.js
 !copy-manifest.js
-
-# Language data is fetched by the developer, not committed. See tessdata/README.md
-public/tessdata/*.traineddata
-public/tessdata/*.traineddata.gz
