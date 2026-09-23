@@ -73,7 +73,16 @@ export interface GrantRequest {
 export type AgentPhase =
   | 'IDLE' | 'CAPTURING' | 'DETECTING' | 'REDACTING' | 'BUILDING_SCENE'
   | 'PLANNING' | 'AWAITING_CONFIRMATION' | 'EXECUTING'
-  | 'COMPLETE' | 'REFUSED' | 'ERROR';
+  | 'COMPLETE' | 'REFUSED' | 'ERROR'
+  /**
+   * The redactor is broken and the session has stopped for good.
+   *
+   * Distinct from ERROR on purpose. An error is something that went wrong;
+   * this is MUDRA's strongest safety property firing, and it has to read that
+   * way to anyone watching. A hard stop that looks like a crash is the worst
+   * possible presentation of the best thing this system does.
+   */
+  | 'BLOCKED';
 
 /** Emitted by the service worker; consumed by the side panel only. */
 export type AgentEventBody =
@@ -97,6 +106,14 @@ export type AgentEventBody =
    */
   | { type: 'AGENT_ACTION_RESOLVED'; effect: string; outcome: 'executed' | 'refused'; reason?: string; target?: string }
   | { type: 'AGENT_ERROR'; message: string }
+  /**
+   * A canary reached the serialised outbound body. The request was aborted
+   * and the session is stopped: no retry, no degraded continue.
+   *
+   * `escapedKinds` names what got out. Never the values — that would leak the
+   * tracer into the panel and the event log to report that it leaked.
+   */
+  | { type: 'AGENT_BLOCKED'; title: string; detail: string; planted: number; escaped: number; escapedKinds: string[] }
   /**
    * What the planner sent back, before the gate has had a say. Carried
    * separately from AGENT_ACTION_RESOLVED because the two answer different

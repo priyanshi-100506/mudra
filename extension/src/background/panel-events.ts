@@ -62,6 +62,26 @@ export const emitPhase = (phase: AgentPhase) => emit({ type: 'AGENT_PHASE', phas
 export const emitObserved = (elements: number, sensitive: number) =>
   emit({ type: 'AGENT_OBSERVED', elements, sensitive });
 export const emitError = (message: string) => emit({ type: 'AGENT_ERROR', message });
+
+/**
+ * The one boundary a canary escape is turned into something a person sees.
+ *
+ * Throwing was the right call; ending up indistinguishable from a hang is
+ * not. A judge who triggers this path should watch MUDRA explain why it
+ * stopped, not wonder whether it broke.
+ */
+export const emitBlocked = (
+  title: string,
+  detail: string,
+  report: { planted: number; escaped: number; escapedKinds: string[] },
+) => emit({
+  type: 'AGENT_BLOCKED',
+  title,
+  detail,
+  planted: report.planted,
+  escaped: report.escaped,
+  escapedKinds: report.escapedKinds,
+});
 export const emitDetection = (counts: DetectionCounts) => emit({ type: 'AGENT_DETECTION', counts });
 export const emitRedaction = (counts: RedactionCounts, fields: RedactedField[]) =>
   emit({ type: 'AGENT_REDACTION', counts, fields });

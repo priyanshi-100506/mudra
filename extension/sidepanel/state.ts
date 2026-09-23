@@ -9,6 +9,7 @@ export const FEED_CAP = 200;
 export const initialState: AgentState = {
   phase: 'IDLE', page: null, task: null, detection: null,
   redaction: null, fields: [], outbound: null, pending: null, audit: [], error: null,
+  blocked: null,
   feed: [], observed: null, seen: [], refused: 0, plan: null,
 };
 
@@ -26,11 +27,14 @@ export type AgentEvent =
   | { type: 'MANIFEST'; entries: ManifestLine[]; meta?: EventMeta }
   | { type: 'COMPLETE'; meta?: EventMeta }
   | { type: 'ERROR'; message: string; meta?: EventMeta }
+  | { type: 'BLOCKED'; blocked: NonNullable<AgentState['blocked']>; meta?: EventMeta }
   | { type: 'RESET' };
 
 type AuditLike = AgentState['audit'][number];
 
-const TERMINAL: AgentPhase[] = ['COMPLETE', 'REFUSED', 'ERROR'];
+// BLOCKED is terminal by design: no retry, no degraded continue. A redactor
+// we cannot trust does not get a second attempt at the same page.
+const TERMINAL: AgentPhase[] = ['COMPLETE', 'REFUSED', 'ERROR', 'BLOCKED'];
 export const isTerminal = (p: AgentPhase) => TERMINAL.includes(p);
 export const isBusy = (p: AgentPhase) =>
   p !== 'IDLE' && p !== 'AWAITING_CONFIRMATION' && !isTerminal(p);
@@ -73,6 +77,7 @@ const STAGE_OF: Record<AgentPhase, number> = {
   PLANNING: 2,
   AWAITING_CONFIRMATION: 3,
   EXECUTING: 3,
+  BLOCKED: 2,
   COMPLETE: 4,
   REFUSED: 3,
   ERROR: -1,
@@ -241,6 +246,8 @@ export function reducer(state: AgentState, e: AgentEvent): AgentState {
 
     case 'COMPLETE': return { ...state, phase: 'COMPLETE', pending: null };
     case 'ERROR': return { ...state, phase: 'ERROR', pending: null, error: e.message };
+    case 'BLOCKED':
+      return { ...state, phase: 'BLOCKED', pending: null, blocked: e.blocked };
     case 'RESET': return { ...initialState, page: state.page };
     default: return state;
   }
@@ -258,4 +265,5 @@ export const PHASE_LABEL: Record<AgentPhase, string> = {
   COMPLETE: 'Task complete',
   REFUSED: 'Action refused',
   ERROR: 'Not completed',
+  BLOCKED: 'Blocked: redactor fault, canary escaped',
 };

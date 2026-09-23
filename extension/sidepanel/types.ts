@@ -59,6 +59,19 @@ export interface AgentState {
   pending: GrantRequest | null;
   audit: AuditEntry[];
   error: string | null;
+  /**
+   * Set when the redactor failed a canary check and the session stopped.
+   *
+   * Separate from `error` so the panel can render it as what it is — the
+   * safety property firing — rather than as a malfunction.
+   */
+  blocked: {
+    title: string;
+    detail: string;
+    planted: number;
+    escaped: number;
+    escapedKinds: string[];
+  } | null;
   /** The live feed, oldest first. Capped; see FEED_CAP. */
   feed: FeedItem[];
   /** Totals from the most recent observation pass. */

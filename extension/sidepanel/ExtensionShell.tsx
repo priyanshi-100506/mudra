@@ -4,6 +4,7 @@ import { reducer, initialState } from './state';
 import { LivePanel } from './components/LivePanel';
 import { ConfirmationDialog } from './components/ConfirmationDialog';
 import { ErrorState } from './components/ErrorState';
+import { BlockedState } from './components/BlockedState';
 import { EntryScreen } from './components/EntryScreen';
 import { AnswerView } from './components/AnswerView';
 
@@ -31,6 +32,16 @@ export const ExtensionShell: React.FC<{ floating?: boolean }> = ({ floating }) =
     void sendDecision(decision).catch(() =>
       dispatch({ type: 'ERROR', message: 'Could not send your decision to the executor.' }));
   };
+
+  // Checked before ERROR: a blocked session is not a malfunction, and must
+  // never fall through to the generic "Something went wrong" card.
+  if (state.phase === 'BLOCKED' && state.blocked) {
+    return (
+      <main className="shell">
+        <BlockedState blocked={state.blocked} onRetry={reset} />
+      </main>
+    );
+  }
 
   if (state.phase === 'ERROR') {
     return (

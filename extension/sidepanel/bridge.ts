@@ -54,6 +54,18 @@ export function toAgentEvent(msg: AgentEventMessage): AgentEvent | null {
       };
     case 'AGENT_MANIFEST':
       return { type: 'MANIFEST', entries: msg.entries, meta };
+    case 'AGENT_BLOCKED':
+      return {
+        type: 'BLOCKED',
+        blocked: {
+          title: msg.title,
+          detail: msg.detail,
+          planted: msg.planted,
+          escaped: msg.escaped,
+          escapedKinds: msg.escapedKinds,
+        },
+        meta,
+      };
     case 'AGENT_ERROR':
       return { type: 'ERROR', message: msg.message, meta };
     default:

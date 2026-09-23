@@ -3,7 +3,8 @@ import type { PanelCommand } from '../shared/agent-events';
 import { AgentAction, PageIR } from '../shared/types';
 import { redactPageIR, buildOutbound, type OutboundPageIR } from '../shared/redact';
 import { emitPhase, emitError, emitDetection, emitRedaction, emitOutbound, emitActivePage, emitObserved,
-         emitConfirmRequired, emitActionResolved, emitManifest, emitPlan, replaySnapshot, clearSnapshot } from './panel-events';
+         emitConfirmRequired, emitActionResolved, emitManifest, emitPlan, emitBlocked,
+         replaySnapshot, clearSnapshot } from './panel-events';
 import { deriveGrant, checkAction, taskSentence, grantSummary, effectOf, type Grant } from '../shared/grant';
 import { stubPlan, STUB_ENABLED_KEY } from './planner-stub';
 import { recordEgress, recordAction, readManifest, clearManifest, recordCanaries } from './manifest';
@@ -367,15 +368,26 @@ async function processPageIR(pageIR: PageIR){
     assertNoCanaries(JSON.stringify(scene.payload));
     recordCanaries(canaryReport([]));
   } catch (err) {
+    // The single boundary where a canary escape becomes something a person
+    // sees. Throwing was right; ending up indistinguishable from a hang is
+    // not. This is MUDRA's strongest safety property firing, and it has to
+    // read that way — a silent stop would look like a crash, which is the
+    // worst possible presentation of the best thing this system does.
     const report = err instanceof CanaryEscape
       ? err.report
       : canaryReport(currentCanaries());
     recordCanaries(report);
     emitManifest(readManifest());
     isAgentRunning = false;
-    const message = err instanceof Error ? err.message : String(err);
-    emitError(message);
-    notifyStatus('error', message);
+    emitPhase('BLOCKED');
+    emitBlocked(
+      'Blocked: redactor fault, canary escaped',
+      err instanceof Error ? err.message : String(err),
+      report,
+    );
+    // Stopped for good. No retry and no degraded continue: a redactor we
+    // cannot trust does not get a second attempt at the same page.
+    notifyStatus('error', 'Blocked: redactor fault, canary escaped');
     return;
   }
 
@@ -533,6 +545,19 @@ async function processPageIR(pageIR: PageIR){
       await triggerObservation();
     }
   } catch (err: any) {
+    // A canary echoed by the planner arrives here. It means the boundary was
+    // crossed upstream — possibly not even by us, since a value can reach a
+    // provider by paths outside this extension. It is still a hard stop, and
+    // still gets the named state rather than a generic error.
+    if (err instanceof CanaryEscape) {
+      recordCanaries(err.report);
+      emitManifest(readManifest());
+      isAgentRunning = false;
+      emitPhase('BLOCKED');
+      emitBlocked('Blocked: canary echoed by the planner', err.message, err.report);
+      notifyStatus('error', 'Blocked: canary echoed by the planner');
+      return;
+    }
     emitError(err.message);
     notifyStatus('error', `❌ ${err.message}`);
     isAgentRunning = false;
