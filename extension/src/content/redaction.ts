@@ -184,6 +184,17 @@ const PII_PATTERNS: PIIPattern[] = [
     validator: (s) => isValidLuhn(s),
   },
   // PAN — [A-Z]{5}[0-9]{4}[A-Z]
+  //
+  // No validator, and this is a known, measured limitation rather than an
+  // oversight. PAN carries no checksum, so shape alone cannot separate it
+  // from any other ten-character alphanumeric code: a warehouse SKU matches
+  // exactly, and the eval harness records that as a standing false positive.
+  //
+  // Constraining the 4th character to the holder-type letters was tried and
+  // reverted. The letter set is not something we can be certain of, and
+  // getting it wrong means failing to seal a real PAN. A sealed SKU costs
+  // the planner one unreadable field; an unsealed PAN is the failure this
+  // whole project exists to prevent. The asymmetry decides it.
   {
     label: 'PAN',
     fullPattern: /^[A-Z]{5}[0-9]{4}[A-Z]$/,

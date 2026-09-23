@@ -2,11 +2,6 @@ import type { PageIR, PageElement } from './types';
 import type { SceneElement, DetectionCounts, RedactionCounts, OutboundSummary, RedactedField } from './agent-events';
 import { redactSnippets, isPII } from '../content/redaction';
 
-const PAN = /\b[A-Z]{5}[0-9]{4}[A-Z]\b/;
-const AADHAAR = /\b\d{4}\s?\d{4}\s?\d{4}\b/;
-const CARD = /\b\d{13,19}\b/;
-const IFSC = /\b[A-Z]{4}0[A-Z0-9]{6}\b/;
-const UPI = /\b[\w.\-]{2,}@[a-zA-Z]{2,}\b/;
 const SENSITIVE_NAME =
   /(pass\s?word|pwd|passcode|otp|mfa|2fa|cvv|cvc|\bpin\b|security\s?code|aadhaar|aadhar|\buid\b|\bpan\b|permanent\s?account|card\s?(number|no|verification)|credit\s?card|debit\s?card|expir|account\s?(number|no)|ifsc|swift|routing|\biban\b|upi|social\s?security|\bssn\b|\bsin\b|tax\s?id|\btin\b|driver'?s?\s?licen[cs]e|licen[cs]e\s?(number|no)|\bdl\s?no|passport|visa\s?number|voter\s?id|\bepic\b|token|secret|api\s?key|private\s?key|\bdob\b|date\s?of\s?birth|birth\s?date|mother'?s?\s?maiden|maiden\s?name|salary|income|net\s?worth|balance|medical|diagnos|prescription|health\s?(id|record))/i;
 
@@ -17,18 +12,6 @@ const SENSITIVE_TYPE = new Set(['password', 'tel']);
 const SENSITIVE_AUTOCOMPLETE =
   /(cc-|current-password|new-password|one-time-code|bday|tel-national)/i;
 
-function luhnValid(digits: string): boolean {
-  let sum = 0;
-  let alt = false;
-  for (let i = digits.length - 1; i >= 0; i--) {
-    let d = Number(digits[i]);
-    if (alt) { d *= 2; if (d > 9) d -= 9; }
-    sum += d;
-    alt = !alt;
-  }
-  return digits.length >= 13 && sum % 10 === 0;
-}
-
 export function isSensitive(el: PageElement): boolean {
   // Identity first: a field is sensitive because of what it is, not only
   // what it currently holds. An empty card-number input still counts.
@@ -37,9 +20,17 @@ export function isSensitive(el: PageElement): boolean {
   if (SENSITIVE_AUTOCOMPLETE.test(el.autocomplete ?? '')) return true;
   const v = el.value ?? '';
   if (!v) return false;
-  if (PAN.test(v) || AADHAAR.test(v) || IFSC.test(v) || UPI.test(v)) return true;
-  if (CARD.test(v) && luhnValid(v.replace(/\D/g, ''))) return true;
-  return false;
+
+  // Delegates to the one validated detector rather than re-testing shapes
+  // here. This function used to carry its own copies of the Aadhaar, PAN and
+  // card patterns, and the Aadhaar one had no Verhoeff check — so every
+  // 12-digit order and invoice number on a page was sealed as an identity
+  // document, and the planner then could not read the field at all.
+  //
+  // The eval harness found it: the decoy column read 5 false positives out
+  // of 5. Two detectors is one too many, and the looser one wins by default
+  // because it fires first.
+  return isPII(v);
 }
 
 /**

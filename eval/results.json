@@ -1,0 +1,336 @@
+{
+  "generated": "2026-09-23T16:35:13.116Z",
+  "groundTruthGenerated": "2026-09-23",
+  "environment": {
+    "machine": "Darwin 25.5.0 arm64",
+    "cpu": "Apple M3",
+    "cores": 8,
+    "ram": "8 GB",
+    "node": "v24.2.0",
+    "chrome": "Google Chrome 153.0.8010.53",
+    "inferenceBackend": "not-run",
+    "weightsPresent": false
+  },
+  "decoys": {
+    "shownToDetector": 5,
+    "inFixtures": 6,
+    "correctlyIgnored": 4,
+    "falsePositives": 1,
+    "falsePositiveRate": 0.2,
+    "kinds": [
+      "12-digit order and invoice numbers that fail Verhoeff",
+      "16-digit ticket and batch numbers that fail Luhn",
+      "PAN-shaped warehouse SKU codes",
+      "a stone statue, for the face detector"
+    ]
+  },
+  "detection": {
+    "truePositives": 7,
+    "falseNegatives": 0,
+    "falsePositives": 1,
+    "recall": 1,
+    "precision": 0.875,
+    "f1": 0.9333,
+    "notObserved": 5,
+    "notObservedNote": "Values present in a fixture but never captured into the PageIR. Not scored either way: the detector was never asked.",
+    "scope": "Text pipeline only. 6 image-only fixtures not run."
+  },
+  "leaks": {
+    "afterRedaction": 0,
+    "canariesPlantedPerObservation": 3,
+    "canariesEscaped": 0
+  },
+  "latency": {
+    "firstLoadMs": "not-run",
+    "steadyStateTextPipelineMs": {
+      "p50": 7.91,
+      "p95": 59.03
+    },
+    "visualPassMs": "not-run",
+    "note": "Text-pipeline timings are measured in this harness. Visual-pass and first-load timings are browser-only and are reported by the panel waterfall, not here."
+  },
+  "payload": {
+    "sentBytesPerObservation": {
+      "p50": 474,
+      "p95": 896
+    },
+    "rawScreenshotBytes": "not-run",
+    "ratio": "not-run",
+    "note": "The payload-vs-screenshot ratio requires a real capture and is reported by the panel. It is not estimated here."
+  },
+  "peakHeapMb": 123.6,
+  "notRun": [
+    {
+      "id": "img-aadhaar-scan",
+      "reason": "Visual pass not run: version-RFB-320.onnx is not present."
+    },
+    {
+      "id": "img-pan-scan",
+      "reason": "Visual pass not run: version-RFB-320.onnx is not present."
+    },
+    {
+      "id": "img-card-photo",
+      "reason": "Visual pass not run: version-RFB-320.onnx is not present."
+    },
+    {
+      "id": "img-hindi-aadhaar",
+      "reason": "Visual pass not run: version-RFB-320.onnx is not present."
+    },
+    {
+      "id": "img-face-photo",
+      "reason": "Visual pass not run: version-RFB-320.onnx is not present."
+    },
+    {
+      "id": "decoy-statue-photo",
+      "reason": "Visual pass not run: version-RFB-320.onnx is not present."
+    }
+  ],
+  "perFixture": [
+    {
+      "id": "dom-aadhaar",
+      "group": "dom-pii",
+      "truePositives": 1,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 0,
+      "notObserved": 0,
+      "expectedPii": 1,
+      "expectedDecoys": 0,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 807,
+      "localMs": 59.03,
+      "visual": "run"
+    },
+    {
+      "id": "dom-pan",
+      "group": "dom-pii",
+      "truePositives": 1,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 0,
+      "notObserved": 0,
+      "expectedPii": 1,
+      "expectedDecoys": 0,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 771,
+      "localMs": 20.17,
+      "visual": "run"
+    },
+    {
+      "id": "dom-card",
+      "group": "dom-pii",
+      "truePositives": 1,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 1,
+      "notObserved": 0,
+      "expectedPii": 1,
+      "expectedDecoys": 1,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 896,
+      "localMs": 32.2,
+      "visual": "run"
+    },
+    {
+      "id": "dom-upi",
+      "group": "dom-pii",
+      "truePositives": 2,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 0,
+      "notObserved": 0,
+      "expectedPii": 2,
+      "expectedDecoys": 0,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 725,
+      "localMs": 15.38,
+      "visual": "run"
+    },
+    {
+      "id": "dom-passport",
+      "group": "dom-pii",
+      "truePositives": 2,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 0,
+      "notObserved": 0,
+      "expectedPii": 2,
+      "expectedDecoys": 0,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 788,
+      "localMs": 19.3,
+      "visual": "run"
+    },
+    {
+      "id": "img-aadhaar-scan",
+      "group": "image-pii",
+      "truePositives": 0,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 0,
+      "notObserved": 1,
+      "expectedPii": 1,
+      "expectedDecoys": 0,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 213,
+      "localMs": 0.43,
+      "visual": "not-run",
+      "notes": "Visual pass not run: version-RFB-320.onnx is not present."
+    },
+    {
+      "id": "img-pan-scan",
+      "group": "image-pii",
+      "truePositives": 0,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 0,
+      "notObserved": 1,
+      "expectedPii": 1,
+      "expectedDecoys": 0,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 211,
+      "localMs": 1.02,
+      "visual": "not-run",
+      "notes": "Visual pass not run: version-RFB-320.onnx is not present."
+    },
+    {
+      "id": "img-card-photo",
+      "group": "image-pii",
+      "truePositives": 0,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 0,
+      "notObserved": 1,
+      "expectedPii": 1,
+      "expectedDecoys": 0,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 235,
+      "localMs": 0.91,
+      "visual": "not-run",
+      "notes": "Visual pass not run: version-RFB-320.onnx is not present."
+    },
+    {
+      "id": "img-hindi-aadhaar",
+      "group": "image-pii",
+      "truePositives": 0,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 0,
+      "notObserved": 1,
+      "expectedPii": 1,
+      "expectedDecoys": 0,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 222,
+      "localMs": 1.08,
+      "visual": "not-run",
+      "notes": "Visual pass not run: version-RFB-320.onnx is not present."
+    },
+    {
+      "id": "img-face-photo",
+      "group": "image-pii",
+      "truePositives": 0,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 0,
+      "notObserved": 0,
+      "expectedPii": 0,
+      "expectedDecoys": 0,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 206,
+      "localMs": 0.6,
+      "visual": "not-run",
+      "notes": "Visual pass not run: version-RFB-320.onnx is not present."
+    },
+    {
+      "id": "decoy-order-number",
+      "group": "decoy",
+      "truePositives": 0,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 1,
+      "notObserved": 0,
+      "expectedPii": 0,
+      "expectedDecoys": 1,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 485,
+      "localMs": 7.91,
+      "visual": "run"
+    },
+    {
+      "id": "decoy-ticket-number",
+      "group": "decoy",
+      "truePositives": 0,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 1,
+      "notObserved": 0,
+      "expectedPii": 0,
+      "expectedDecoys": 1,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 474,
+      "localMs": 14.02,
+      "visual": "run"
+    },
+    {
+      "id": "decoy-sku-code",
+      "group": "decoy",
+      "truePositives": 0,
+      "falseNegatives": 0,
+      "falsePositives": 1,
+      "trueNegatives": 1,
+      "notObserved": 0,
+      "expectedPii": 0,
+      "expectedDecoys": 2,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 602,
+      "localMs": 19.47,
+      "visual": "run"
+    },
+    {
+      "id": "decoy-invoice",
+      "group": "decoy",
+      "truePositives": 0,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 0,
+      "notObserved": 1,
+      "expectedPii": 0,
+      "expectedDecoys": 1,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 179,
+      "localMs": 0.8,
+      "visual": "run"
+    },
+    {
+      "id": "decoy-statue-photo",
+      "group": "decoy",
+      "truePositives": 0,
+      "falseNegatives": 0,
+      "falsePositives": 0,
+      "trueNegatives": 0,
+      "notObserved": 0,
+      "expectedPii": 0,
+      "expectedDecoys": 0,
+      "leakedAfterRedaction": 0,
+      "canariesEscaped": 0,
+      "sentBytes": 197,
+      "localMs": 0.45,
+      "visual": "not-run",
+      "notes": "Visual pass not run: version-RFB-320.onnx is not present."
+    }
+  ]
+}

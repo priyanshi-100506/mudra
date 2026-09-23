@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Warehouse — Stock Item</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; background: #f4f5f7; color: #16181d; }
+  header { background: #0b3d91; color: #fff; padding: 18px 32px; }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  main { max-width: 680px; margin: 32px auto; background: #fff; padding: 28px 32px;
+         border: 1px solid #dcdde1; }
+  h2 { margin: 0 0 20px; font-size: 19px; font-weight: 500; }
+  .row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  label { width: 200px; text-align: right; font-size: 14px; color: #3c3f47; }
+  input, select { flex: 1; padding: 8px 10px; border: 1px solid #c4c6cc; font-size: 14px; }
+  button { padding: 9px 22px; background: #0b3d91; color: #fff; border: none; font-size: 14px; }
+  .note { margin-top: 20px; font-size: 12px; color: #83868f; }
+  .doc { width: 420px; height: 260px; border: 1px solid #c4c6cc; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td, th { padding: 7px 9px; border-bottom: 1px solid #ececef; text-align: left; }
+</style>
+
+</head>
+<body>
+<header><h1>Warehouse — Stock Item</h1></header>
+<main>
+<h2>Item detail</h2>
+  <div class="row">
+    <label for="sku">SKU</label>
+    <input id="sku" name="sku" value="ZZQRS1234X" >
+  </div>
+  <div class="row">
+    <label for="batch">Batch number</label>
+    <input id="batch" name="batch" value="6011000999888776" >
+  </div>
+  <div class="row">
+    <label for="on_hand">On hand</label>
+    <input id="on_hand" name="on_hand" value="412" >
+  </div>
+</main>
+<p class="note" style="text-align:center">Synthetic fixture. Every identifier on this page is fake.</p>
+</body>
+</html>
