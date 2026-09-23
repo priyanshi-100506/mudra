@@ -130,6 +130,8 @@ export function redactPageIR(ir: PageIR, visual?: VisualCounts): Redacted {
       input_type: el.input_type ?? null,
       sensitive,
       bbox: el.bbox ?? null,
+      // Kept for the gate, stripped before egress. See buildOutbound.
+      form: el.form ?? null,
     };
   });
 
@@ -251,7 +253,10 @@ export function buildOutbound(
   const payload: OutboundPageIR = {
     url: sanitiseUrl(ir.url),
     title: scrubSealedValues(redactSnippets([ir.title])[0] ?? '', r.refMap),
-    elements: r.elements,
+    // Form context is local. It exists so the gate can recognise a
+    // payment-shaped form; the planner has no use for it, and a form's
+    // action URL is one more place a session token can hide.
+    elements: r.elements.map(({ form, ...rest }) => rest),
     text_snippets: redactSnippets(ir.text_snippets ?? [])
       .map((snippet) => scrubSealedValues(snippet, r.refMap)),
     observed_at: ir.observed_at,

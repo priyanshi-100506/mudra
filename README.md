@@ -160,6 +160,27 @@ Three documents, written from the code:
 | [**docs/page_ir_spec.md**](docs/page_ir_spec.md) | the Page IR shape, the `ref_*` contract, what may and may not be sent |
 | [**docs/action_schema.md**](docs/action_schema.md) | the verbs, validation, and what the grant system permits and refuses |
 
+### Hardest bugs found, and how
+
+Listed because how a bug was found says more about a project than how it was
+fixed. Every one of these was invisible to the test suite that was passing at
+the time.
+
+| Bug | Found by | Why tests missed it |
+|---|---|---|
+| **A click on a "Transfer ₹50,000" button was allowed under a form-filling grant.** `effectOf` mapped every click to `click`, which is in every grant's base effects. A prompt injection does not ask for a new permission — it asks for one the task already has. | **Building the injection demo.** The attack was written to be refused, and wasn't. | The gate was tested against the effects it knew about. Nothing tested what happens when a dangerous action wears an ordinary verb. |
+| **MV3's CSP blocks WebAssembly.** `script-src 'self'` forbids `WebAssembly.instantiate`, so ONNX Runtime *and* Tesseract could never load — the visual pass would have failed with the weights sitting right there. | **Loading the extension in a real Chrome.** | Only happens inside an extension page. No unit test has one. |
+| **The agent loop crashed on every non-Gemini planner.** It called `.model_dump()` on whatever the planner returned; the stub and Ollama clients return a plain dict. The offline path and the demo fallback both 500'd on every step. | **Running the app.** | 29 planner tests drove the planners directly. None called `AgentLoop.step`. |
+| **The offscreen race matcher missed Chrome's actual wording.** It looked for "already"; Chrome says "Only a single offscreen document may be created". A lost race would have dropped the first observation — invisible in dev, guaranteed on the first click on stage. | **Writing the test for it.** | The test was written from the documented behaviour, not the real string. |
+| **Canary tracers were skipped on the no-OCR path.** An early return disabled them on exactly the degraded path where a redaction bug is most likely. | **Writing the canary tests.** | |
+| **A second, unvalidated PII detector.** `shared/redact.ts` carried its own Aadhaar pattern with no Verhoeff check, so every 12-digit order number was sealed as an identity document. | **The eval harness**, on its first honest run. | Both detectors passed their own tests. Nothing compared them. |
+
+The pattern is consistent enough to be worth stating: **the bugs were found by
+running the thing, and the worst one was found by attacking it.** The
+`effectOf` hole was live in the product, not a demo gap — any page with a
+transfer button and an injected instruction could have gotten a click through
+under an ordinary form-filling grant.
+
 ### The two ideas worth knowing
 
 **Re-OCR verification.** After the masks are painted, the redacted image is

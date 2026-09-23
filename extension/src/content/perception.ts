@@ -1,4 +1,4 @@
-import { PageIR, PageElement, BoundingBox } from '../shared/types';
+import { PageIR, PageElement, BoundingBox, FormContext } from '../shared/types';
 import { register } from './node-registry';
 
 // Observation-scoped mapping from ID to live DOM node
@@ -75,6 +75,7 @@ export function capturePageIR(): PageIR {
       id,
       role,
       name,
+      form: formContextOf(el),
       visible: true,
       enabled: !el.hasAttribute('disabled') && el.getAttribute('aria-disabled') !== 'true',
       bbox
@@ -102,6 +103,42 @@ export function capturePageIR(): PageIR {
     elements,
     text_snippets: textSnippets,
     observed_at: new Date().toISOString()
+  };
+}
+
+/**
+ * Describes the form an element belongs to, if any.
+ *
+ * Only the field *names* are collected, never their values — the point is to
+ * recognise a payment-shaped form, and "there is a field called amount" is
+ * enough for that. Reading the values here would put them into the very
+ * structure the rest of this file works to keep them out of.
+ */
+function formContextOf(el: Element): FormContext | null {
+  const form = el.closest('form');
+  if (!form) return null;
+
+  const action = form.getAttribute('action') ?? '';
+  let resolved = action;
+  let crossOrigin = false;
+  try {
+    const url = new URL(action || window.location.href, window.location.href);
+    resolved = url.href;
+    crossOrigin = url.origin !== window.location.origin;
+  } catch { /* a malformed action is left as written */ }
+
+  const fieldNames: string[] = [];
+  for (const field of form.querySelectorAll('input,select,textarea,button')) {
+    const fieldName = field.getAttribute('name') ?? field.getAttribute('id') ?? '';
+    if (fieldName) fieldNames.push(fieldName);
+    if (fieldNames.length >= 40) break;
+  }
+
+  return {
+    action: resolved,
+    method: (form.getAttribute('method') ?? 'get').toLowerCase(),
+    crossOrigin,
+    fieldNames,
   };
 }
 

@@ -5,6 +5,25 @@ export interface BoundingBox {
   height: number;
 }
 
+/**
+ * What the form around an element is shaped like.
+ *
+ * Captured because a button's label is page content, and the page chooses
+ * it. A button reading "Continue" that posts an amount and a payee to a
+ * different origin is a payment, whatever it calls itself. The shape of the
+ * form is much harder for a page to disguise than the text on a button,
+ * because changing it means changing what the form actually does.
+ */
+export interface FormContext {
+  /** Where it posts. Sanitised before it ever leaves the device. */
+  action: string;
+  method: string;
+  /** True when the form posts somewhere other than the page's own origin. */
+  crossOrigin: boolean;
+  /** `name` of each field the form would submit. Not their values. */
+  fieldNames: string[];
+}
+
 export interface PageElement {
   id: string;
   role: string;
@@ -17,6 +36,8 @@ export interface PageElement {
   visible: boolean;
   enabled: boolean;
   bbox?: BoundingBox | null;
+  /** Present for submit controls and for elements inside a form. */
+  form?: FormContext | null;
 }
 
 export interface PageIR {

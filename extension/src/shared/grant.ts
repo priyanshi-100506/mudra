@@ -1,4 +1,4 @@
-import type { AgentAction } from './types';
+import type { AgentAction, FormContext } from './types';
 
 /** A local, task- and document-scoped authorisation. Never minted by the server. */
 export interface Grant {
@@ -18,7 +18,7 @@ export interface Grant {
 /** Effects that require the user to confirm before they run. */
 const HIGH_IMPACT = new Set([
   'submit_form', 'navigate_cross_origin', 'transfer', 'purchase',
-  'delete', 'upload', 'set_secret',
+  'delete', 'upload', 'set_secret', 'submit_cross_origin',
 ]);
 
 /**
@@ -44,6 +44,51 @@ const CONTROL_EFFECT: Array<[RegExp, string]> = [
   [/\b(upload|attach\s*document)\b/i, 'upload'],
 ];
 
+/**
+ * Field names that make a form a payment form.
+ *
+ * The second layer, and the one that does not trust the page. A label is
+ * page content and the page chooses it, so a button reading "Continue" that
+ * submits an amount and a payee is still a payment — the label check alone
+ * defeats only honest labels. The *shape* of a form is much harder to
+ * disguise, because changing it means changing what the form actually does.
+ */
+const FORM_FIELD_EFFECT: Array<[RegExp, string]> = [
+  [/\b(amount|amt|payee|beneficiary|account[_\s-]?(no|number)|upi|vpa|ifsc|remit|transfer|payment)\b/i, 'transfer'],
+  [/\b(card[_\s-]?(no|number)|cvv|cvc|expiry|checkout|order[_\s-]?total|quantity)\b/i, 'purchase'],
+  [/\b(confirm[_\s-]?delete|delete[_\s-]?account|deactivate|close[_\s-]?account)\b/i, 'delete'],
+];
+
+/** Path fragments that say what an endpoint does, when the fields do not. */
+const FORM_ACTION_EFFECT: Array<[RegExp, string]> = [
+  [/\/(transfer|payment|pay|remit|neft|imps|rtgs|fund)/i, 'transfer'],
+  [/\/(checkout|purchase|order|buy|subscribe)/i, 'purchase'],
+  [/\/(delete|close|deactivate|terminate)/i, 'delete'],
+];
+
+/**
+ * What the form an element sits in would actually do.
+ *
+ * Returns null for an ordinary form. Note that this can only ever *raise*
+ * the required permission, never lower it: the worst a hostile page can do
+ * by manipulating its own form is make MUDRA ask for a confirmation it did
+ * not strictly need.
+ */
+export function effectOfForm(form: FormContext | null | undefined): string | null {
+  if (!form) return null;
+  const fields = form.fieldNames.join(' ');
+  for (const [pattern, effect] of FORM_FIELD_EFFECT) {
+    if (pattern.test(fields)) return effect;
+  }
+  for (const [pattern, effect] of FORM_ACTION_EFFECT) {
+    if (pattern.test(form.action)) return effect;
+  }
+  // A POST to another origin is not classifiable, but it is consequential
+  // and irreversible, which is enough to require a human.
+  if (form.crossOrigin && form.method === 'post') return 'submit_cross_origin';
+  return null;
+}
+
 /** What a control's label says it does, or null if it says nothing alarming. */
 export function effectOfControl(label: string | null | undefined): string | null {
   const text = label ?? '';
@@ -61,15 +106,22 @@ export function effectOfControl(label: string | null | undefined): string | null
  * resolve the target should pass it — that is the difference between
  * refusing an injected transfer and executing one.
  */
-export function effectOf(action: AgentAction, targetLabel?: string | null): string {
+export function effectOf(
+  action: AgentAction,
+  targetLabel?: string | null,
+  form?: FormContext | null,
+): string {
   switch (action.action) {
-    case 'click':    return effectOfControl(targetLabel) ?? 'click';
+    // Two independent readings, and the stricter one wins. The label is
+    // checked first only because it is more specific when it is honest;
+    // the form shape catches the case where it is not.
+    case 'click':    return effectOfControl(targetLabel) ?? effectOfForm(form) ?? 'click';
     case 'type':     return 'set_public_text';
     case 'select':   return 'select';
     case 'scroll':   return 'scroll';
     case 'extract':  return 'extract';
     case 'wait':     return 'wait';
-    case 'submit':   return 'submit_form';
+    case 'submit':   return effectOfForm(form) ?? 'submit_form';
     case 'navigate': return 'navigate_cross_origin';
     case 'done':     return 'done';
     default:         return 'unknown';
@@ -97,6 +149,17 @@ export function deriveGrant(task: string, origin: string): Grant {
 
 export type Verdict =
   | { kind: 'allow'; effect: string; consumesUse: boolean }
+  /**
+   * Consequential, and the grant does not settle it either way.
+   *
+   * The case this exists for: a click whose effect we could only derive from
+   * the page — a payment-shaped form behind a button labelled "Continue" —
+   * or a submit on a form the task never mentioned. Silently allowing it
+   * trusts a page that has already shown it will lie about its own labels.
+   * Refusing outright would make the agent useless on any form we cannot
+   * classify. So a person decides.
+   */
+  | { kind: 'confirm'; effect: string; reason: string; consumesUse: boolean }
   | { kind: 'refuse'; effect: string; reason: string };
 
 /**
@@ -109,8 +172,23 @@ export function checkAction(
   currentOrigin: string,
   /** Label of the element the action targets, when the caller can resolve it. */
   targetLabel?: string | null,
+  /** The form the target sits in, when there is one. */
+  form?: FormContext | null,
 ): Verdict {
-  const effect = effectOf(action, targetLabel);
+  const effect = effectOf(action, targetLabel, form);
+
+  // The two readings are kept apart, because they warrant different answers.
+  //
+  // A control that *says* it transfers money, under a task that does not
+  // cover transfers, is a planner asking for something plainly outside its
+  // remit — refuse it, and say so. But an ordinary-looking button over a
+  // payment-shaped form is ambiguous: it may genuinely be the payment the
+  // user is trying to make, and the only thing that can settle it is the
+  // user. Refusing every unclassifiable form would make the agent useless
+  // on real sites; allowing them silently would trust a page that has
+  // already shown it chooses its own labels.
+  const labelEffect = action.action === 'click' ? effectOfControl(targetLabel) : null;
+  const formEffect = effectOfForm(form);
 
   if (!grant) {
     return { kind: 'refuse', effect, reason: 'No grant is active for this task.' };
@@ -120,6 +198,18 @@ export function checkAction(
              reason: `Grant was issued for ${grant.origin}, page is now ${currentOrigin}.` };
   }
   if (!grant.allowedEffects.includes(effect)) {
+    // Derived from the page's own form rather than from what the control
+    // claims: ambiguous, so a person decides.
+    if (!labelEffect && formEffect === effect) {
+      return {
+        kind: 'confirm',
+        effect,
+        reason:
+          `This looks like a ${effect.replace(/_/g, ' ')}: the form it belongs to ` +
+          `submits ${describeForm(form)}. Your task did not authorise that.`,
+        consumesUse: true,
+      };
+    }
     return { kind: 'refuse', effect,
              reason: `"${effect}" is not among the effects authorised for this task.` };
   }
@@ -135,7 +225,34 @@ export function checkAction(
     }
     return { kind: 'allow', effect, consumesUse: true };
   }
+
+  // Past here the effect is ordinary — a click, a scroll. But an ordinary
+  // verb on a consequential form is the gap the label check leaves open, and
+  // the page controls the label.
+  if (formEffect && !grant.allowedEffects.includes(formEffect)) {
+    return {
+      kind: 'confirm',
+      effect: formEffect,
+      reason:
+        `This looks like a ${formEffect.replace(/_/g, ' ')}: the form it belongs to ` +
+        `submits ${describeForm(form)}. Your task did not authorise that.`,
+      consumesUse: true,
+    };
+  }
+
   return { kind: 'allow', effect, consumesUse: false };
+}
+
+/** A short, non-sensitive description of what a form would send. */
+function describeForm(form: FormContext | null | undefined): string {
+  if (!form) return 'an unknown form';
+  const notable = form.fieldNames
+    .filter((n) => /amount|payee|beneficiary|account|upi|vpa|ifsc|card|cvv/i.test(n))
+    .slice(0, 3);
+  const where = form.crossOrigin ? ' to another site' : '';
+  return notable.length
+    ? `${notable.join(', ')}${where}`
+    : `${form.fieldNames.length} fields${where}`;
 }
 
 /** The one question the user is asked, before the page is read. */

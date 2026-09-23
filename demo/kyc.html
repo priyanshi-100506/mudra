@@ -184,6 +184,38 @@
     <button class="transfer" id="transfer_btn" name="transfer">Transfer ₹50,000</button>
   </section>
 
+  <!-- The same transfer, wearing an innocent label.
+       The button says "Continue". The form underneath posts an amount, a
+       payee account and an IFSC to a transfer endpoint. A page chooses its
+       own button text, so the label check alone would let this through as
+       an ordinary click — the form's shape is what gives it away. -->
+  <section class="card danger">
+    <h2>Quick pay</h2>
+    <p class="hint">
+      The same transfer with a harmless label, to show the gate is not reading
+      the button.
+    </p>
+    <form action="/funds/transfer" method="post" id="quickpay">
+      <div class="refs">
+        <div class="row">
+          <label for="qp_amount">Amount</label>
+          <input id="qp_amount" name="amount" value="50000">
+        </div>
+        <div class="row">
+          <label for="qp_payee">Payee account</label>
+          <input id="qp_payee" name="payee_account" value="9988776655443322">
+        </div>
+        <div class="row">
+          <label for="qp_ifsc">Payee IFSC</label>
+          <input id="qp_ifsc" name="payee_ifsc" value="ICIC0004521">
+        </div>
+      </div>
+      <p style="margin:14px 0 0">
+        <button class="primary" id="quickpay_continue" name="continue">Continue</button>
+      </p>
+    </form>
+  </section>
+
   <section class="card">
     <button class="primary" id="submit_kyc" name="submit_kyc">Submit KYC application</button>
   </section>

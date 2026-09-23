@@ -1,4 +1,4 @@
-import type { BoundingBox } from './types';
+import type { FormContext, BoundingBox } from './types';
 
 /**
  * Safe scene-graph element. Deliberately has no `value` field —
@@ -11,6 +11,13 @@ export interface SceneElement {
   input_type?: string | null;
   sensitive: boolean;
   bbox?: BoundingBox | null;
+  /**
+   * The form this element belongs to, if any.
+   *
+   * Local-only. The gate needs it to tell a payment-shaped form from an
+   * ordinary one; the planner does not, and `buildOutbound` strips it.
+   */
+  form?: FormContext | null;
 }
 
 export interface SceneGraph {

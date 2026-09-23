@@ -525,10 +525,55 @@ async function processPageIR(pageIR: PageIR){
     // "Transfer Rs 50,000" is a transfer, not a click, and the gate can only
     // know that if it is told what the target says.
     const targetRef = targetOf(action);
-    const targetLabel = scene.payload.elements
-      .find((e) => e.ref === targetRef)?.name ?? null;
+    // `redacted.elements` still carries form context; `scene.payload` has had
+    // it stripped for egress. The gate needs the local copy.
+    const targetEl = redacted.elements.find((e) => e.ref === targetRef);
+    const targetLabel = targetEl?.name ?? null;
 
-    const verdict = checkAction(action, grant, currentOrigin, targetLabel);
+    const verdict = checkAction(action, grant, currentOrigin, targetLabel, targetEl?.form);
+
+    if (verdict.kind === 'confirm') {
+      // The page's own labelling did not settle it, and the form underneath
+      // is consequential. Silently allowing would trust a page that chooses
+      // its own button text; refusing outright would break every form we
+      // cannot classify. So ask.
+      emitPhase('AWAITING_CONFIRMATION');
+      emitConfirmRequired({
+        sentence: verdict.reason,
+        origin: currentOrigin,
+        effect: verdict.effect,
+        targetRole: targetEl?.role ?? 'control',
+        targetRef: targetRef ?? '',
+        permits: grantSummary(grant!),
+        uses: grant?.usesRemaining ?? 0,
+      });
+
+      const decision = await new Promise<'authorise' | 'refuse'>((resolve) => {
+        pendingResolve = resolve;
+      });
+      pendingResolve = null;
+
+      if (decision === 'refuse') {
+        const reason = `${verdict.reason} You declined it.`;
+        emitActionResolved(verdict.effect, 'refused', reason, targetRef);
+        recordAction(verdict.effect, 'refused', reason);
+        emitManifest(readManifest());
+        notifyStatus('running', `Refused: ${verdict.effect}`);
+        refusalCount += 1;
+
+        if (refusalCount >= MAX_REFUSALS) {
+          emitPhase('REFUSED');
+          emitError('Too many refused actions — stopping. The plan is not aligned with your task.');
+          isAgentRunning = false;
+          return;
+        }
+        await sleep(400);
+        await triggerObservation();
+        return;
+      }
+      if (verdict.consumesUse && grant) grant.usesRemaining -= 1;
+      emitPhase('EXECUTING');
+    }
 
     if (verdict.kind === 'refuse') {
       // Refuse, log, and continue with the remaining steps. A refusal is a

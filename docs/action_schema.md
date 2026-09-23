@@ -119,6 +119,51 @@ The checks, in order:
 5. **High-impact and uses exhausted** → refuse. One authorisation, one use.
 6. Otherwise allow, consuming a use if high-impact.
 
+### Reading the action, not the label
+
+A click is not inherently high-impact — `click` is in every grant's base
+effects, because an agent that needs confirmation to click a tab is useless.
+But *what a click lands on* decides what it does, and that is checked in two
+independent layers.
+
+**Layer 1 — the control's label.** A button reading `Transfer ₹50,000` yields
+the effect `transfer`, not `click`.
+
+**Layer 2 — the form's shape.** The page chooses its own button text, so
+layer 1 defeats only honest labels. A button reading `Continue` over a form
+that posts `amount`, `payee_account` and `ifsc` to `/funds/transfer` is a
+transfer whatever it calls itself. The effect is derived from the form's
+field names, its action path, and whether it posts cross-origin.
+
+Field **names** only, never values. Recognising a payment-shaped form needs
+"there is a field called amount" and nothing more.
+
+Both layers can only ever *raise* the required permission. The worst a
+hostile page achieves by manipulating its own labels or form is making MUDRA
+ask for a confirmation it did not strictly need.
+
+#### The two answers, and why they differ
+
+| What revealed it | Verdict | Why |
+|---|---|---|
+| The control's own label | **refuse** | The planner asked for something plainly outside the task. Nothing ambiguous to resolve. |
+| Only the form's shape | **confirm** | It may genuinely be the payment the user is trying to make. Refusing every unclassifiable form would make the agent useless on real sites; allowing it silently would trust a page that chooses its own labels. So a person decides. |
+
+A `confirm` verdict consumes a use exactly as an authorised high-impact
+effect does, and a declined confirmation is recorded as a refusal.
+
+#### The limit, stated plainly
+
+**A button with no form, whose effect happens in page JavaScript, cannot be
+classified from the DOM.** A `<button onclick="transferFunds()">Continue</button>`
+looks identical to a button that opens a menu. Neither layer sees anything.
+
+Nothing in the DOM can close that gap, because the effect does not exist in
+the DOM. What covers it is the confirmation on consequential actions and the
+fact that a grant is scoped to one task on one origin with a finite number of
+high-impact uses — a script-driven action still cannot exceed what the user
+authorised for the task, and cannot run twice.
+
 ### Why refusing beats prompting
 
 `authorised` is set once, by the user, **before the page is ever observed**,
