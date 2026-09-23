@@ -45,3 +45,20 @@ chrome.runtime.onMessage.addListener((msg: { type?: string; targets?: HighlightT
 
 
 
+/**
+ * Reports the page's own coordinate space to the background.
+ *
+ * The background needs this because it holds the screenshot, which is in
+ * device pixels, while every bbox in the PageIR is in CSS pixels. Only the
+ * page knows its `devicePixelRatio`, so it has to travel across this boundary
+ * explicitly rather than being assumed to be 1.
+ */
+chrome.runtime.onMessage.addListener((msg: { type?: string }, _sender, sendResponse) => {
+  if (msg?.type === 'GET_VIEWPORT_INFO') {
+    sendResponse({
+      width: window.innerWidth,
+      height: window.innerHeight,
+      dpr: window.devicePixelRatio || 1,
+    });
+  }
+});

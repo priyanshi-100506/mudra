@@ -6,6 +6,7 @@ export type ExtensionMessage =
   | { type: 'PANEL_CHAT'; message: string; context?: string }
   | { type: 'TOGGLE_PANEL' }
   | { type: 'CAPTURE_PAGE_IR' }
+  | { type: 'GET_VIEWPORT_INFO' }
   | { type: 'PAGE_IR_CAPTURED'; pageIR: PageIR }
   | { type: 'EXECUTE_ACTION'; action: AgentAction }
   | { type: 'ACTION_EXECUTED'; success: boolean; error?: string; extracted_data?: string }
