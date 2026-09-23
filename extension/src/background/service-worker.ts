@@ -10,6 +10,9 @@ import { stubPlan, STUB_ENABLED_KEY } from './planner-stub';
 import { recordEgress, recordAction, readManifest, clearManifest, recordCanaries } from './manifest';
 import { registerCanaries, assertNoCanaries, scanPlannerResponse, canaryReport,
          CanaryEscape, currentCanaries } from '../shared/canary';
+import { runVisualPass, noImage, type VisualPassResult } from './visual-pass';
+import { utf8ByteLength } from '../shared/evidence';
+import { isSensitive } from '../shared/redact';
 
 let currentGoal = '';
 let isAgentRunning = false;
@@ -312,11 +315,31 @@ async function processPageIR(pageIR: PageIR){
 
   const t0 = performance.now();
   emitPhase('DETECTING');
+  // The visual pass runs before redaction counts are reported, because those
+  // counts are partly what it found. It is allowed to fail: `runVisualPass`
+  // never throws, and a failure means no image, not no observation.
+  const visual: VisualPassResult = activeTabId === null
+    ? noImage('no active tab to capture')
+    : await runVisualPass({
+        tabId: activeTabId,
+        // The DOM already knows which fields are sensitive; reusing that
+        // judgement here keeps one definition of "sensitive" in the system.
+        domSensitiveBoxes: pageIR.elements
+          .filter((el) => isSensitive(el) && el.bbox)
+          .map((el) => ({ bbox: el.bbox!, inputType: el.input_type, name: el.name })),
+        // Local only. Passed so the verifier can confirm none survived.
+        knownPiiValues: pageIR.elements
+          .map((el) => el.value ?? '')
+          .filter(Boolean),
+        canaryText: currentCanaries().map((c) => c.value).join('\n'),
+        canaries: { planted: currentCanaries().length, escaped: 0 },
+      });
+
   const redacted = redactPageIR(pageIR, {
-    faces: 0,
-    ocrRegions: 0,
-    maskedRegions: 0,
-    reOcrVerified: false,
+    faces: visual.faces,
+    ocrRegions: visual.ocrRegions,
+    maskedRegions: visual.maskedRegions,
+    reOcrVerified: visual.reOcrVerified,
     canariesPlanted: currentCanaries().length,
     canariesEscaped: 0,
   });
@@ -349,7 +372,10 @@ async function processPageIR(pageIR: PageIR){
   emitPhase('BUILDING_SCENE');
   let scene;
   try {
-    scene = buildOutbound(redacted, pageIR);
+    scene = buildOutbound(redacted, pageIR, {
+      screenshotB64: visual.screenshotB64,
+      reOcrVerified: visual.reOcrVerified,
+    });
   } catch (err: any) {
     isAgentRunning = false;
     emitError(err.message);
@@ -364,8 +390,9 @@ async function processPageIR(pageIR: PageIR){
   // The last gate before anything leaves. Scanning the serialised body — not
   // the object — is the point: the leak worth catching is a value nested
   // somewhere nobody thought to walk.
+  const outboundBody = JSON.stringify(scene.payload);
   try {
-    assertNoCanaries(JSON.stringify(scene.payload));
+    assertNoCanaries(outboundBody);
     recordCanaries(canaryReport([]));
   } catch (err) {
     // The single boundary where a canary escape becomes something a person
@@ -392,6 +419,17 @@ async function processPageIR(pageIR: PageIR){
   }
 
   emitOutbound(scene.summary);
+
+  // The panel shows the body exactly as it was serialised for the canary
+  // scan, not a prettified copy — a re-serialised string is a different
+  // string from the one that was actually checked and sent.
+  void chrome.runtime.sendMessage({
+    target: 'offscreen',
+    type: 'EVIDENCE_BODY',
+    sentBody: outboundBody,
+    sentBytes: utf8ByteLength(outboundBody),
+  }).catch(() => { /* no panel open, or no offscreen document; not fatal */ });
+
   // The ref → element mapping never leaves this worker. It is the point at
   // which a reference the planner merely discussed becomes a target we act
   // on, and it is consulted only after the gate has approved the action.

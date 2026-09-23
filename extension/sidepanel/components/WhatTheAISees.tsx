@@ -145,8 +145,22 @@ export const WhatTheAISees: React.FC = () => {
 
   useEffect(() => {
     const port = chrome.runtime.connect({ name: EVIDENCE_PORT });
-    port.onMessage.addListener((msg: VisualEvidencePacket) => {
-      packetRef.current = msg;
+    port.onMessage.addListener((msg: VisualEvidencePacket | {
+      type: 'EVIDENCE_BODY'; sentBody: string; sentBytes: number;
+    }) => {
+      // The body arrives after the image, because only the worker knows what
+      // was actually serialised and sent. Merging rather than replacing keeps
+      // the pixels that came in the first message.
+      if ('type' in msg && msg.type === 'EVIDENCE_BODY') {
+        if (!packetRef.current) return;
+        packetRef.current = {
+          ...packetRef.current,
+          sentBody: msg.sentBody,
+          sizes: { ...packetRef.current.sizes, sentBytes: msg.sentBytes },
+        };
+      } else {
+        packetRef.current = msg as VisualEvidencePacket;
+      }
       setVersion((v) => v + 1);
     });
     return () => {
