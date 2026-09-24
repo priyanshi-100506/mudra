@@ -193,10 +193,18 @@ export function visionStatus(): VisionStatus {
   return status;
 }
 
-/** Resolves an extension-relative path, or falls back for test environments. */
-function runtimeUrl(path: string): string {
+/**
+ * Resolves an extension-relative path to an absolute chrome-extension:// URL.
+ *
+ * Returns null outside an extension. That distinction matters: a bare
+ * relative path like "wasm/" is read by ONNX Runtime under Node as a module
+ * specifier, and the load fails with a confusing ERR_MODULE_NOT_FOUND rather
+ * than anything about WASM. Returning null lets the caller leave ORT's own
+ * defaults alone instead of handing it a path that means nothing there.
+ */
+function runtimeUrl(path: string): string | null {
   const cr = (globalThis as { chrome?: { runtime?: { getURL?(p: string): string } } }).chrome;
-  return cr?.runtime?.getURL ? cr.runtime.getURL(path) : path;
+  return cr?.runtime?.getURL ? cr.runtime.getURL(path) : null;
 }
 
 /**
@@ -212,17 +220,52 @@ export async function initVision(): Promise<VisionStatus> {
     ort = await import('onnxruntime-web');
     // Local only. A CDN fetch here would quietly undo the offline claim, and
     // on a locked-down network it would fail at demo time.
-    ort.env.wasm.wasmPaths = runtimeUrl('wasm/');
+    const wasmDir = runtimeUrl('wasm/');
+    if (wasmDir) ort.env.wasm.wasmPaths = wasmDir;
 
+    const modelUrl = runtimeUrl(MODEL_PATH) ?? MODEL_PATH;
     const preferWebGpu = typeof navigator !== 'undefined' && 'gpu' in navigator;
-    const providers = preferWebGpu ? ['webgpu', 'wasm'] : ['wasm'];
 
-    session = await ort.InferenceSession.create(runtimeUrl(MODEL_PATH), {
-      executionProviders: providers,
-      graphOptimizationLevel: 'all',
-    });
+    /**
+     * Builds a session on one provider and proves it can actually run.
+     *
+     * The proof is the point. ONNX Runtime falls back between providers when
+     * a session cannot be *created*, but this graph creates cleanly on
+     * WebGPU and then fails on the first inference with a kernel error. So a
+     * machine with WebGPU reported ready:true, detected zero faces forever,
+     * and withheld every image — fail-closed, silent, and wrong.
+     *
+     * Each provider is therefore tried with a real forward pass over a blank
+     * tensor before it is accepted. A provider that cannot run the graph is
+     * not a provider.
+     */
+    const tryProvider = async (provider: 'webgpu' | 'wasm') => {
+      const candidate = await ort!.InferenceSession.create(modelUrl, {
+        executionProviders: [provider],
+        graphOptimizationLevel: 'all',
+      });
+      const probe = new ort!.Tensor(
+        'float32',
+        new Float32Array(MODEL_WIDTH * MODEL_HEIGHT * 3),
+        [1, 3, MODEL_HEIGHT, MODEL_WIDTH],
+      );
+      await candidate.run({ [candidate.inputNames[0]]: probe } as never);
+      return candidate;
+    };
 
-    status = { ready: true, provider: preferWebGpu ? 'webgpu' : 'wasm' };
+    const order: Array<'webgpu' | 'wasm'> = preferWebGpu ? ['webgpu', 'wasm'] : ['wasm'];
+    const failures: string[] = [];
+    for (const provider of order) {
+      try {
+        session = await tryProvider(provider);
+        status = { ready: true, provider };
+        break;
+      } catch (err) {
+        failures.push(`${provider}: ${err instanceof Error ? err.message : String(err)}`);
+        session = null;
+      }
+    }
+    if (!session) throw new Error(failures.join(' | '));
   } catch (err) {
     session = null;
     status = {

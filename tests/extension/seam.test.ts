@@ -244,15 +244,45 @@ describe('a verified pass reports what it found', () => {
   });
 });
 
-describe.skipIf(!HAVE_WEIGHTS)('end to end, with the real model', () => {
-  it('produces a verified redacted image with no canaries escaped', async () => {
-    // Runs only once version-RFB-320.onnx is in public/models. Until then
-    // the suite above asserts the fail-closed half, which is what the
-    // pipeline genuinely does without weights.
-    const { initVision } = await import('../../extension/src/offscreen/vision');
-    const status = await initVision();
-    expect(status.ready).toBe(true);
-    expect(status.provider).toBeDefined();
+describe.skipIf(!HAVE_WEIGHTS)('the committed model, checked against what vision.ts expects', () => {
+  // These run against the real file. They deliberately do not try to load an
+  // inference session: ORT's WASM backend needs a browser, and pretending
+  // otherwise under JSDOM would test the harness rather than the model. The
+  // live load is asserted in extension/scripts/drive-extension.mjs, which
+  // runs in a real Chrome.
+
+  it('is the file the README records', async () => {
+    const { createHash } = await import('crypto');
+    const { readFileSync } = await import('fs');
+    const buf = readFileSync(MODEL);
+    const sha = createHash('sha256').update(buf).digest('hex');
+    const readme = readFileSync(resolve(__dirname, '../../extension/public/models/README.md'), 'utf8');
+    // A hash recorded but never compared is decoration.
+    expect(readme).toContain(sha);
+    expect(buf.length).toBe(1_270_727);
+  });
+
+  it('names its tensors the way the decoder looks them up', async () => {
+    // vision.ts finds outputs by /score|conf/ and /box/, falling back to
+    // position. If a re-export renamed them, decodeDetections would read
+    // boxes as scores and silently mask nothing — so the names are checked
+    // against the bytes rather than assumed.
+    const { readFileSync } = await import('fs');
+    const bytes = readFileSync(MODEL);
+    const header = bytes.subarray(0, 4096).toString('latin1');
+    const footer = bytes.subarray(-4096).toString('latin1');
+    expect(header).toContain('input');
+    expect(footer).toContain('scores');
+    expect(footer).toContain('boxes');
+  });
+
+  it('is large enough to be the real graph, not an LFS pointer', async () => {
+    // A git-lfs pointer is a few hundred bytes of text and would otherwise
+    // fail much later, as an opaque ORT parse error.
+    const { readFileSync } = await import('fs');
+    const head = readFileSync(MODEL).subarray(0, 64).toString('latin1');
+    expect(head).not.toContain('git-lfs');
+    expect(head).not.toContain('version https://');
   });
 });
 

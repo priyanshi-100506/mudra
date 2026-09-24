@@ -436,43 +436,15 @@ describe('redactPageIR', () => {
 // ---------------------------------------------------------------------------
 
 describe('redactCanvas', () => {
-  beforeEach(() => {
-    // Mock getContext('2d') in jsdom environment where canvas context is not fully implemented
-    HTMLCanvasElement.prototype.getContext = function (contextId: string) {
-      if (contextId === '2d') {
-        const filledRects: Array<{ x: number; y: number; w: number; h: number; color: string }> = [];
-        let currentColor = '#000000';
-        const mockContext = {
-          get fillStyle() {
-            return currentColor;
-          },
-          set fillStyle(val: string) {
-            currentColor = val;
-          },
-          fillRect: (x: number, y: number, w: number, h: number) => {
-            filledRects.push({ x, y, w, h, color: currentColor });
-          },
-          drawImage: () => {},
-          getImageData: (x: number, y: number) => {
-            let colorVal = 255; // default white
-            for (const r of filledRects) {
-              if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
-                if (r.color === '#000000') {
-                  colorVal = 0; // black
-                }
-              }
-            }
-            return { data: [colorVal, colorVal, colorVal, 255] };
-          },
-        };
-        return mockContext as unknown as CanvasRenderingContext2D;
-      }
-      return null;
-    };
-    HTMLCanvasElement.prototype.toDataURL = function () {
-      return 'data:image/png;base64,mockImageData';
-    };
-  });
+  // No canvas mock here.
+  //
+  // There used to be one, because JSDOM has no rasteriser. It returned a
+  // fresh context object on every getContext call, so a mask written through
+  // one object was read back through another — and the tests that mattered
+  // most were skipped as a result. The `canvas` devDependency rasterises for
+  // real, so these assert actual output pixels, which is the only form in
+  // which the redaction claim means anything.
+
 
   /** Creates a minimal 200×200 canvas pre-filled with white pixels. */
   function makeCanvas(width = 200, height = 200): HTMLCanvasElement {
@@ -493,11 +465,12 @@ describe('redactCanvas', () => {
     expect(out).not.toBe(src); // must be a distinct object
   });
 
-  // SKIPPED: jsdom stubs canvas and does not rasterize, so getImageData
-  // returns the untouched backing store. The pixel pipeline is a real
-  // security property and must be verified in a browser environment —
-  // see the Playwright task in docs/frontend-blueprint.md Phase 3.
-  it.skip('blackens pixels within the masked region (+ 4px padding)', () => {
+  // These were skipped while JSDOM had no rasteriser: getImageData returned
+  // the untouched backing store, so a mask that did nothing still passed.
+  // The `canvas` devDependency now rasterises for real, and these assert
+  // actual output pixels — which is the only form in which the redaction
+  // claim means anything.
+  it('blackens pixels within the masked region (+ 4px padding)', () => {
     const src = makeCanvas();
     const rect = new DOMRect(50, 50, 100, 60);
     const out = redactCanvas(src, [rect]);
@@ -520,7 +493,7 @@ describe('redactCanvas', () => {
   // returns the untouched backing store. The pixel pipeline is a real
   // security property and must be verified in a browser environment —
   // see the Playwright task in docs/frontend-blueprint.md Phase 3.
-  it.skip('applies 4px padding — masks pixels 4px outside the DOMRect boundary', () => {
+  it('applies 4px padding — masks pixels 4px outside the DOMRect boundary', () => {
     const src = makeCanvas();
     // Place rect at (20,20) with size 10×10
     const rect = new DOMRect(20, 20, 10, 10);
@@ -536,7 +509,7 @@ describe('redactCanvas', () => {
   // returns the untouched backing store. The pixel pipeline is a real
   // security property and must be verified in a browser environment —
   // see the Playwright task in docs/frontend-blueprint.md Phase 3.
-  it.skip('handles multiple masked regions independently', () => {
+  it('handles multiple masked regions independently', () => {
     const src = makeCanvas();
     const r1 = new DOMRect(10, 10, 20, 20);
     const r2 = new DOMRect(100, 100, 20, 20);

@@ -22,7 +22,9 @@ const dist = resolve(extensionRoot, 'dist');
 // The fixture server. This origin is in host_permissions so the demo runs
 // without a click; on any other site the extension holds only `activeTab`,
 // which Chrome grants on a user gesture and scopes to that one tab.
-const FIXTURES = process.env.FIXTURE_URL ?? 'http://127.0.0.1:5173';
+// Matches what `make demo` serves: the repo root, so the demo page and the
+// eval fixtures share one origin and one host permission.
+const FIXTURES = process.env.FIXTURE_URL ?? 'http://127.0.0.1:5173/eval/fixtures';
 
 const profile = mkdtempSync(resolve(tmpdir(), 'mudra-'));
 let context;
@@ -228,6 +230,12 @@ try {
                       (e.withheld ? `  (${e.withheld.slice(0, 70)})` : ''));
       log('pipeline', `masks ${e.maskedRegions?.length ?? 0}, faces ${e.faceCount ?? 0}, ` +
                       `ocr regions ${e.ocrRegionCount ?? 0}, verified ${e.reOcrVerified}`);
+      if (e.maskedRegions?.length) {
+        log('pipeline', `labels: ${[...new Set(e.maskedRegions.map((m) => m.label))].join(', ')}`);
+      }
+      // The detector ran if the pipeline got past it at all — faces:0 on an
+      // image with no face is the correct answer, not a failure.
+      if (e.reOcrVerified) log('pipeline', '\u2713 redaction verified by re-OCR; image released');
       log('pipeline', `warmup ${result.warmupMs} ms, stages ${JSON.stringify(result.timings)}`);
       // The invariant, checked live: no verification means no pixels.
       if (!e.reOcrVerified && e.screenshotB64) {
