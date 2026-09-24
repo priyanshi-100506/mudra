@@ -14,10 +14,15 @@ demo:
 build:
 	cd extension && npm run build
 
+# The virtualenv's python, wherever this platform put it. A bare `python`
+# here resolves to whatever is on PATH, which is usually not the venv, and
+# the failure looks like a missing dependency rather than a missing venv.
+PY := $(firstword $(wildcard .venv/bin/python .venv/Scripts/python.exe backend/.venv/bin/python) python3)
+
 ## Both suites.
 test:
 	cd extension && npm test
-	cd backend && python -m pytest ../tests -q
+	cd backend && ../$(PY) -m pytest ../tests -q
 
 ## Check everything before going on stage. Green or red, per line.
 preflight:
