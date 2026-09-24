@@ -341,12 +341,19 @@ add('img-hindi-aadhaar', 'image-pii', 'Aadhaar Scan — Hindi',
   ])}">`,
   { pii: [V.aadhaar2], decoys: [], imageOnly: true, devanagari: true });
 
+// The face fixture points at the demo's consented applicant photograph.
+//
+// It deliberately does NOT ship a synthetic stand-in. A drawn or cartoon
+// face is not detected by UltraFace, so a placeholder would produce a
+// confident "0 faces found" that looks like a measurement and is not one.
+// With no photo present the eval marks this row not-measurable and says so,
+// which is the honest reading: we have not tested face recall.
 add('img-face-photo', 'image-pii', 'Video Call — Participant',
   `<h2>Meeting in progress</h2>
-  <canvas class="doc" id="stage" width="420" height="260"></canvas>
+  <img class="doc" id="participant" alt="Participant"
+       src="../../demo/assets/applicant-photo.jpg">
   <p>One participant has their camera on.</p>`,
-  { pii: [], faces: 1, decoys: [], imageOnly: true },
-  );
+  { pii: [], faces: 1, decoys: [], imageOnly: true, needsPhoto: true });
 
 // Group 3 — decoys (5)
 // Decoys sit in form fields, not only in prose, so the detector is actually
@@ -432,6 +439,8 @@ const groundTruth = {
     /** True when the PII exists only as pixels, so the DOM cannot help. */
     imageOnly: Boolean(f.expect.imageOnly),
     devanagari: Boolean(f.expect.devanagari),
+    /** True when this row cannot be measured without the applicant photo. */
+    needsPhoto: Boolean(f.expect.needsPhoto),
   })),
 };
 

@@ -67,9 +67,15 @@ The planner can still tell there is a password field and a PAN field, and can
 still act on them by reference. `hunter2` and `BKPPS4321N` are not present in
 any form — the outbound type has no `value` field for them to occupy.
 
-<!-- NARRATIVE: the payload-size line goes here once measured end to end with
-     the ONNX weights in place. The panel computes it for real; do not quote a
-     ratio that has not been measured. -->
+**Measured on this page, at 1280×900:** a raw PNG capture is **113,533
+bytes**; the body the redactor produced for it is **4,381 bytes**. A ratio of
+**25.9×**, computed by `npm run measure:payload` from two real artefacts.
+
+That is deliberately not the 900× figure this kind of system usually quotes.
+A ratio like that assumes a photo-heavy screenshot of one or two megabytes;
+`kyc.html` is a flat form and PNG compresses it to 113 KB. The ratio is a
+property of the page as much as of the redactor. Quoting 25.9× on a page we
+can show beats quoting 900× on a page we cannot.
 
 ---
 
@@ -111,27 +117,38 @@ From [`eval/results.json`](eval/results.json), committed and reproducible with
 
 **Conditions:** Apple M3, 8 cores, 8 GB RAM, macOS (Darwin 25.5.0 arm64),
 Node v24.2.0, Chrome 153. 19 fixtures, 30 synthetic identifiers, 16 decoys.
+Text pipeline measured in JSDOM; the visual pipeline measured in a real
+Chrome with the built extension loaded, on WASM.
 
 | Metric | Result |
 |---|---|
-| Recall (text pipeline) | **100%** (25/25) |
+| Recall, text pipeline | **100%** (25/25) |
+| **Recall, PII visible only as pixels** | **100%** (4/4) |
 | Precision | **89.3%** |
 | F1 | **94.3%** |
 | **Decoy false positives** | **3 / 15 (20.0%)** |
 | Leaks after redaction | **0** |
 | Canaries escaped | **0** of 3 per observation |
-| Local pipeline p50 / p95 | **7.4 ms / 61.5 ms** |
-| Payload per observation p50 / p95 | **602 B / 1257 B** |
-| Peak heap | **98.1 MB** |
+| Text pipeline p50 / p95 | **8.0 ms / 61.5 ms** |
+| Visual pass, per observation | **~2,250 ms** |
+| Model + OCR first load, once per session | **1,112 ms** |
+| Payload on `demo/kyc.html` | **4,381 B** vs **113,533 B** raw — **25.9×** |
+| Peak heap | **107.8 MB** |
 
 ### Status and limits
 
 <!-- NARRATIVE: tone is yours, but these facts should survive the edit. -->
 
-- **Six of eighteen fixtures have not been run.** They need the UltraFace-320
-  weights, which are not yet committed. Their rows read `not-run`, never zero,
-  and the recall figure above is scoped to the text pipeline rather than
-  presented as a whole-system number.
+- **Face detection recall is untested, not zero.** The face fixture needs a
+  consented photograph that is not yet in the repository, and it deliberately
+  ships no synthetic stand-in — a drawn face is not detected by UltraFace, so
+  a placeholder would give a confident "0 faces found" that looks like a
+  measurement and is not one. That row reads `notMeasurable`.
+- **The Devanagari fixture's number was found, but labelled `AADHAAR`, not
+  `HINDI-OCR`.** The label reflects the matched token, which is a string of
+  digits. The Hindi language data is loaded and the page renders in
+  Devanagari, but this run does not by itself establish that the Hindi glyphs
+  contributed.
 - **The three false positives are all one cause: PAN and IFSC have no
   checksum.** Where a checksum exists — Aadhaar, card — every decoy is
   correctly ignored, including a GSTIN that contains a valid PAN as a

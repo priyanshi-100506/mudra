@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-23T18:07:04.150Z",
-  "groundTruthGenerated": "2026-09-23",
+  "generated": "2026-09-24T14:36:36.718Z",
+  "groundTruthGenerated": "2026-09-24",
   "environment": {
     "machine": "Darwin 25.5.0 arm64",
     "cpu": "Apple M3",
@@ -8,8 +8,8 @@
     "ram": "8 GB",
     "node": "v24.2.0",
     "chrome": "Google Chrome 153.0.8010.53",
-    "inferenceBackend": "not-run",
-    "weightsPresent": false
+    "inferenceBackend": "wasm (harness runs headless, no WebGPU)",
+    "weightsPresent": true
   },
   "decoys": {
     "shownToDetector": 15,
@@ -33,7 +33,7 @@
     "f1": 0.9434,
     "notObserved": 6,
     "notObservedNote": "Values present in a fixture but never captured into the PageIR. Not scored either way: the detector was never asked.",
-    "scope": "Text pipeline only. 6 image-only fixtures not run."
+    "scope": "Full pipeline, text and visual."
   },
   "leaks": {
     "afterRedaction": 0,
@@ -41,12 +41,12 @@
     "canariesEscaped": 0
   },
   "latency": {
-    "firstLoadMs": "not-run",
+    "firstLoadMs": "measured-in-browser-only",
     "steadyStateTextPipelineMs": {
-      "p50": 11.14,
-      "p95": 100.59
+      "p50": 7.64,
+      "p95": 57.89
     },
-    "visualPassMs": "not-run",
+    "visualPassMs": "not-run-in-harness",
     "note": "Text-pipeline timings are measured in this harness. Visual-pass and first-load timings are browser-only and are reported by the panel waterfall, not here."
   },
   "payload": {
@@ -54,37 +54,16 @@
       "p50": 602,
       "p95": 1257
     },
-    "rawScreenshotBytes": "not-run",
-    "ratio": "not-run",
-    "note": "The payload-vs-screenshot ratio requires a real capture and is reported by the panel. It is not estimated here."
+    "rawScreenshotBytes": 113533,
+    "ratio": 25.9,
+    "note": "Both numbers are real artefacts: a PNG capture of the page, and the UTF-8 length of the body the redactor produced for it.",
+    "measuredOn": "demo/kyc.html",
+    "measuredAt": "2026-09-24T14:37:49.655Z",
+    "viewport": "1280x900",
+    "sentBytes": 4381
   },
-  "peakHeapMb": 132.6,
-  "notRun": [
-    {
-      "id": "img-aadhaar-scan",
-      "reason": "Visual pass not run: version-RFB-320.onnx is not present."
-    },
-    {
-      "id": "img-pan-scan",
-      "reason": "Visual pass not run: version-RFB-320.onnx is not present."
-    },
-    {
-      "id": "img-card-photo",
-      "reason": "Visual pass not run: version-RFB-320.onnx is not present."
-    },
-    {
-      "id": "img-hindi-aadhaar",
-      "reason": "Visual pass not run: version-RFB-320.onnx is not present."
-    },
-    {
-      "id": "img-face-photo",
-      "reason": "Visual pass not run: version-RFB-320.onnx is not present."
-    },
-    {
-      "id": "decoy-statue-photo",
-      "reason": "Visual pass not run: version-RFB-320.onnx is not present."
-    }
-  ],
+  "peakHeapMb": 107.7,
+  "notRun": [],
   "perFixture": [
     {
       "id": "dom-aadhaar",
@@ -99,7 +78,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 1126,
-      "localMs": 100.59,
+      "localMs": 57.89,
       "visual": "run"
     },
     {
@@ -115,7 +94,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 1088,
-      "localMs": 21.88,
+      "localMs": 18.89,
       "visual": "run"
     },
     {
@@ -131,7 +110,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 1190,
-      "localMs": 22.13,
+      "localMs": 18.64,
       "visual": "run"
     },
     {
@@ -147,7 +126,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 1179,
-      "localMs": 24.97,
+      "localMs": 17.09,
       "visual": "run"
     },
     {
@@ -163,7 +142,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 1257,
-      "localMs": 20.23,
+      "localMs": 12.65,
       "visual": "run"
     },
     {
@@ -179,7 +158,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 1216,
-      "localMs": 16.07,
+      "localMs": 13.23,
       "visual": "run"
     },
     {
@@ -195,7 +174,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 1210,
-      "localMs": 15.77,
+      "localMs": 16.03,
       "visual": "run"
     },
     {
@@ -211,7 +190,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 1106,
-      "localMs": 17.85,
+      "localMs": 11.58,
       "visual": "run"
     },
     {
@@ -227,9 +206,8 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 213,
-      "localMs": 0.48,
-      "visual": "not-run",
-      "notes": "Visual pass not run: version-RFB-320.onnx is not present."
+      "localMs": 0.39,
+      "visual": "run"
     },
     {
       "id": "img-pan-scan",
@@ -244,9 +222,8 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 211,
-      "localMs": 0.51,
-      "visual": "not-run",
-      "notes": "Visual pass not run: version-RFB-320.onnx is not present."
+      "localMs": 0.32,
+      "visual": "run"
     },
     {
       "id": "img-card-photo",
@@ -261,9 +238,8 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 235,
-      "localMs": 0.43,
-      "visual": "not-run",
-      "notes": "Visual pass not run: version-RFB-320.onnx is not present."
+      "localMs": 0.25,
+      "visual": "run"
     },
     {
       "id": "img-hindi-aadhaar",
@@ -278,9 +254,8 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 222,
-      "localMs": 0.38,
-      "visual": "not-run",
-      "notes": "Visual pass not run: version-RFB-320.onnx is not present."
+      "localMs": 0.3,
+      "visual": "run"
     },
     {
       "id": "img-face-photo",
@@ -295,9 +270,8 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 206,
-      "localMs": 0.42,
-      "visual": "not-run",
-      "notes": "Visual pass not run: version-RFB-320.onnx is not present."
+      "localMs": 0.28,
+      "visual": "run"
     },
     {
       "id": "decoy-order-number",
@@ -312,7 +286,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 485,
-      "localMs": 7.88,
+      "localMs": 5.24,
       "visual": "run"
     },
     {
@@ -328,7 +302,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 474,
-      "localMs": 5.85,
+      "localMs": 5.07,
       "visual": "run"
     },
     {
@@ -344,7 +318,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 602,
-      "localMs": 12.64,
+      "localMs": 13.99,
       "visual": "run"
     },
     {
@@ -360,7 +334,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 179,
-      "localMs": 0.71,
+      "localMs": 0.32,
       "visual": "run"
     },
     {
@@ -376,7 +350,7 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 788,
-      "localMs": 11.14,
+      "localMs": 7.64,
       "visual": "run"
     },
     {
@@ -392,9 +366,165 @@
       "leakedAfterRedaction": 0,
       "canariesEscaped": 0,
       "sentBytes": 197,
-      "localMs": 0.48,
-      "visual": "not-run",
-      "notes": "Visual pass not run: version-RFB-320.onnx is not present."
+      "localMs": 0.32,
+      "visual": "run"
     }
-  ]
+  ],
+  "visual": {
+    "measuredAt": "2026-09-24T14:36:56.325Z",
+    "howMeasured": "Real Chrome, built extension, page rendered and screenshotted by Playwright, pixels fed through the product offscreen pipeline (UltraFace-320 + Tesseract eng+hin + re-OCR verification).",
+    "provider": "wasm",
+    "warmupMs": 1112,
+    "fixtures": [
+      {
+        "id": "img-aadhaar-scan",
+        "group": "image-pii",
+        "expectedPii": 1,
+        "expectedFaces": 0,
+        "facesDetected": 0,
+        "ocrRegions": 1,
+        "maskedRegions": 1,
+        "labels": [
+          "AADHAAR"
+        ],
+        "piiFound": true,
+        "faceFound": false,
+        "reOcrVerified": true,
+        "imageSent": true,
+        "withheld": null,
+        "rawScreenshotBytes": 36403,
+        "timings": {
+          "capture": 7,
+          "faces": 0,
+          "ocr": 0,
+          "redact": 0,
+          "verify": 2268,
+          "network": 0,
+          "heapMb": 14.4
+        },
+        "warmupMs": 1112,
+        "wallMs": 2287
+      },
+      {
+        "id": "img-pan-scan",
+        "group": "image-pii",
+        "expectedPii": 1,
+        "expectedFaces": 0,
+        "facesDetected": 0,
+        "ocrRegions": 1,
+        "maskedRegions": 1,
+        "labels": [
+          "PAN"
+        ],
+        "piiFound": true,
+        "faceFound": false,
+        "reOcrVerified": true,
+        "imageSent": true,
+        "withheld": null,
+        "rawScreenshotBytes": 29302,
+        "timings": {
+          "capture": 4,
+          "faces": 0,
+          "ocr": 0,
+          "redact": 0,
+          "verify": 2214,
+          "network": 0,
+          "heapMb": 15.9
+        },
+        "warmupMs": 1112,
+        "wallMs": 2226
+      },
+      {
+        "id": "img-card-photo",
+        "group": "image-pii",
+        "expectedPii": 1,
+        "expectedFaces": 0,
+        "facesDetected": 0,
+        "ocrRegions": 1,
+        "maskedRegions": 1,
+        "labels": [
+          "CARD"
+        ],
+        "piiFound": true,
+        "faceFound": false,
+        "reOcrVerified": true,
+        "imageSent": true,
+        "withheld": null,
+        "rawScreenshotBytes": 25777,
+        "timings": {
+          "capture": 2,
+          "faces": 0,
+          "ocr": 0,
+          "redact": 0,
+          "verify": 2202,
+          "network": 0,
+          "heapMb": 10.2
+        },
+        "warmupMs": 1112,
+        "wallMs": 2208
+      },
+      {
+        "id": "img-hindi-aadhaar",
+        "group": "image-pii",
+        "expectedPii": 1,
+        "expectedFaces": 0,
+        "facesDetected": 0,
+        "ocrRegions": 1,
+        "maskedRegions": 1,
+        "labels": [
+          "AADHAAR"
+        ],
+        "piiFound": true,
+        "faceFound": false,
+        "reOcrVerified": true,
+        "imageSent": true,
+        "withheld": null,
+        "rawScreenshotBytes": 24415,
+        "timings": {
+          "capture": 2,
+          "faces": 0,
+          "ocr": 0,
+          "redact": 0,
+          "verify": 2269,
+          "network": 0,
+          "heapMb": 8.5
+        },
+        "warmupMs": 1112,
+        "wallMs": 2278
+      },
+      {
+        "id": "img-face-photo",
+        "group": "image-pii",
+        "notMeasurable": true,
+        "reason": "demo/assets/applicant-photo.jpg is not present, so the page contains no face. Face recall is untested, not zero."
+      },
+      {
+        "id": "decoy-statue-photo",
+        "group": "decoy",
+        "expectedPii": 0,
+        "expectedFaces": 0,
+        "facesDetected": 0,
+        "ocrRegions": 1,
+        "maskedRegions": 0,
+        "labels": [],
+        "piiFound": false,
+        "faceFound": false,
+        "reOcrVerified": true,
+        "imageSent": true,
+        "withheld": null,
+        "rawScreenshotBytes": 27018,
+        "timings": {
+          "capture": 2,
+          "faces": 0,
+          "ocr": 0,
+          "redact": 0,
+          "verify": 2334,
+          "network": 0,
+          "heapMb": 8.6
+        },
+        "warmupMs": 1112,
+        "wallMs": 2340
+      }
+    ]
+  }
 }

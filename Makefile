@@ -28,8 +28,11 @@ drive:
 	cd extension && npm run build && npm run drive
 
 ## Re-run the evaluation and rewrite eval/results.json.
+## The visual half needs a browser and a fixture server: run `make demo` first.
 eval:
 	cd extension && npm run eval
+	cd extension && npm run eval:visual
+	cd extension && npm run measure:payload
 
 clean:
 	rm -rf extension/dist

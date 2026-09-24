@@ -133,21 +133,81 @@ Twenty-two identifiers were captured and scored; five more sit in prose the
 perception layer does not collect, and are reported as `notObserved` rather
 than counted as either successes or misses.
 
-### Not yet run
+## The visual pipeline, measured
 
-Six of the eighteen fixtures — five image-only and the statue decoy — require
-`version-RFB-320.onnx`, which is not yet in `extension/public/models/`. Their
-rows read `not-run`. They are **not** reported as zeros, and the recall figure
-above is explicitly scoped to the text pipeline rather than presented as a
-whole-system number.
+Run with `npm run eval:visual`. It has to be a browser: ONNX Runtime's WASM
+backend, OffscreenCanvas and Tesseract's worker all need one, and a JSDOM
+harness claiming to run them would be measuring itself. Each fixture is
+rendered in Chrome with the built extension loaded, screenshotted, and those
+real pixels are fed through the product's own offscreen pipeline.
 
-Still to be measured once the weights land:
+**Provider: WASM. First load: 1,112 ms, paid once.**
 
-- face detection recall, and the statue false-positive case
-- image-only PII recall, including the Devanagari fixture
-- first-load cost, separately from steady state
-- visual-pass latency
-- the payload-versus-raw-screenshot ratio, which needs a real capture
+| Fixture | PII in pixels only | Found | Label | Verified | Wall |
+|---|---|---|---|---|---|
+| `img-aadhaar-scan` | Aadhaar | ✅ | `AADHAAR` | ✅ | 2,287 ms |
+| `img-pan-scan` | PAN | ✅ | `PAN` | ✅ | 2,226 ms |
+| `img-card-photo` | card | ✅ | `CARD` | ✅ | 2,208 ms |
+| `img-hindi-aadhaar` | Aadhaar, Devanagari page | ✅ | `AADHAAR` | ✅ | 2,278 ms |
+| `img-face-photo` | a face | — | — | — | **not measurable** |
+| `decoy-statue-photo` | *nothing* | ✅ none found | — | ✅ | 2,340 ms |
+
+**Image-only PII recall: 4 / 4.** Every number that existed solely as pixels
+was found, masked, and the redaction confirmed by re-OCR before the image was
+released.
+
+### Three honest qualifications
+
+**Face detection recall is untested, not zero.** `img-face-photo` needs
+`demo/assets/applicant-photo.jpg`, a consented photograph that is not yet in
+the repository. The fixture deliberately ships no synthetic stand-in: a drawn
+face is not detected by UltraFace, so a placeholder would produce a confident
+"0 faces found" that looks like a measurement and is not one. The row reads
+`notMeasurable` with its reason.
+
+**The Hindi fixture is labelled `AADHAAR`, not `HINDI-OCR`.** The number on
+that card was found, which is the thing that matters. But the label reflects
+the *matched token*, and the token that matched is a string of digits — so
+this run does not by itself demonstrate that the Devanagari text was read.
+The `hin` language data is loaded and the page renders in Devanagari; whether
+the Hindi glyphs contributed is not established by this measurement.
+
+**The statue decoy is weaker than its name.** It is a rendered SVG with text
+on it, not a photograph of a statue. "No face found" in it is true and
+correct, but it is a low bar — a real photograph of a sculpture would be a
+much better test of whether the detector hallucinates faces.
+
+### Latency, first load kept separate
+
+| | |
+|---|---|
+| First load (model + OCR worker), once per session | **1,112 ms** |
+| Steady-state visual pass, per observation | **~2,250 ms** |
+| Text pipeline, per observation (p50 / p95) | **8.0 / 61.5 ms** |
+
+The visual pass is dominated by re-OCR verification — reading the redacted
+image back is roughly as expensive as reading it the first time. That is the
+cost of checking rather than asserting, and it is paid on purpose.
+
+## Payload size, measured on the demo page
+
+| | |
+|---|---|
+| Raw PNG capture of `demo/kyc.html` at 1280×900 | **113,533 bytes** |
+| Body the redactor produced for the same page | **4,381 bytes** |
+| Ratio | **25.9×** |
+
+Both are real artefacts, measured by `npm run measure:payload`.
+
+**This is not the 900× figure that gets quoted for this kind of system, and
+the difference is worth understanding.** A ratio like that assumes a
+photo-heavy screenshot of one or two megabytes. `kyc.html` is a flat form —
+solid colours, no photographs — and PNG compresses it to 113 KB. The ratio is
+a property of the page as much as of the redactor, and on a page carrying
+real photographs it would be far higher.
+
+Quoting 25.9× on a page we can show, rather than 900× on a page we cannot, is
+the version that survives someone asking which page.
 
 First-load and steady-state timings are kept apart, the same way the panel
 keeps `warmupMs` apart from its stage times. Both are honest; averaging them
